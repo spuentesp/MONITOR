@@ -1,0 +1,128 @@
+# Universal RPG System Schema (v1)
+# Este esquema define los componentes principales para representar cualquier sistema de rol
+
+name: "Universal RPG System Schema"
+description: "Esquema base para modelar cualquier sistema de rol mediante YAML."
+version: 1.0
+
+# DEFINICIÓN DEL SISTEMA
+system:
+  name: "Nombre del sistema"
+  dice_mechanics:
+    type: "dice_pool | standard | percentile | custom"
+    expression: "2d6 + stat + tags - conditions"
+    critical:
+      success: ">= 12"
+      failure: "<= 2"
+    partial_success:
+      range: "7..9"
+
+# ATRIBUTOS (STATS BÁSICOS NUMÉRICOS)
+stats:
+  - name: "Strength"
+    abbreviation: "STR"
+    description: "Fuerza física bruta."
+    min: 0
+    max: 10
+    default: 1
+
+# TAGS: VENTAJAS NARRATIVAS O TÉCNICAS
+# (Pueden tener categorías como mythos/logos, aspecto, ventaja, etc.)
+tags:
+  types:
+    - name: "Power"
+    - name: "Weakness"
+    - name: "Aspect"
+    - name: "Tag Category Custom"
+
+# CONDITIONS O STATUS EFECTIVOS
+conditions:
+  - name: "Wounded"
+    stackable: true
+    scale: 1
+    description: "Cada nivel representa una herida acumulativa."
+  - name: "Burned"
+    stackable: false
+
+# RECURSOS DEL JUEGO
+resources:
+  - name: "HP"
+    min: 0
+    max: 100
+    default: 100
+  - name: "XP"
+    min: 0
+    default: 0
+
+# MOVIMIENTOS / ACCIONES / HABILIDADES
+actions:
+  - name: "Attack"
+    trigger: "Cuando atacas directamente a un enemigo."
+    roll: "1d20 + STR"
+    outcome:
+      success: "Haces daño completo"
+      partial: "Haces daño reducido"
+      failure: "Fallas o recibes contraataque"
+
+# TIRADAS ENFRENTADAS
+opposed_rolls:
+  enabled: true
+  rules: "Ambos jugadores tiran 2d6 + stat y comparan"
+
+# FICHA DE PERSONAJE
+character_sheet:
+  layout:
+    - section: "Stats"
+      fields:
+        - STR
+        - DEX
+        - INT
+    - section: "Tags"
+      fields:
+        - name: "Power Tags"
+          type: list
+        - name: "Weakness Tags"
+          type: list
+    - section: "Resources"
+      fields:
+        - HP
+        - XP
+    - section: "Conditions"
+      fields:
+        - name: "Wounded"
+          type: scale
+
+# PROGRESIÓN / SUBIDA DE NIVEL
+progression:
+  type: "XP based | Milestone | Narrative"
+  rules: "Cuando llegas a 10 XP, eliges una mejora de personaje."
+
+# CRÍTICOS / FALLAS ESPECIALES
+critical_rules:
+  critical_success:
+    effect: "Doble daño o efecto especial narrativo."
+  critical_failure:
+    effect: "Fallo espectacular, el GM describe una consecuencia."
+
+# INTEGRACIÓN NARRATIVA
+narrative_hooks:
+  enable_reactive_story: true
+  on_critical:
+    - trigger: "success"
+      effect: "Introduce un giro narrativo a favor"
+    - trigger: "failure"
+      effect: "Introduce una complicación inesperada"
+
+# EXTENSIONES
+extensions:
+  modular_subsystems:
+    - name: "Magic"
+      description: "Subsistema de magia con reglas propias."
+    - name: "Investigation"
+      description: "Sistema de pistas y deducción."
+
+# METADATOS
+metadata:
+  created_by: "Sebastián Puentes"
+  license: "CC-BY-SA"
+  last_updated: "2025-08-30"
