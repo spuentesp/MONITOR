@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+from typing import Any
+
+try:
+    from core.ports.storage import RepoPort  # type: ignore
+except Exception:  # pragma: no cover
+    RepoPort = Any  # type: ignore
+
 from core.persistence.queries_lib.axioms import AxiomsQueries
 from core.persistence.queries_lib.base import BaseQueries
 from core.persistence.queries_lib.entities import EntitiesQueries
@@ -18,5 +25,5 @@ class QueryService(
     AxiomsQueries,
     SystemsQueries,
 ):
-    def __init__(self, repo):
-        super().__init__(repo)
+    def __init__(self, repo: RepoPort | Any):
+        super().__init__(repo)  # BaseQueries expects a repo duck-typed to RepoPort

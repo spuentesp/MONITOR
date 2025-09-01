@@ -1,4 +1,35 @@
+from __future__ import annotations
+
+from typing import Any
+
 from core.persistence.recorder import RecorderService
+
+
+class DummyRepo:
+    def __init__(self):
+        self.calls: list[tuple[str, dict[str, Any]]] = []
+
+    def ping(self) -> bool:
+        return False
+
+    def run(self, q: str, **params: Any):
+        self.calls.append((q.strip().split("\n")[0], params))
+        return []
+
+
+def test_recorder_facts_relations_and_states_paths():
+    repo = DummyRepo()
+    svc = RecorderService(repo)
+    res = svc.commit_deltas(
+        scene_id="s1",
+        universe_id="u1",
+        facts=[{"description": "d", "participants": [{"entity_id": "e1", "role": "pc"}]}],
+        relation_states=[
+            {"type": "ally", "entity_a": "e1", "entity_b": "e2", "set_in_scene": "s1"}
+        ],
+        relations=[{"a": "e1", "b": "e2", "type": "ally", "weight": 1}],
+    )
+    assert res["ok"] and res["written"]["facts"] == 1 and res["written"]["relation_states"] == 1 and res["written"]["relations"] == 1
 
 
 class FakeRepo:

@@ -1,8 +1,84 @@
+from __future__ import annotations
+
 import time
+from typing import Any
 
 from core.engine.cache import ReadThroughCache, StagingStore
 from core.engine.tools import ToolContext, query_tool, recorder_tool
 from core.persistence.recorder import RecorderService
+from core.services.query_service import QueryServiceFacade
+from core.services.recorder_service import RecorderServiceFacade
+
+
+class FakeCache:
+    def __init__(self):
+        self.store: dict[str, Any] = {}
+        self.cleared = 0
+
+    def make_key(self, method: str, params: dict[str, Any]) -> str:
+        return f"k:{method}:{sorted(params.items())}"
+
+    def get(self, key: str) -> Any | None:
+        return self.store.get(key)
+
+    def set(self, key: str, value: Any) -> None:
+        self.store[key] = value
+
+    def clear(self) -> None:
+        self.cleared += 1
+        self.store.clear()
+
+
+class FakeStaging:
+    def __init__(self):
+        self.staged: list[dict[str, Any]] = []
+
+    def stage(self, deltas: dict[str, Any]) -> None:
+        self.staged.append(deltas)
+
+
+class QImpl:
+    def __init__(self):
+        self.calls = 0
+
+    def relations_effective_in_scene(self, scene_id: str):
+        self.calls += 1
+        return [{"a": "e1", "b": "e2", "type": "ally", "sid": scene_id}]
+
+
+class RecImpl:
+    def __init__(self):
+        self.calls = 0
+
+    def commit_deltas(self, **kwargs: Any):
+        self.calls += 1
+        return {"ok": True, "written": {"facts": len(kwargs.get("facts") or [])}, "warnings": []}
+
+
+def test_query_tool_uses_cache():
+    qs = QueryServiceFacade(QImpl())
+    cache = FakeCache()
+    ctx = ToolContext(query_service=qs, read_cache=cache)
+    out1 = query_tool(ctx, "relations_effective_in_scene", scene_id="s1")
+    out2 = query_tool(ctx, "relations_effective_in_scene", scene_id="s1")
+    assert out1 == out2 and cache.store  # cached on second call
+
+
+def test_recorder_tool_dry_run_stages_and_clears_cache():
+    qs = QueryServiceFacade(QImpl())
+    cache = FakeCache()
+    staging = FakeStaging()
+    ctx = ToolContext(query_service=qs, read_cache=cache, staging=staging)
+    out = recorder_tool(ctx, draft="x", deltas={"facts": [{"description": "d"}]})
+    assert out["mode"] == "dry_run" and staging.staged and cache.cleared == 1
+
+
+def test_recorder_tool_commit_clears_cache():
+    rec = RecorderServiceFacade(RecImpl())
+    cache = FakeCache()
+    ctx = ToolContext(query_service=QueryServiceFacade(QImpl()), recorder=rec, read_cache=cache, dry_run=False)
+    out = recorder_tool(ctx, draft="x", deltas={"facts": [{"description": "d"}]})
+    assert out["mode"] == "commit" and cache.cleared == 1
 
 
 class DummyQueryService:

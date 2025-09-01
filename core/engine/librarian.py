@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
+try:
+    from core.ports.storage import QueryReadPort  # type: ignore
+except Exception:  # pragma: no cover
+    QueryReadPort = Any  # type: ignore
+
 
 class LibrarianService:
     """Encapsulated retrieval helper that summarizes context for agents.
@@ -9,7 +14,7 @@ class LibrarianService:
     It uses the public QueryService; formatting is kept minimal and bounded.
     """
 
-    def __init__(self, query_service: Any):
+    def __init__(self, query_service: QueryReadPort | Any):
         self.q = query_service
 
     def scene_brief(self, scene_id: str, limits: dict[str, int] | None = None) -> str:

@@ -21,7 +21,7 @@ app = FastAPI(title="M.O.N.I.T.O.R. API")
 
 @app.middleware("http")
 async def validate_context_token(request: Request, call_next):
-    if request.url.path in ["/docs", "/openapi.json", "/"]:
+    if request.url.path in ["/docs", "/openapi.json", "/", "/health"]:
         return await call_next(request)
 
     token = request.headers.get("X-Context-Token")

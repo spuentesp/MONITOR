@@ -15,3 +15,5 @@ openai>=1.40.0
 # Dev tools
 ruff
 mypy
+import-linter
+types-PyYAML

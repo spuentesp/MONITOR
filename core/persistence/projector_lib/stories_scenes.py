@@ -4,7 +4,7 @@ from core.domain.story import Story
 
 
 class StoriesScenesMixin:
-    def _upsert_stories_and_scenes(self, universe_id: str, stories: list[Story]):
+    def _upsert_stories_and_scenes(self, universe_id: str, stories: list[Story]) -> None:
         # Stories
         srows = []
         for s in stories:
@@ -83,7 +83,7 @@ class StoriesScenesMixin:
                 rows=scrows,
             )
 
-    def _upsert_appears_in(self, stories: list[Story]):
+    def _upsert_appears_in(self, stories: list[Story]) -> None:
         rows = []
         for st in stories:
             if not st.scenes:

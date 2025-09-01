@@ -1,0 +1,11 @@
+[run]
+branch = True
+omit =
+    frontend/*
+    core/interfaces/cli_interface.py
+    core/persistence/brancher_lib/*
+    core/persistence/projector_lib/*
+
+[report]
+show_missing = True
+skip_covered = True

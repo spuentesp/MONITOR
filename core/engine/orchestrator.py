@@ -107,8 +107,11 @@ class Orchestrator:
 def build_live_tools(dry_run: bool = True) -> ToolContext:
     """Construct a ToolContext backed by the live Neo4j graph using env vars, with optional caching."""
     repo = Neo4jRepo().connect()
-    qs = QueryService(repo)
-    recorder = RecorderService(repo)
+    from core.services.query_service import QueryServiceFacade
+    from core.services.recorder_service import RecorderServiceFacade
+
+    qs = QueryServiceFacade(QueryService(repo))
+    recorder = RecorderServiceFacade(RecorderService(repo))
     backend = os.getenv("MONITOR_CACHE_BACKEND", "").lower()  # "redis" or ""
     ttl = float(os.getenv("MONITOR_CACHE_TTL", "60"))
     if backend == "redis" and RedisReadThroughCache and RedisStagingStore:

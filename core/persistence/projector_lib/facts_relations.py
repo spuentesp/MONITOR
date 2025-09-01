@@ -4,7 +4,7 @@ from core.domain.fact import Fact, RelationState
 
 
 class FactsRelationsMixin:
-    def _upsert_facts(self, universe_id: str, facts: list[Fact]):
+    def _upsert_facts(self, universe_id: str, facts: list[Fact]) -> None:
         frows = []
         for f in facts:
             props = {
@@ -52,7 +52,7 @@ class FactsRelationsMixin:
             rows=frows,
         )
 
-    def _upsert_relation_states(self, rels: list[RelationState]):
+    def _upsert_relation_states(self, rels: list[RelationState]) -> None:
         rrows = [
             {
                 "id": r.id,

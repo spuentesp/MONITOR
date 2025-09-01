@@ -4,7 +4,7 @@ from core.domain.entity import ConcreteEntity
 
 
 class EntitiesSheetsMixin:
-    def _upsert_entities_and_sheets(self, universe_id: str, entities: list[ConcreteEntity]):
+    def _upsert_entities_and_sheets(self, universe_id: str, entities: list[ConcreteEntity]) -> None:
         erows = []
         for e in entities:
             props = {

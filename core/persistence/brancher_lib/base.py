@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+from typing import Any
+
+try:
+    from core.ports.storage import RepoPort  # type: ignore
+except Exception:  # pragma: no cover
+    RepoPort = Any  # type: ignore
 
 class BranchBase:
-    def __init__(self, repo):
+    def __init__(self, repo: RepoPort | Any):
         self.repo = repo
 
     def _check_source_and_target(
@@ -27,5 +33,5 @@ class BranchBase:
             )
 
     @staticmethod
-    def _first_count(rows) -> int:
+    def _first_count(rows: list[dict[str, Any]] | list[Any]) -> int:
         return int(rows[0]["c"]) if rows and "c" in rows[0] else 0

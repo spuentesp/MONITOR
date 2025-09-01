@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
+try:
+    from core.ports.storage import QueryReadPort  # type: ignore
+except Exception:  # pragma: no cover
+    QueryReadPort = Any  # type: ignore
+
 
 class StewardService:
     """Encapsulated continuity checks before commits.
@@ -9,7 +14,7 @@ class StewardService:
     Returns (ok: bool, warnings: List[str], errors: List[str]).
     """
 
-    def __init__(self, query_service: Any):
+    def __init__(self, query_service: QueryReadPort | Any):
         self.q = query_service
 
     def validate(self, deltas: dict[str, Any]) -> tuple[bool, list[str], list[str]]:

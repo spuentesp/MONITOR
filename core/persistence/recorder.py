@@ -4,6 +4,11 @@ import json
 from typing import Any
 from uuid import uuid4
 
+try:
+    from core.ports.storage import RepoPort  # type: ignore
+except Exception:  # pragma: no cover
+    RepoPort = Any  # type: ignore
+
 from core.persistence.neo4j_repo import Neo4jRepo
 
 
@@ -13,7 +18,7 @@ class RecorderService:
     Note: Canonical policy remains YAML-first; use this for dev or controlled autopilot flows.
     """
 
-    def __init__(self, repo: Neo4jRepo):
+    def __init__(self, repo: RepoPort | Neo4jRepo):
         self.repo = repo
 
     @staticmethod

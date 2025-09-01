@@ -6,7 +6,7 @@ from core.domain.axiom import Axiom
 
 
 class SystemsAxiomsArchetypesMixin:
-    def _upsert_archetypes(self, archetypes):
+    def _upsert_archetypes(self, archetypes: list[Any]) -> None:
         rows = []
         for a in archetypes:
             props = {
@@ -27,7 +27,7 @@ class SystemsAxiomsArchetypesMixin:
             rows=rows,
         )
 
-    def _upsert_systems(self, systems: list[dict[str, Any]]):
+    def _upsert_systems(self, systems: list[dict[str, Any]]) -> None:
         rows = []
         for s in systems:
             props = {k: self._sanitize(v) for k, v in s.items() if k != "id"}
@@ -43,7 +43,7 @@ class SystemsAxiomsArchetypesMixin:
             rows=rows,
         )
 
-    def _upsert_axioms(self, axioms: list[Axiom]):
+    def _upsert_axioms(self, axioms: list[Axiom]) -> None:
         rows = [
             {
                 "id": ax.id,
@@ -81,7 +81,7 @@ class SystemsAxiomsArchetypesMixin:
             rows=rows,
         )
 
-    def _apply_axiom_to_universes(self, ax: Axiom):
+    def _apply_axiom_to_universes(self, ax: Axiom) -> None:
         if not ax.applies_to:
             return
         self.repo.run(
