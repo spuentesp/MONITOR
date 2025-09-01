@@ -89,8 +89,6 @@ def load_omniverse_from_yaml(path: Path | str) -> Omniverse:
                     ce.sheets.append(sheet)
                 entities.append(ce)
 
-            # Facts and relation states are not yet first-class domain models; keep them in universe.extra if needed later
-
             # Facts
             facts: List[Fact] = []
             for f in u.get("facts", []):
@@ -121,12 +119,12 @@ def load_omniverse_from_yaml(path: Path | str) -> Omniverse:
                 description=u.get("description"),
                 stories=stories,
                 arcs=arcs,
+                entities=entities,
                 axioms=u_axioms,
                 archetypes=u_archetypes,
+                facts=facts,
+                relation_states=relation_states,
             )
-            # attach dynamic extras to universe instance for now
-            setattr(uni, "facts", facts)
-            setattr(uni, "relation_states", relation_states)
             universes.append(uni)
 
         m = Multiverse(

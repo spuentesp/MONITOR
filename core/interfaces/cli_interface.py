@@ -12,6 +12,7 @@ from core.domain.entity import ConcreteEntity
 from core.domain.sheet import Sheet
 from core.domain.event import Event
 from core.domain.scene import Scene
+from core.persistence.neo4j_repo import Neo4jRepo
 
 
 app = typer.Typer(help="M.O.N.I.T.O.R. CLI")
@@ -56,3 +57,14 @@ def init_multiverse(
 
 if __name__ == "__main__":
     app()
+
+
+@app.command("neo4j-bootstrap")
+def neo4j_bootstrap():
+    repo = Neo4jRepo().connect()
+    ok = repo.ping()
+    typer.echo(f"Neo4j ping: {'OK' if ok else 'FAIL'}")
+    if ok:
+        repo.bootstrap_constraints()
+        typer.echo("Constraints ensured.")
+    repo.close()

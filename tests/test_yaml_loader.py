@@ -23,6 +23,9 @@ def test_loader_builds_domain_and_relations_are_navigable():
         # axioms and archetypes present
         assert len(u.axioms) >= 2
         assert len(u.archetypes) >= 2
+        # facts and relation states present
+        assert len(u.facts) >= 2
+        assert len(u.relation_states) >= 1
         # arcs, stories and scenes present and linked
         assert len(u.arcs) >= 2
         assert len(u.stories) >= 4
@@ -33,10 +36,3 @@ def test_loader_builds_domain_and_relations_are_navigable():
             for sc in s.scenes:
                 assert sc.story_id == s.id
                 assert isinstance(sc.sequence_index, int) and sc.sequence_index >= 1
-
-    # Validate sheets attached to entities and system_id present
-    for u in (u1, u2):
-        # We stored entities only during load; they are not on Universe model. Reconstruct from YAML for assertion
-        # Instead, ensure facts/reference states exist via attributes added by loader
-        assert hasattr(u, "facts") and len(getattr(u, "facts")) >= 2
-        assert hasattr(u, "relation_states") and len(getattr(u, "relation_states")) >= 1
