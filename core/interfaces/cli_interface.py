@@ -111,6 +111,90 @@ def q_axioms_for_universe(universe_id: str):
     _print_json(svc.axioms_applying_to_universe(universe_id))
     repo.close()
 
+@queries.command("entities-in-arc")
+def q_entities_in_arc(arc_id: str):
+    repo = Neo4jRepo().connect()
+    svc = QueryService(repo)
+    _print_json(svc.entities_in_arc(arc_id))
+    repo.close()
+
+@queries.command("facts-for-story")
+def q_facts_for_story(story_id: str):
+    repo = Neo4jRepo().connect()
+    svc = QueryService(repo)
+    _print_json(svc.facts_for_story(story_id))
+    repo.close()
+
+@queries.command("system-usage")
+def q_system_usage(universe_id: str):
+    repo = Neo4jRepo().connect()
+    svc = QueryService(repo)
+    _print_json(svc.system_usage_summary(universe_id))
+    repo.close()
+
+@queries.command("axioms-in-scene")
+def q_axioms_in_scene(scene_id: str):
+    repo = Neo4jRepo().connect()
+    svc = QueryService(repo)
+    _print_json(svc.axioms_effective_in_scene(scene_id))
+    repo.close()
+
+@queries.command("entities-in-universe")
+def q_entities_in_universe(universe_id: str):
+    repo = Neo4jRepo().connect()
+    svc = QueryService(repo)
+    _print_json(svc.entities_in_universe(universe_id))
+    repo.close()
+
+@queries.command("entities-in-story-by-role")
+def q_entities_in_story_by_role(story_id: str, role: str):
+    repo = Neo4jRepo().connect()
+    svc = QueryService(repo)
+    _print_json(svc.entities_in_story_by_role(story_id, role))
+    repo.close()
+
+@queries.command("entities-in-arc-by-role")
+def q_entities_in_arc_by_role(arc_id: str, role: str):
+    repo = Neo4jRepo().connect()
+    svc = QueryService(repo)
+    _print_json(svc.entities_in_arc_by_role(arc_id, role))
+    repo.close()
+
+@queries.command("entities-in-universe-by-role")
+def q_entities_in_universe_by_role(universe_id: str, role: str):
+    repo = Neo4jRepo().connect()
+    svc = QueryService(repo)
+    _print_json(svc.entities_in_universe_by_role(universe_id, role))
+    repo.close()
+
+@queries.command("participants-by-role-for-scene")
+def q_participants_by_role_for_scene(scene_id: str):
+    repo = Neo4jRepo().connect()
+    svc = QueryService(repo)
+    _print_json(svc.participants_by_role_for_scene(scene_id))
+    repo.close()
+
+@queries.command("participants-by-role-for-story")
+def q_participants_by_role_for_story(story_id: str):
+    repo = Neo4jRepo().connect()
+    svc = QueryService(repo)
+    _print_json(svc.participants_by_role_for_story(story_id))
+    repo.close()
+
+@queries.command("next-scene-for-entity")
+def q_next_scene_for_entity(story_id: str, entity_id: str, after_sequence_index: int):
+    repo = Neo4jRepo().connect()
+    svc = QueryService(repo)
+    _print_json(svc.next_scene_for_entity_in_story(story_id, entity_id, after_sequence_index) or {})
+    repo.close()
+
+@queries.command("prev-scene-for-entity")
+def q_prev_scene_for_entity(story_id: str, entity_id: str, before_sequence_index: int):
+    repo = Neo4jRepo().connect()
+    svc = QueryService(repo)
+    _print_json(svc.previous_scene_for_entity_in_story(story_id, entity_id, before_sequence_index) or {})
+    repo.close()
+
 if __name__ == "__main__":
     app()
 

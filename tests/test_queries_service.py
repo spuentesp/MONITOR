@@ -40,3 +40,39 @@ def test_queries_shapes():
 
     svc.scenes_for_entity("E-5")
     assert "MATCH (e:Entity {id:$eid})-[:APPEARS_IN]->(sc:Scene)" in repo.last[0]
+
+    svc.entities_in_arc("ARC-1")
+    assert "MATCH (a:Arc {id:$aid})-[:HAS_STORY]->(st:Story)" in repo.last[0]
+
+    svc.facts_for_story("ST-2")
+    assert "MATCH (st:Story {id:$sid})-[:HAS_SCENE]->(sc:Scene)" in repo.last[0]
+
+    svc.system_usage_summary("U-1")
+    assert "MATCH (u:Universe {id:$uid})" in repo.last[0]
+
+    svc.axioms_effective_in_scene("SC-7")
+    assert "MATCH (st:Story)-[:HAS_SCENE]->(sc:Scene {id:$sid})" in repo.last[0]
+
+    svc.entities_in_universe("U-1")
+    assert "MATCH (u:Universe {id:$uid})-[:HAS_STORY]->(st:Story)" in repo.last[0]
+
+    svc.entities_in_story_by_role("ST-1", "rescuer")
+    assert "WHERE p.role = $role" in repo.last[0]
+
+    svc.entities_in_arc_by_role("ARC-9", "antagonist")
+    assert "MATCH (a:Arc {id:$aid})-[:HAS_STORY]->(st:Story)" in repo.last[0]
+
+    svc.entities_in_universe_by_role("U-2", "guardian")
+    assert "MATCH (u:Universe {id:$uid})-[:HAS_STORY]->(st:Story)" in repo.last[0]
+
+    svc.participants_by_role_for_scene("SC-1")
+    assert "WITH p.role AS role" in repo.last[0]
+
+    svc.participants_by_role_for_story("ST-2")
+    assert "WITH p.role AS role" in repo.last[0]
+
+    svc.next_scene_for_entity_in_story("ST-1", "E-1", 1)
+    assert "ORDER BY sequence_index ASC" in repo.last[0]
+
+    svc.previous_scene_for_entity_in_story("ST-1", "E-1", 3)
+    assert "ORDER BY sequence_index DESC" in repo.last[0]
