@@ -42,7 +42,7 @@ class RecorderService:
     def commit_deltas(
         self,
         *,
-        scene_id: Optional[str],
+        scene_id: Optional[str] = None,
         facts: Optional[List[Dict[str, Any]]] = None,
         relation_states: Optional[List[Dict[str, Any]]] = None,
         relations: Optional[List[Dict[str, Any]]] = None,

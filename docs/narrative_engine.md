@@ -6,6 +6,30 @@ Purpose
 
 ---
 
+## System overview (how it works today)
+
+This section reflects the current, working implementation in the repo (as of 2025‑09‑01).
+
+- Core layers
+  - QueryService (read): high‑level graph queries, used by tools and agents.
+  - RecorderService (write): persists deltas for Multiverse/Universe/Arc/Story/Scene/Entity, Facts, RelationStates, and simple Relations.
+  - Tools facade: query_tool, recorder_tool, notes_tool (stub), rules_tool (stub) exposed via a lightweight ToolContext.
+  - Orchestrator: builds a ToolContext with optional caching and staging backends; can flush staged writes.
+
+- Caching and staging
+  - ReadThroughCache: in‑memory LRU with TTL per key. Optional Redis implementation for durability.
+  - StagingStore: append‑only JSONL queue for deltas in dry‑run mode. Optional Redis list implementation. Flush applies all deltas through RecorderService atomically and clears cache.
+
+- Agents and generation
+  - Narrator/Archivist/Character exist with a MockLLM for tests; a minimal session orchestrator stitches simple flows.
+  - Optional LangGraph flow mirrors the orchestrator and is auto‑skipped in tests when not installed.
+
+- Persistence targets
+  - Neo4j 5 used for live query/integration tests via env configuration. Constraints/indexes are bootstrapped in Docker.
+  - In prod, YAML remains the canonical source; DBs are projections. Current write path targets Neo4j for dev/testing.
+
+---
+
 ## Components
 
 - LLM interface
@@ -20,6 +44,8 @@ Purpose
   - `core/engine/__init__.py` → `default_narrative_session(llm)`
 - Graph access (read): `core/persistence/queries.py` (QueryService)
 - Persistence (write): YAML-first via projector; Facts + RelationState deltas (planned tools)
+
+Note: We now provide a working RecorderService that writes the full ontology (+ facts and relation deltas) to Neo4j in dev/test paths. YAML‑first policy remains for production workflows.
 
 ---
 
@@ -37,6 +63,15 @@ Purpose
     - Co‑pilot vs Auto‑pilot (user approval gates persistence in co‑pilot)
   - Guardrails: tone/rating checks; refusal if policy violated
   - Integration: a minimal LangGraph flow (`core/engine/langgraph_flow.py`) mirrors the orchestrator; install `langgraph` to enable. Tests will skip if not installed.
+
+Today’s orchestrator (`core/engine/orchestrator.py`) builds a ToolContext with:
+- query_service: the read interface
+- read_cache: optional ReadThroughCache or RedisReadThroughCache
+- staging: optional StagingStore or RedisStagingStore
+- dry_run flag: when true, recorder_tool stages deltas instead of committing
+
+Helpers:
+- flush_staging(ctx): loads staged deltas and commits them via RecorderService, then clears cache.
 
 ---
 
@@ -157,6 +192,93 @@ Purpose
 - Orchestration: flow without deadlocks; recoverable on failure.
 
 > Next step: formalize these into interfaces (inputs, outputs, pre/post‑conditions, error signals) so we can write smoke tests and enforce compliance before diving into implementations.
+
+---
+
+## Current write model (RecorderService)
+
+Entry point: `RecorderService.commit_deltas(**deltas)`
+
+Inputs (selected):
+- Context/IDs
+  - `scene_id?`, `universe_id?` (contextual scoping and provenance)
+- Creation
+  - `new_multiverse`, `new_universe`, `new_arc`, `new_story`, `new_scene`, `new_entities[]`
+- Facts & relations
+  - `facts[]`: description, occurs_in?, when/time_span?, participants?, confidence?, derived_from?
+  - `relation_states[]`: type, entity_a, entity_b, set/changed/ended_in_scene?, started_at?, ended_at?
+  - `relations[]`: simple `a→b` edges with `{type, weight?, temporal?}`
+
+Behavior:
+- Upserts nodes/edges with MERGE; wires APPEARS_IN/PARTICIPATES_AS and OCCURS_IN edges when participants/occurs_in are provided.
+- Creates/updates versioned RelationState nodes with canonical IDs and temporal hints; warns on provenance issues.
+- Sanitizes complex properties for Neo4j by JSON‑encoding dicts/lists (e.g., attributes, time_span, derived_from, temporal).
+- Returns a summary: `{ok, written, warnings}`.
+
+Provenance & warnings:
+- Emits warnings when participants reference missing entities, or when relation deltas lack clear scene provenance.
+- Adds `recorded_at` timestamps for scenes when not provided.
+
+Idempotence:
+- IDs are either provided or generated deterministically when possible; MERGE patterns avoid duplicates.
+
+---
+
+## Caching and staging
+
+ReadThroughCache (`core/engine/cache.py`):
+- In‑memory LRU with TTL per key; used by query_tool to cache read results.
+- Config: capacity (default 64), ttl_seconds (default 60).
+
+StagingStore (JSONL):
+- Durable append‑only queue for deltas while in dry‑run; stored under a directory (default: `.monitor/staging` in cwd, tests pass an explicit temp dir).
+- `stage(deltas)`: append one delta batch; `pending()`: count; `flush(recorder, clear_after=True)`: apply all via RecorderService.
+
+Redis backends (`core/engine/cache_redis.py`):
+- `RedisReadThroughCache`: versioned namespace invalidation on writes.
+- `RedisStagingStore`: list‑based queue for deltas; `flush` pops and applies in order.
+
+Environment:
+- `MONITOR_CACHE_BACKEND`: `memory` (default) or `redis`.
+- `REDIS_URL`: connection string (e.g., `redis://localhost:6379/0`).
+- `MONITOR_CACHE_TTL`: seconds; overrides default TTL for read cache.
+
+---
+
+## Tools facade and ToolContext
+
+`ToolContext` (`core/engine/tools.py`) bundles:
+- `query_service`: required
+- `read_cache`: optional
+- `staging`: optional
+- `dry_run`: bool
+
+query_tool(ctx, method, **kwargs):
+- Dispatches to the named method on QueryService.
+- If `read_cache` is present, caches results per `(method, kwargs)` with TTL.
+
+recorder_tool(ctx, draft, deltas):
+- When `ctx.dry_run` is true, stages the deltas via `ctx.staging` and returns `{mode: "dry_run", staged: n}`.
+- When `ctx.dry_run` is false, invokes `RecorderService.commit_deltas(**deltas)`, clears the read cache namespace, and returns the Recorder result.
+
+flush_staging(ctx):
+- Convenience helper that takes all staged deltas and applies them with a `RecorderService`, then clears cache.
+
+---
+
+## End‑to‑end flow (today’s happy path)
+
+1) Build tools via orchestrator → returns `ToolContext` with cache/staging per env.
+2) Use `query_tool` to fetch context (entities, scenes, relations effective in scene, etc.).
+3) Draft narrative with agents (Narrator/Character using MockLLM) — optional today.
+4) Propose deltas (Facts, RelationState changes, new entities/scenes/stories). In copilot mode, keep `dry_run=True`.
+5) Stage deltas via `recorder_tool` (dry‑run) and review.
+6) Commit via `flush_staging(ctx)` or run with `dry_run=False` to write immediately.
+7) Cache is invalidated post‑commit; subsequent reads reflect updates.
+
+Smoke test scenario (“Jimmy” emergent NPC):
+- Create a new NPC entity, a scene in a story, a fact involving the NPC, and a relation state change.
+- Unit and optional integration tests validate node/edge creation and shapes.
 
 ---
 

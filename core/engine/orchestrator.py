@@ -7,10 +7,17 @@ from core.agents.base import Agent, AgentConfig, Session
 from core.agents.narrator import narrator_agent
 from core.agents.archivist import archivist_agent
 from core.engine.tools import ToolContext, query_tool, rules_tool, notes_tool, recorder_tool
+import os
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.queries import QueryService
 from core.engine.langgraph_flow import select_engine_backend
 from core.persistence.recorder import RecorderService
+from core.engine.cache import ReadThroughCache, StagingStore
+try:
+    from core.engine.cache_redis import RedisReadThroughCache, RedisStagingStore  # type: ignore
+except Exception:  # pragma: no cover
+    RedisReadThroughCache = None  # type: ignore
+    RedisStagingStore = None  # type: ignore
 
 
 @dataclass
@@ -73,11 +80,33 @@ class Orchestrator:
 
 
 def build_live_tools(dry_run: bool = True) -> ToolContext:
-    """Construct a ToolContext backed by the live Neo4j graph using env vars."""
+    """Construct a ToolContext backed by the live Neo4j graph using env vars, with optional caching."""
     repo = Neo4jRepo().connect()
     qs = QueryService(repo)
     recorder = RecorderService(repo)
-    return ToolContext(query_service=qs, recorder=recorder, dry_run=dry_run)
+    backend = os.getenv("MONITOR_CACHE_BACKEND", "").lower()  # "redis" or ""
+    ttl = float(os.getenv("MONITOR_CACHE_TTL", "60"))
+    if backend == "redis" and RedisReadThroughCache and RedisStagingStore:
+        url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        read_cache = RedisReadThroughCache(url=url, ttl_seconds=ttl)
+        staging = RedisStagingStore(url=url, list_key="monitor:staging", daily=True)
+    else:
+        read_cache = ReadThroughCache(capacity=512, ttl_seconds=ttl)
+        staging = StagingStore()
+    return ToolContext(query_service=qs, recorder=recorder, dry_run=dry_run, read_cache=read_cache, staging=staging)
+
+
+def flush_staging(ctx: ToolContext) -> Dict[str, Any]:
+    """Flush staged deltas to the graph and clear caches."""
+    if not ctx.recorder or not ctx.staging:
+        return {"ok": False, "error": "recorder/staging not configured"}
+    res = ctx.staging.flush(ctx.recorder, clear_after=True)
+    try:
+        if ctx.read_cache is not None:
+            ctx.read_cache.clear()
+    except Exception:
+        pass
+    return res
 
 
 def run_once(user_intent: str, scene_id: Optional[str] = None, mode: str = "copilot") -> Dict[str, Any]:

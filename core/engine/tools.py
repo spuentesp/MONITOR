@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional
 
+from core.engine.cache import ReadThroughCache, StagingStore
+
 
 @dataclass
 class ToolContext:
@@ -17,6 +19,9 @@ class ToolContext:
     recorder: Optional[Any] = None
     rules: Optional[Any] = None
     dry_run: bool = True
+    # Optional caches (duck-typed interfaces)
+    read_cache: Optional[Any] = None
+    staging: Optional[Any] = None
 
 
 def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
@@ -40,7 +45,24 @@ def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
     fn: Optional[Callable[..., Any]] = getattr(ctx.query_service, method, None)
     if not callable(fn):
         raise AttributeError(f"QueryService has no callable '{method}'")
-    return fn(**kwargs)
+    # Optional read-through cache
+    cache_key = None
+    if ctx.read_cache is not None:
+        try:
+            cache_key = ctx.read_cache.make_key(method, kwargs)
+            cached = ctx.read_cache.get(cache_key)
+            if cached is not None:
+                return cached
+        except Exception:
+            # Cache is best-effort
+            cache_key = None
+    out = fn(**kwargs)
+    if cache_key is not None:
+        try:
+            ctx.read_cache.set(cache_key, out)
+        except Exception:
+            pass
+    return out
 
 
 def rules_tool(ctx: ToolContext, action: str, **kwargs) -> Dict[str, Any]:
@@ -79,12 +101,26 @@ def recorder_tool(ctx: ToolContext, draft: str, deltas: Optional[Dict[str, Any]]
             new_scene=deltas.get("new_scene"),
             new_entities=deltas.get("new_entities"),
         )
+        # Invalidate read cache after write
+        try:
+            if ctx.read_cache is not None:
+                ctx.read_cache.clear()
+        except Exception:
+            pass
         return {
             "mode": "commit",
             "result": res,
             "refs": {"scene_id": deltas.get("scene_id")},
             "trace": ["recorder:persist"],
         }
+    # Dry-run: stage deltas if a staging store exists
+    try:
+        if ctx.staging is not None:
+            ctx.staging.stage(deltas)
+        if ctx.read_cache is not None:
+            ctx.read_cache.clear()
+    except Exception:
+        pass
     return {
         "mode": "dry_run",
         "draft_preview": draft[:180],

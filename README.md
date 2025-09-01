@@ -255,4 +255,6 @@ See **Design Extensions & Integration Addendum (EN)** for:
 * **Design addendum**: *M.O.N.I.T.O.R. — Design Extensions & Integration Addendum (EN)*
 * **Narrative Engine**: `docs/narrative_engine.md` (consolidated design)
 
+See the “System overview (how it works today)” section in `docs/narrative_engine.md` for the current implementation status, including RecorderService, ToolContext, caching/staging (in-memory and Redis), and the end-to-end flow.
+
 > Tip: Start small. Create one Universe, one Story with a few Scenes, edit YAML or ingest two documents, and let the co-pilot draft a scene. Then add a what-if branch and compare diffs.
