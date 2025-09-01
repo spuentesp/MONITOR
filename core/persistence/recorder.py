@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
 import json
+from typing import Any
 from uuid import uuid4
 
 from core.persistence.neo4j_repo import Neo4jRepo
@@ -17,12 +17,12 @@ class RecorderService:
         self.repo = repo
 
     @staticmethod
-    def _ensure_id(prefix: str, id_: Optional[str]) -> str:
+    def _ensure_id(prefix: str, id_: str | None) -> str:
         return id_ or f"{prefix}:{uuid4()}"
 
     @staticmethod
     def _is_primitive(x: Any) -> bool:
-        return isinstance(x, (str, int, float, bool)) or x is None
+        return isinstance(x, str | int | float | bool) or x is None
 
     @classmethod
     def _sanitize(cls, value: Any):
@@ -42,18 +42,18 @@ class RecorderService:
     def commit_deltas(
         self,
         *,
-        scene_id: Optional[str] = None,
-        facts: Optional[List[Dict[str, Any]]] = None,
-        relation_states: Optional[List[Dict[str, Any]]] = None,
-        relations: Optional[List[Dict[str, Any]]] = None,
-        universe_id: Optional[str] = None,
-        new_multiverse: Optional[Dict[str, Any]] = None,
-        new_universe: Optional[Dict[str, Any]] = None,
-        new_arc: Optional[Dict[str, Any]] = None,
-        new_story: Optional[Dict[str, Any]] = None,
-        new_scene: Optional[Dict[str, Any]] = None,
-        new_entities: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
+        scene_id: str | None = None,
+        facts: list[dict[str, Any]] | None = None,
+        relation_states: list[dict[str, Any]] | None = None,
+        relations: list[dict[str, Any]] | None = None,
+        universe_id: str | None = None,
+        new_multiverse: dict[str, Any] | None = None,
+        new_universe: dict[str, Any] | None = None,
+        new_arc: dict[str, Any] | None = None,
+        new_story: dict[str, Any] | None = None,
+        new_scene: dict[str, Any] | None = None,
+        new_entities: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
         facts = facts or []
         relation_states = relation_states or []
         relations = relations or []
@@ -70,14 +70,24 @@ class RecorderService:
             "universes": 0,
             "multiverses": 0,
         }
-        warnings: List[str] = []
+        warnings: list[str] = []
 
         # Preflight: basic mismatch checks without DB I/O
-        if new_story and universe_id and new_story.get("universe_id") and new_story.get("universe_id") != universe_id:
+        if (
+            new_story
+            and universe_id
+            and new_story.get("universe_id")
+            and new_story.get("universe_id") != universe_id
+        ):
             warnings.append(
                 f"new_story.universe_id ({new_story.get('universe_id')}) differs from provided universe_id ({universe_id})"
             )
-        if new_arc and universe_id and new_arc.get("universe_id") and new_arc.get("universe_id") != universe_id:
+        if (
+            new_arc
+            and universe_id
+            and new_arc.get("universe_id")
+            and new_arc.get("universe_id") != universe_id
+        ):
             warnings.append(
                 f"new_arc.universe_id ({new_arc.get('universe_id')}) differs from provided universe_id ({universe_id})"
             )
@@ -91,7 +101,10 @@ class RecorderService:
         # -2) Multiverse upsert and Omniverse link
         if new_multiverse:
             mv_id = self._ensure_id("multiverse", new_multiverse.get("id"))
-            props = {"name": new_multiverse.get("name"), "description": new_multiverse.get("description")}
+            props = {
+                "name": new_multiverse.get("name"),
+                "description": new_multiverse.get("description"),
+            }
             self.repo.run(
                 """
                 UNWIND [$row] AS row
@@ -109,7 +122,10 @@ class RecorderService:
         # -1) Universe upsert and Multiverse link
         if new_universe:
             u_id = self._ensure_id("universe", new_universe.get("id"))
-            props = {"name": new_universe.get("name"), "description": new_universe.get("description")}
+            props = {
+                "name": new_universe.get("name"),
+                "description": new_universe.get("description"),
+            }
             self.repo.run(
                 """
                 UNWIND [$row] AS row
@@ -159,7 +175,12 @@ class RecorderService:
                 raise ValueError("universe_id is required to create stories")
             st_id = self._ensure_id("story", new_story.get("id"))
             u_for_story = new_story.get("universe_id") or universe_id
-            props = {"title": new_story.get("title"), "summary": new_story.get("summary"), "universe_id": u_for_story, "arc_id": new_story.get("arc_id")}
+            props = {
+                "title": new_story.get("title"),
+                "summary": new_story.get("summary"),
+                "universe_id": u_for_story,
+                "arc_id": new_story.get("arc_id"),
+            }
             self.repo.run(
                 """
                 UNWIND [$row] AS row
@@ -335,12 +356,19 @@ class RecorderService:
                         },
                         "a": r.get("entity_a"),
                         "b": r.get("entity_b"),
-                        "set": r.get("set_in_scene") or scene_id if r.get("set_in_scene") is not None else None,
+                        "set": r.get("set_in_scene") or scene_id
+                        if r.get("set_in_scene") is not None
+                        else None,
                         "chg": r.get("changed_in_scene"),
                         "end": r.get("ended_in_scene"),
                     }
                 )
-                if not (r.get("set_in_scene") or r.get("changed_in_scene") or r.get("ended_in_scene") or scene_id):
+                if not (
+                    r.get("set_in_scene")
+                    or r.get("changed_in_scene")
+                    or r.get("ended_in_scene")
+                    or scene_id
+                ):
                     warnings.append(
                         f"RelationState {rid} has no provenance scene (set/changed/ended) and no default scene_id"
                     )
@@ -378,7 +406,9 @@ class RecorderService:
                         "b": rel.get("to") or rel.get("b"),
                         "type": rel.get("type"),
                         "weight": rel.get("weight"),
-                        "temporal": self._sanitize(rel.get("temporal")),  # {started_at, ended_at} optional
+                        "temporal": self._sanitize(
+                            rel.get("temporal")
+                        ),  # {started_at, ended_at} optional
                     }
                 )
             self.repo.run(

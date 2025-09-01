@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 from core.generation.interfaces.llm import LLM, Message
 
@@ -15,10 +15,10 @@ class MockLLM(LLM):
         self,
         *,
         system_prompt: str,
-        messages: List[Message],
+        messages: list[Message],
         temperature: float = 0.7,
         max_tokens: int = 400,
-        extra: Optional[Dict[str, Any]] = None,
+        extra: dict[str, Any] | None = None,
     ) -> str:
         last_user = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
         last_user = last_user.strip().split("\n")[0][:120]

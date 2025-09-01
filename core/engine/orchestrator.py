@@ -1,20 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+import os
+from typing import Any
 
-from core.agents.base import Agent, AgentConfig, Session
-from core.agents.narrator import narrator_agent
 from core.agents.archivist import archivist_agent
-from core.engine.tools import ToolContext, query_tool, rules_tool, notes_tool, recorder_tool
+from core.agents.base import Agent, Session
+from core.agents.narrator import narrator_agent
+from core.engine.cache import ReadThroughCache, StagingStore
+from core.engine.langgraph_flow import select_engine_backend
 from core.engine.librarian import LibrarianService
 from core.engine.steward import StewardService
-import os
+from core.engine.tools import ToolContext, query_tool, recorder_tool
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.queries import QueryService
-from core.engine.langgraph_flow import select_engine_backend
 from core.persistence.recorder import RecorderService
-from core.engine.cache import ReadThroughCache, StagingStore
+
 try:
     from core.engine.cache_redis import RedisReadThroughCache, RedisStagingStore  # type: ignore
 except Exception:  # pragma: no cover
@@ -25,7 +26,7 @@ except Exception:  # pragma: no cover
 @dataclass
 class OrchestratorConfig:
     mode: str = "copilot"  # or "autopilot"
-    style: Optional[str] = None
+    style: str | None = None
 
 
 class Orchestrator:
@@ -34,7 +35,7 @@ class Orchestrator:
     This is a thin placeholder until LangGraph wiring; it demonstrates tool usage.
     """
 
-    def __init__(self, llm: Any, tools: ToolContext, config: Optional[OrchestratorConfig] = None):
+    def __init__(self, llm: Any, tools: ToolContext, config: OrchestratorConfig | None = None):
         self.tools = tools
         self.config = config or OrchestratorConfig()
         self.narrator: Agent = narrator_agent(llm)
@@ -43,12 +44,12 @@ class Orchestrator:
         self.librarian_svc = LibrarianService(self.tools.query_service)
         self.steward_svc = StewardService(self.tools.query_service)
 
-    def _build_context(self, scene_id: Optional[str]) -> str:
+    def _build_context(self, scene_id: str | None) -> str:
         if not scene_id:
             return ""
         return self.librarian_svc.scene_brief(scene_id)
 
-    def step(self, user_intent: str, scene_id: Optional[str] = None) -> Dict[str, Any]:
+    def step(self, user_intent: str, scene_id: str | None = None) -> dict[str, Any]:
         # Director (stub): interpret intent as goals
         plan = {"beats": [user_intent], "risks": [], "assumptions": []}
 
@@ -56,7 +57,9 @@ class Orchestrator:
         evidence = []
         if scene_id:
             try:
-                effective = query_tool(self.tools, "relations_effective_in_scene", scene_id=scene_id)
+                effective = query_tool(
+                    self.tools, "relations_effective_in_scene", scene_id=scene_id
+                )
                 evidence.append({"relations": effective})
             except Exception:
                 pass
@@ -115,10 +118,12 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
     else:
         read_cache = ReadThroughCache(capacity=512, ttl_seconds=ttl)
         staging = StagingStore()
-    return ToolContext(query_service=qs, recorder=recorder, dry_run=dry_run, read_cache=read_cache, staging=staging)
+    return ToolContext(
+        query_service=qs, recorder=recorder, dry_run=dry_run, read_cache=read_cache, staging=staging
+    )
 
 
-def flush_staging(ctx: ToolContext) -> Dict[str, Any]:
+def flush_staging(ctx: ToolContext) -> dict[str, Any]:
     """Flush staged deltas to the graph and clear caches."""
     if not ctx.recorder or not ctx.staging:
         return {"ok": False, "error": "recorder/staging not configured"}
@@ -131,7 +136,9 @@ def flush_staging(ctx: ToolContext) -> Dict[str, Any]:
     return res
 
 
-def run_once(user_intent: str, scene_id: Optional[str] = None, mode: str = "copilot") -> Dict[str, Any]:
+def run_once(
+    user_intent: str, scene_id: str | None = None, mode: str = "copilot"
+) -> dict[str, Any]:
     """Convenience function to run a single step against the live graph.
 
     Chooses backend by env MONITOR_ENGINE_BACKEND=(inmemory|langgraph); defaults to inmemory.
@@ -140,6 +147,7 @@ def run_once(user_intent: str, scene_id: Optional[str] = None, mode: str = "copi
     tools = build_live_tools(dry_run=(mode != "autopilot"))
     backend = select_engine_backend()
     from core.generation.providers import select_llm_from_env
+
     llm = select_llm_from_env()
     if backend == "langgraph":
         try:

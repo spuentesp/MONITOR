@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Any, List
+
 import yaml
 
 from core.loaders.yaml_loader import load_omniverse_from_yaml
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.projector_lib.base import ProjectorBase
-from core.persistence.projector_lib.systems_axioms_archetypes import SystemsAxiomsArchetypesMixin
-from core.persistence.projector_lib.universe_and_arcs import UniverseAndArcsMixin
-from core.persistence.projector_lib.stories_scenes import StoriesScenesMixin
 from core.persistence.projector_lib.entities_sheets import EntitiesSheetsMixin
 from core.persistence.projector_lib.facts_relations import FactsRelationsMixin
+from core.persistence.projector_lib.stories_scenes import StoriesScenesMixin
+from core.persistence.projector_lib.systems_axioms_archetypes import SystemsAxiomsArchetypesMixin
+from core.persistence.projector_lib.universe_and_arcs import UniverseAndArcsMixin
 
 
 class Projector(

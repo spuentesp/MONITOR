@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class CloneFullMixin:
@@ -12,32 +12,43 @@ class CloneFullMixin:
         *,
         force: bool = False,
         dry_run: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         # Guardrails
         self._check_source_and_target(source_universe_id, new_universe_id, force)
         if dry_run:
-            stories = self._first_count(self.repo.run(
-                "MATCH (:Universe {id:$src})-[:HAS_STORY]->(st:Story) RETURN count(DISTINCT st) AS c",
-                src=source_universe_id,
-            ))
-            scenes = self._first_count(self.repo.run(
-                "MATCH (:Universe {id:$src})-[:HAS_STORY]->(:Story)-[:HAS_SCENE]->(sc:Scene) RETURN count(DISTINCT sc) AS c",
-                src=source_universe_id,
-            ))
-            entities = self._first_count(self.repo.run(
-                "MATCH (:Universe {id:$src})<-[:BELONGS_TO]-(e:Entity) RETURN count(DISTINCT e) AS c",
-                src=source_universe_id,
-            ))
-            facts = self._first_count(self.repo.run(
-                "MATCH (:Universe {id:$src})-[:HAS_STORY]->(:Story)-[:HAS_SCENE]->(sc:Scene) MATCH (f:Fact)-[:OCCURS_IN]->(sc) RETURN count(DISTINCT f) AS c",
-                src=source_universe_id,
-            ))
-            sheets = self._first_count(self.repo.run(
-                "MATCH (:Universe {id:$src})<-[:BELONGS_TO]-(:Entity)-[:HAS_SHEET]->(sh:Sheet) RETURN count(DISTINCT sh) AS c",
-                src=source_universe_id,
-            ))
-            rel_states = self._first_count(self.repo.run(
-                """
+            stories = self._first_count(
+                self.repo.run(
+                    "MATCH (:Universe {id:$src})-[:HAS_STORY]->(st:Story) RETURN count(DISTINCT st) AS c",
+                    src=source_universe_id,
+                )
+            )
+            scenes = self._first_count(
+                self.repo.run(
+                    "MATCH (:Universe {id:$src})-[:HAS_STORY]->(:Story)-[:HAS_SCENE]->(sc:Scene) RETURN count(DISTINCT sc) AS c",
+                    src=source_universe_id,
+                )
+            )
+            entities = self._first_count(
+                self.repo.run(
+                    "MATCH (:Universe {id:$src})<-[:BELONGS_TO]-(e:Entity) RETURN count(DISTINCT e) AS c",
+                    src=source_universe_id,
+                )
+            )
+            facts = self._first_count(
+                self.repo.run(
+                    "MATCH (:Universe {id:$src})-[:HAS_STORY]->(:Story)-[:HAS_SCENE]->(sc:Scene) MATCH (f:Fact)-[:OCCURS_IN]->(sc) RETURN count(DISTINCT f) AS c",
+                    src=source_universe_id,
+                )
+            )
+            sheets = self._first_count(
+                self.repo.run(
+                    "MATCH (:Universe {id:$src})<-[:BELONGS_TO]-(:Entity)-[:HAS_SHEET]->(sh:Sheet) RETURN count(DISTINCT sh) AS c",
+                    src=source_universe_id,
+                )
+            )
+            rel_states = self._first_count(
+                self.repo.run(
+                    """
                 MATCH (:Universe {id:$src})<-[:BELONGS_TO]-(eAll:Entity)
                 WITH collect(eAll.id) AS eids
                 MATCH (rs:RelationState)-[:REL_STATE_FOR {endpoint:'A'}]->(a:Entity)
@@ -45,12 +56,15 @@ class CloneFullMixin:
                 WHERE a.id IN eids AND b.id IN eids
                 RETURN count(DISTINCT rs) AS c
                 """,
-                src=source_universe_id,
-            ))
-            arcs = self._first_count(self.repo.run(
-                "MATCH (:Universe {id:$src})-[:HAS_ARC]->(a:Arc) RETURN count(DISTINCT a) AS c",
-                src=source_universe_id,
-            ))
+                    src=source_universe_id,
+                )
+            )
+            arcs = self._first_count(
+                self.repo.run(
+                    "MATCH (:Universe {id:$src})-[:HAS_ARC]->(a:Arc) RETURN count(DISTINCT a) AS c",
+                    src=source_universe_id,
+                )
+            )
             return {
                 "dry_run": True,
                 "new_universe_id": new_universe_id,

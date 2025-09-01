@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class EntitiesQueries:
-    def entities_in_scene(self, scene_id: str) -> List[Dict[str, Any]]:
+    def entities_in_scene(self, scene_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (e:Entity)-[:APPEARS_IN]->(s:Scene {id:$sid})
@@ -14,7 +14,7 @@ class EntitiesQueries:
             sid=scene_id,
         )
 
-    def entities_in_story(self, story_id: str) -> List[Dict[str, Any]]:
+    def entities_in_story(self, story_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (st:Story {id:$sid})-[:HAS_SCENE]->(sc:Scene)
@@ -25,7 +25,7 @@ class EntitiesQueries:
             sid=story_id,
         )
 
-    def entities_in_universe(self, universe_id: str) -> List[Dict[str, Any]]:
+    def entities_in_universe(self, universe_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (u:Universe {id:$uid})-[:HAS_STORY]->(st:Story)
@@ -37,7 +37,7 @@ class EntitiesQueries:
             uid=universe_id,
         )
 
-    def entities_in_arc(self, arc_id: str) -> List[Dict[str, Any]]:
+    def entities_in_arc(self, arc_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (a:Arc {id:$aid})-[:HAS_STORY]->(st:Story)
@@ -49,7 +49,7 @@ class EntitiesQueries:
             aid=arc_id,
         )
 
-    def entities_in_story_by_role(self, story_id: str, role: str) -> List[Dict[str, Any]]:
+    def entities_in_story_by_role(self, story_id: str, role: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (st:Story {id:$sid})-[:HAS_SCENE]->(sc:Scene)
@@ -63,7 +63,7 @@ class EntitiesQueries:
             role=role,
         )
 
-    def entities_in_arc_by_role(self, arc_id: str, role: str) -> List[Dict[str, Any]]:
+    def entities_in_arc_by_role(self, arc_id: str, role: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (a:Arc {id:$aid})-[:HAS_STORY]->(st:Story)
@@ -78,7 +78,7 @@ class EntitiesQueries:
             role=role,
         )
 
-    def entities_in_universe_by_role(self, universe_id: str, role: str) -> List[Dict[str, Any]]:
+    def entities_in_universe_by_role(self, universe_id: str, role: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (u:Universe {id:$uid})-[:HAS_STORY]->(st:Story)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class LibrarianService:
@@ -12,10 +12,10 @@ class LibrarianService:
     def __init__(self, query_service: Any):
         self.q = query_service
 
-    def scene_brief(self, scene_id: str, limits: Optional[Dict[str, int]] = None) -> str:
+    def scene_brief(self, scene_id: str, limits: dict[str, int] | None = None) -> str:
         lim = {"rels": 8, "ents": 8, "facts": 6}
         lim.update(limits or {})
-        lines: List[str] = [f"Context for scene {scene_id}:"]
+        lines: list[str] = [f"Context for scene {scene_id}:"]
         try:
             rels = self.q.relations_effective_in_scene(scene_id)
             if rels:

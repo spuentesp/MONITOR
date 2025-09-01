@@ -1,4 +1,3 @@
-import os
 import time
 
 from core.engine.cache import ReadThroughCache, StagingStore
@@ -45,8 +44,12 @@ def test_staging_and_flush(tmp_path):
         staging=StagingStore(dirpath=staging_dir),
         read_cache=ReadThroughCache(),
     )
-    res1 = recorder_tool(ctx, draft="", deltas={"new_entities": [{"name": "Jimmy"}], "universe_id": "U-1"})
-    res2 = recorder_tool(ctx, draft="", deltas={"new_scene": {"story_id": "ST-1", "sequence_index": 3}})
+    res1 = recorder_tool(
+        ctx, draft="", deltas={"new_entities": [{"name": "Jimmy"}], "universe_id": "U-1"}
+    )
+    res2 = recorder_tool(
+        ctx, draft="", deltas={"new_scene": {"story_id": "ST-1", "sequence_index": 3}}
+    )
     assert res1["mode"] == "dry_run" and res2["mode"] == "dry_run"
     assert ctx.staging.pending() == 2
     rec = RecorderService(FakeRepo())

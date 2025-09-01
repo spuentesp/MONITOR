@@ -3,10 +3,10 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
-	sys.path.insert(0, str(ROOT))
+    sys.path.insert(0, str(ROOT))  # noqa: E402
 
-from core.persistence.neo4j_repo import Neo4jRepo
-from core.persistence.projector import Projector
+from core.persistence.neo4j_repo import Neo4jRepo  # noqa: E402
+from core.persistence.projector import Projector  # noqa: E402
 
 yaml_path = Path(__file__).resolve().parents[1] / "tests" / "data" / "example_multiverse.yaml"
 
@@ -20,9 +20,22 @@ print("Done.")
 
 # Quick smoke check: count a few labels
 counts = {}
-for label in ["Omniverse", "Multiverse", "Universe", "Story", "Scene", "Entity", "Sheet", "Axiom", "Arc", "Fact", "RelationState", "System"]:
-	rows = repo.run(f"MATCH (n:{label}) RETURN count(n) AS c")
-	counts[label] = rows[0]["c"] if rows else 0
+for label in [
+    "Omniverse",
+    "Multiverse",
+    "Universe",
+    "Story",
+    "Scene",
+    "Entity",
+    "Sheet",
+    "Axiom",
+    "Arc",
+    "Fact",
+    "RelationState",
+    "System",
+]:
+    rows = repo.run(f"MATCH (n:{label}) RETURN count(n) AS c")
+    counts[label] = rows[0]["c"] if rows else 0
 print("Counts:")
 for k, v in counts.items():
-	print(f"  {k}: {v}")
+    print(f"  {k}: {v}")

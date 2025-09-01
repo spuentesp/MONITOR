@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 from core.generation.interfaces.llm import LLM, Message
 from core.generation.mock_llm import MockLLM
@@ -14,7 +14,7 @@ class OpenAIChat(LLM):
     Model via MONITOR_OPENAI_MODEL (default: gpt-4o-mini).
     """
 
-    def __init__(self, api_key: str, model: str, base_url: Optional[str] = None):
+    def __init__(self, api_key: str, model: str, base_url: str | None = None):
         try:
             # Local import to avoid hard dependency if not used
             from openai import OpenAI  # type: ignore
@@ -30,10 +30,10 @@ class OpenAIChat(LLM):
         self,
         *,
         system_prompt: str,
-        messages: List[Message],
+        messages: list[Message],
         temperature: float = 0.7,
         max_tokens: int = 400,
-        extra: Optional[Dict[str, Any]] = None,
+        extra: dict[str, Any] | None = None,
     ) -> str:
         msgs = [{"role": "system", "content": system_prompt}] + [
             {"role": m["role"], "content": m["content"]} for m in messages

@@ -14,7 +14,7 @@ def step(
     mode: str = typer.Option("copilot", help="copilot or autopilot"),
 ):
     out = run_once(intent, scene_id=scene_id, mode=mode)
-    typer.echo({k: (v if isinstance(v, (dict, list)) else str(v)) for k, v in out.items()})
+    typer.echo({k: (v if isinstance(v, dict | list) else str(v)) for k, v in out.items()})
 
 
 if __name__ == "__main__":

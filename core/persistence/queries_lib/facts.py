@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class FactsQueries:
-    def facts_for_scene(self, scene_id: str) -> List[Dict[str, Any]]:
+    def facts_for_scene(self, scene_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (f:Fact)-[:OCCURS_IN]->(s:Scene {id:$sid})
@@ -16,7 +16,7 @@ class FactsQueries:
             sid=scene_id,
         )
 
-    def facts_for_story(self, story_id: str) -> List[Dict[str, Any]]:
+    def facts_for_story(self, story_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (st:Story {id:$sid})-[:HAS_SCENE]->(sc:Scene)

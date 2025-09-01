@@ -1,24 +1,25 @@
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from typing import Any
 from uuid import uuid4
+
+from pydantic import BaseModel, Field
 
 
 class FactParticipant(BaseModel):
     entity_id: str
-    role: Optional[str] = None
+    role: str | None = None
 
 
 class Fact(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
-    universe_id: Optional[str] = None
+    universe_id: str | None = None
     description: str
-    when: Optional[str] = None
-    time_span: Optional[Dict[str, Any]] = None
-    occurs_in: Optional[str] = None  # Scene ID
-    participants: List[FactParticipant] = Field(default_factory=list)
-    source_refs: List[Dict[str, Any]] = Field(default_factory=list)
-    confidence: Optional[float] = None
-    derived_from: List[str] = Field(default_factory=list)
+    when: str | None = None
+    time_span: dict[str, Any] | None = None
+    occurs_in: str | None = None  # Scene ID
+    participants: list[FactParticipant] = Field(default_factory=list)
+    source_refs: list[dict[str, Any]] = Field(default_factory=list)
+    confidence: float | None = None
+    derived_from: list[str] = Field(default_factory=list)
 
 
 class RelationState(BaseModel):
@@ -26,8 +27,8 @@ class RelationState(BaseModel):
     type: str
     entity_a: str
     entity_b: str
-    started_at: Optional[str] = None
-    ended_at: Optional[str] = None
-    set_in_scene: Optional[str] = None
-    changed_in_scene: Optional[str] = None
-    ended_in_scene: Optional[str] = None
+    started_at: str | None = None
+    ended_at: str | None = None
+    set_in_scene: str | None = None
+    changed_in_scene: str | None = None
+    ended_in_scene: str | None = None

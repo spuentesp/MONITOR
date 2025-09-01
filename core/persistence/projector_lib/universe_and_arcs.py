@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from typing import List
-
-from core.domain.universe import Universe
 from core.domain.arc import Arc
+from core.domain.universe import Universe
 
 
 class UniverseAndArcsMixin:
@@ -80,9 +78,18 @@ class UniverseAndArcsMixin:
         if getattr(u, "relation_states", None):
             self._upsert_relation_states(u.relation_states)
 
-    def _upsert_arcs(self, universe_id: str, arcs: List[Arc]):
+    def _upsert_arcs(self, universe_id: str, arcs: list[Arc]):
         rows = [
-            {"id": a.id, "props": {"title": a.title, "tags": getattr(a, "tags", []), "ordering_mode": getattr(a, "ordering_mode", None), "universe_id": universe_id, "story_ids": getattr(a, "story_ids", [])}}
+            {
+                "id": a.id,
+                "props": {
+                    "title": a.title,
+                    "tags": getattr(a, "tags", []),
+                    "ordering_mode": getattr(a, "ordering_mode", None),
+                    "universe_id": universe_id,
+                    "story_ids": getattr(a, "story_ids", []),
+                },
+            }
             for a in arcs
         ]
         self.repo.run(

@@ -1,5 +1,6 @@
-import sys
 from pathlib import Path
+import sys
+
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,7 +33,9 @@ def test_recorder_live_creates_entity_scene_fact_and_relstate():
         # Ensure a minimal universe, story, and heroes exist
         repo.run("MERGE (u:Universe {id:'U-616'}) RETURN u")
         repo.run("MERGE (s:Story {id:'story-nyc-patrol'}) RETURN s")
-        repo.run("MATCH (u:Universe {id:'U-616'}), (s:Story {id:'story-nyc-patrol'}) MERGE (u)-[:HAS_STORY]->(s)")
+        repo.run(
+            "MATCH (u:Universe {id:'U-616'}), (s:Story {id:'story-nyc-patrol'}) MERGE (u)-[:HAS_STORY]->(s)"
+        )
         repo.run("MERGE (e:Entity {id:'ent-rogue'}) RETURN e")
         repo.run("MERGE (e:Entity {id:'ent-spidey'}) RETURN e")
 

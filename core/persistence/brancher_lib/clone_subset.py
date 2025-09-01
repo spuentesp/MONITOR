@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class CloneSubsetMixin:
@@ -9,71 +9,85 @@ class CloneSubsetMixin:
         source_universe_id: str,
         new_universe_id: str,
         new_universe_name: str | None = None,
-        stories: List[str] | None = None,
-        arcs: List[str] | None = None,
+        stories: list[str] | None = None,
+        arcs: list[str] | None = None,
         scene_max_index: int | None = None,
         include_all_entities: bool = False,
         *,
         force: bool = False,
         dry_run: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         # Guardrails
         self._check_source_and_target(source_universe_id, new_universe_id, force)
         stories = stories or []
         arcs = arcs or []
         if dry_run:
-            stories_cnt = self._first_count(self.repo.run(
-                "MATCH (:Universe {id:$src})-[:HAS_STORY]->(st:Story) WHERE size($stories)=0 OR st.id IN $stories RETURN count(DISTINCT st) AS c",
-                src=source_universe_id,
-                stories=stories,
-            ))
-            scenes_cnt = self._first_count(self.repo.run(
-                """
+            stories_cnt = self._first_count(
+                self.repo.run(
+                    "MATCH (:Universe {id:$src})-[:HAS_STORY]->(st:Story) WHERE size($stories)=0 OR st.id IN $stories RETURN count(DISTINCT st) AS c",
+                    src=source_universe_id,
+                    stories=stories,
+                )
+            )
+            scenes_cnt = self._first_count(
+                self.repo.run(
+                    """
                 MATCH (:Universe {id:$src})-[:HAS_STORY]->(st:Story)-[:HAS_SCENE]->(sc:Scene)
                 WHERE (size($stories)=0 OR st.id IN $stories) AND ($scene_max IS NULL OR sc.sequence_index <= $scene_max)
                 RETURN count(DISTINCT sc) AS c
                 """,
-                src=source_universe_id,
-                stories=stories,
-                scene_max=scene_max_index,
-            ))
-            if include_all_entities:
-                entities_cnt = self._first_count(self.repo.run(
-                    "MATCH (:Universe {id:$src})<-[:BELONGS_TO]-(e:Entity) RETURN count(DISTINCT e) AS c",
                     src=source_universe_id,
-                ))
+                    stories=stories,
+                    scene_max=scene_max_index,
+                )
+            )
+            if include_all_entities:
+                entities_cnt = self._first_count(
+                    self.repo.run(
+                        "MATCH (:Universe {id:$src})<-[:BELONGS_TO]-(e:Entity) RETURN count(DISTINCT e) AS c",
+                        src=source_universe_id,
+                    )
+                )
             else:
-                entities_cnt = self._first_count(self.repo.run(
-                    """
+                entities_cnt = self._first_count(
+                    self.repo.run(
+                        """
                     MATCH (:Universe {id:$src})-[:HAS_STORY]->(st:Story)-[:HAS_SCENE]->(sc:Scene)
                     WHERE (size($stories)=0 OR st.id IN $stories) AND ($scene_max IS NULL OR sc.sequence_index <= $scene_max)
                     MATCH (e:Entity)-[:APPEARS_IN]->(sc)
                     RETURN count(DISTINCT e) AS c
                     """,
-                    src=source_universe_id,
-                    stories=stories,
-                    scene_max=scene_max_index,
-                ))
-            facts_cnt = self._first_count(self.repo.run(
-                """
+                        src=source_universe_id,
+                        stories=stories,
+                        scene_max=scene_max_index,
+                    )
+                )
+            facts_cnt = self._first_count(
+                self.repo.run(
+                    """
                 MATCH (:Universe {id:$src})-[:HAS_STORY]->(st:Story)-[:HAS_SCENE]->(sc:Scene)
                 WHERE (size($stories)=0 OR st.id IN $stories) AND ($scene_max IS NULL OR sc.sequence_index <= $scene_max)
                 MATCH (f:Fact)-[:OCCURS_IN]->(sc)
                 RETURN count(DISTINCT f) AS c
                 """,
-                src=source_universe_id,
-                stories=stories,
-                scene_max=scene_max_index,
-            ))
-            sheets_cnt = self._first_count(self.repo.run(
-                "MATCH (:Universe {id:$src})<-[:BELONGS_TO]-(:Entity)-[:HAS_SHEET]->(sh:Sheet) RETURN count(DISTINCT sh) AS c",
-                src=source_universe_id,
-            ))
-            arcs_cnt = self._first_count(self.repo.run(
-                "MATCH (:Universe {id:$src})-[:HAS_ARC]->(a:Arc) WHERE size($arcs)=0 OR a.id IN $arcs RETURN count(DISTINCT a) AS c",
-                src=source_universe_id,
-                arcs=arcs,
-            ))
+                    src=source_universe_id,
+                    stories=stories,
+                    scene_max=scene_max_index,
+                )
+            )
+            sheets_cnt = self._first_count(
+                self.repo.run(
+                    "MATCH (:Universe {id:$src})<-[:BELONGS_TO]-(:Entity)-[:HAS_SHEET]->(sh:Sheet) RETURN count(DISTINCT sh) AS c",
+                    src=source_universe_id,
+                )
+            )
+            arcs_cnt = self._first_count(
+                self.repo.run(
+                    "MATCH (:Universe {id:$src})-[:HAS_ARC]->(a:Arc) WHERE size($arcs)=0 OR a.id IN $arcs RETURN count(DISTINCT a) AS c",
+                    src=source_universe_id,
+                    arcs=arcs,
+                )
+            )
             return {
                 "dry_run": True,
                 "new_universe_id": new_universe_id,

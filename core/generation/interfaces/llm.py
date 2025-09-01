@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
+from typing import Any
 
-
-Message = Dict[str, str]  # {"role": "user|assistant|system", "content": str}
+Message = dict[str, str]  # {"role": "user|assistant|system", "content": str}
 
 
 class LLM(ABC):
@@ -14,10 +13,10 @@ class LLM(ABC):
         self,
         *,
         system_prompt: str,
-        messages: List[Message],
+        messages: list[Message],
         temperature: float = 0.7,
         max_tokens: int = 400,
-        extra: Optional[Dict[str, Any]] = None,
+        extra: dict[str, Any] | None = None,
     ) -> str:  # returns assistant text
         raise NotImplementedError
 
@@ -26,4 +25,4 @@ class LLM(ABC):
 class CompletionConfig:
     temperature: float = 0.7
     max_tokens: int = 400
-    extra: Optional[Dict[str, Any]] = None
+    extra: dict[str, Any] | None = None

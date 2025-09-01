@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
 import json
+from typing import Any
 
 
 class ProjectorBase:
@@ -10,7 +10,7 @@ class ProjectorBase:
 
     @staticmethod
     def _is_primitive(x):
-        return isinstance(x, (str, int, float, bool)) or x is None
+        return isinstance(x, str | int | float | bool) or x is None
 
     @classmethod
     def _sanitize(cls, value: Any):

@@ -1,13 +1,13 @@
 import json
-import sys
 from pathlib import Path
+import sys
 
 # Ensure project root is on sys.path to import 'core' package when running via pytest
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from core.interfaces.cli_interface import init_multiverse
+from core.interfaces.cli_interface import init_multiverse  # noqa: E402
 
 
 def test_cli_init_includes_scenes(tmp_path: Path):

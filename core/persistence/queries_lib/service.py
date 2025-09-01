@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from .axioms import AxiomsQueries
 from .base import BaseQueries
 from .entities import EntitiesQueries
-from .scenes import ScenesQueries
 from .facts import FactsQueries
 from .relations import RelationsQueries
-from .axioms import AxiomsQueries
+from .scenes import ScenesQueries
 from .systems import SystemsQueries
 
 

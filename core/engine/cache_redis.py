@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import time
-from typing import Any, Dict, Optional, List
+from typing import Any
 
 try:
     import redis  # type: ignore
@@ -34,11 +34,11 @@ class RedisReadThroughCache:
         v = self.r.get(self._ver_key())
         return v if v is not None else "0"
 
-    def make_key(self, method: str, params: Dict[str, Any]) -> str:
+    def make_key(self, method: str, params: dict[str, Any]) -> str:
         slug = f"{method}:{_hash(_json_key(params))}"
         return f"{self.ns}:v{self._version()}:{slug}"
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         raw = self.r.get(key)
         if raw is None:
             return None
@@ -68,7 +68,7 @@ class RedisStagingStore:
             return self.base_key
         return f"{self.base_key}:{time.strftime('%Y%m%d')}"
 
-    def stage(self, deltas: Dict[str, Any]) -> None:
+    def stage(self, deltas: dict[str, Any]) -> None:
         self.r.rpush(self._key(), json.dumps(deltas, ensure_ascii=False))
 
     def pending(self) -> int:
@@ -77,15 +77,15 @@ class RedisStagingStore:
     def clear(self) -> None:
         self.r.delete(self._key())
 
-    def flush(self, recorder, clear_after: bool = True) -> Dict[str, Any]:
+    def flush(self, recorder, clear_after: bool = True) -> dict[str, Any]:
         pipe = self.r.pipeline()
         k = self._key()
         pipe.lrange(k, 0, -1)
         if clear_after:
             pipe.delete(k)
         data, *_ = pipe.execute()
-        written_total: Dict[str, int] = {}
-        warnings: List[str] = []
+        written_total: dict[str, int] = {}
+        warnings: list[str] = []
         ok = True
         for raw in data:
             payload = json.loads(raw)

@@ -1,14 +1,15 @@
-import sys
 from pathlib import Path
+import sys
+
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from core.persistence.neo4j_repo import Neo4jRepo
-from core.persistence.projector import Projector
-from core.persistence.queries import QueryService
+from core.persistence.neo4j_repo import Neo4jRepo  # noqa: E402
+from core.persistence.projector import Projector  # noqa: E402
+from core.persistence.queries import QueryService  # noqa: E402
 
 
 def neo4j_available():
@@ -17,6 +18,7 @@ def neo4j_available():
         return True
     except Exception:
         return False
+
 
 requires_neo4j = pytest.mark.skipif(not neo4j_available(), reason="Neo4j not available")
 
@@ -84,7 +86,9 @@ def test_queries_cover_core_paths(populated_db):
     assert eff_scene is None or set(eff_scene.keys()) == {"system_id", "source"}
 
     # Pick an entity that has sheets and see effective system for entity or entity@story
-    any_entity = populated_db.run("MATCH (e:Entity)-[:HAS_SHEET]->(:Sheet) RETURN e.id AS eid LIMIT 1")[0]["eid"]
+    any_entity = populated_db.run(
+        "MATCH (e:Entity)-[:HAS_SHEET]->(:Sheet) RETURN e.id AS eid LIMIT 1"
+    )[0]["eid"]
     eff_e = q.effective_system_for_entity(any_entity)
     assert eff_e is None or (eff_e["system_id"] and eff_e["source"] in {"entity", "sheet"})
     eff_e_story = q.effective_system_for_entity_in_story(any_entity, any_story)

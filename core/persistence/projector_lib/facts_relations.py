@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import List
-
 from core.domain.fact import Fact, RelationState
 
 
 class FactsRelationsMixin:
-    def _upsert_facts(self, universe_id: str, facts: List[Fact]):
+    def _upsert_facts(self, universe_id: str, facts: list[Fact]):
         frows = []
         for f in facts:
             props = {
@@ -23,7 +21,9 @@ class FactsRelationsMixin:
                     "id": f.id,
                     "props": props,
                     "occurs_in": f.occurs_in,
-                    "participants": [{"entity_id": p.entity_id, "role": p.role} for p in f.participants],
+                    "participants": [
+                        {"entity_id": p.entity_id, "role": p.role} for p in f.participants
+                    ],
                 }
             )
         if not frows:
@@ -52,9 +52,17 @@ class FactsRelationsMixin:
             rows=frows,
         )
 
-    def _upsert_relation_states(self, rels: List[RelationState]):
+    def _upsert_relation_states(self, rels: list[RelationState]):
         rrows = [
-            {"id": r.id, "props": {"type": r.type, "started_at": r.started_at, "ended_at": r.ended_at}, "a": r.entity_a, "b": r.entity_b, "set": r.set_in_scene, "chg": r.changed_in_scene, "end": r.ended_in_scene}
+            {
+                "id": r.id,
+                "props": {"type": r.type, "started_at": r.started_at, "ended_at": r.ended_at},
+                "a": r.entity_a,
+                "b": r.entity_b,
+                "set": r.set_in_scene,
+                "chg": r.changed_in_scene,
+                "end": r.ended_in_scene,
+            }
             for r in rels
         ]
         if not rrows:

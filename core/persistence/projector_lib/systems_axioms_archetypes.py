@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Any, List
+from typing import Any
 
 from core.domain.axiom import Axiom
 
@@ -27,7 +27,7 @@ class SystemsAxiomsArchetypesMixin:
             rows=rows,
         )
 
-    def _upsert_systems(self, systems: List[Dict[str, Any]]):
+    def _upsert_systems(self, systems: list[dict[str, Any]]):
         rows = []
         for s in systems:
             props = {k: self._sanitize(v) for k, v in s.items() if k != "id"}
@@ -43,7 +43,7 @@ class SystemsAxiomsArchetypesMixin:
             rows=rows,
         )
 
-    def _upsert_axioms(self, axioms: List[Axiom]):
+    def _upsert_axioms(self, axioms: list[Axiom]):
         rows = [
             {
                 "id": ax.id,

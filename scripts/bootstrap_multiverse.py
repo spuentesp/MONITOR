@@ -1,28 +1,49 @@
 import json
 from pathlib import Path
-from typing import Optional
 
-from core.domain.omniverse import Omniverse
-from core.domain.multiverse import Multiverse
-from core.domain.universe import Universe
-from core.domain.story import Story
 from core.domain.entity import ConcreteEntity
-from core.domain.sheet import Sheet
 from core.domain.event import Event
+from core.domain.multiverse import Multiverse
+from core.domain.omniverse import Omniverse
+from core.domain.sheet import Sheet
+from core.domain.story import Story
+from core.domain.universe import Universe
 
 
 def build_sample(include_story: bool = True) -> Omniverse:
     # Basic Universe
-    universe = Universe(name="Earth-Prime", description="Primary test universe", stories=[], multiverse_id="mv-001",)
+    universe = Universe(
+        name="Earth-Prime",
+        description="Primary test universe",
+        stories=[],
+        multiverse_id="mv-001",
+    )
     # Optional Story + Entity + Sheet + Event
     if include_story:
-        hero = ConcreteEntity(id="ent-hero-001", name="Alex", universe_id=universe.id, type="character")
-        sheet = Sheet(id="sheet-hero-001", name="Alex Sheet", type="PC", entity_id=hero.id, story_id=None)
-        ev = Event(description="Alex helps a civilian in Downtown", type="narrative", participants=[hero.id], universe_id=universe.id)
-        story = Story(title="A Hero's Start", summary="Alex begins their journey.", events=[ev], sheets=[sheet], universe_id=universe.id)
+        hero = ConcreteEntity(
+            id="ent-hero-001", name="Alex", universe_id=universe.id, type="character"
+        )
+        sheet = Sheet(
+            id="sheet-hero-001", name="Alex Sheet", type="PC", entity_id=hero.id, story_id=None
+        )
+        ev = Event(
+            description="Alex helps a civilian in Downtown",
+            type="narrative",
+            participants=[hero.id],
+            universe_id=universe.id,
+        )
+        story = Story(
+            title="A Hero's Start",
+            summary="Alex begins their journey.",
+            events=[ev],
+            sheets=[sheet],
+            universe_id=universe.id,
+        )
         universe.stories.append(story)
 
-    multiverse = Multiverse(id="mv-001", name="Sample Multiverse", description="Demo multiverse", universes=[universe])
+    multiverse = Multiverse(
+        id="mv-001", name="Sample Multiverse", description="Demo multiverse", universes=[universe]
+    )
     omni = Omniverse(id="omniverse-001", name="M.O.N.I.T.O.R.", multiverses=[multiverse])
     return omni
 

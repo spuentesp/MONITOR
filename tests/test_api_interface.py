@@ -1,5 +1,6 @@
-import sys
 from pathlib import Path
+import sys
+
 from fastapi.testclient import TestClient
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,6 +31,7 @@ def test_rejects_invalid_context_token():
 def test_accepts_valid_context_token():
     client = TestClient(app)
     token = '{"omniverse_id":"o","multiverse_id":"m","universe_id":"u"}'
+
     # Define a dummy route to pass middleware
     @app.get("/secure")
     def secure():  # pragma: no cover - trivial route

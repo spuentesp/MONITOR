@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
-import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
+import json
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, List
+import time
+from typing import Any
 
 
 def _json_key(obj: Any) -> str:
@@ -16,13 +16,13 @@ def _json_key(obj: Any) -> str:
 class ReadThroughCache:
     capacity: int = 256
     ttl_seconds: float = 60.0
-    _store: OrderedDict[str, Tuple[Any, float]] = field(default_factory=OrderedDict)
+    _store: OrderedDict[str, tuple[Any, float]] = field(default_factory=OrderedDict)
 
     def _evict_if_needed(self):
         while len(self._store) > self.capacity:
             self._store.popitem(last=False)
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         now = time.time()
         item = self._store.get(key)
         if not item:
@@ -47,7 +47,7 @@ class ReadThroughCache:
         self._store.clear()
 
     @staticmethod
-    def make_key(method: str, params: Dict[str, Any]) -> str:
+    def make_key(method: str, params: dict[str, Any]) -> str:
         return f"{method}:{_json_key(params)}"
 
 
@@ -55,21 +55,21 @@ class ReadThroughCache:
 class StagingStore:
     dirpath: Path = field(default_factory=lambda: Path("ops/staging"))
     persist: bool = True
-    _buffer: List[Dict[str, Any]] = field(default_factory=list)
+    _buffer: list[dict[str, Any]] = field(default_factory=list)
 
     def __post_init__(self):
         self.dirpath.mkdir(parents=True, exist_ok=True)
 
-    def stage(self, deltas: Dict[str, Any]) -> None:
+    def stage(self, deltas: dict[str, Any]) -> None:
         self._buffer.append(deltas)
         if self.persist:
             fp = self.dirpath / (time.strftime("%Y%m%d") + ".jsonl")
             with fp.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(deltas, ensure_ascii=False) + "\n")
 
-    def flush(self, recorder, clear_after: bool = True) -> Dict[str, Any]:
-        written_total: Dict[str, int] = {}
-        warnings: List[str] = []
+    def flush(self, recorder, clear_after: bool = True) -> dict[str, Any]:
+        written_total: dict[str, int] = {}
+        warnings: list[str] = []
         ok = True
         for payload in list(self._buffer):
             res = recorder.commit_deltas(**payload)

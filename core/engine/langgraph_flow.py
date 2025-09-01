@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict
-
-
 import os
+from typing import Any
 
 
 def build_langgraph_flow(tools: Any):
@@ -12,7 +10,7 @@ def build_langgraph_flow(tools: Any):
     This function avoids importing langgraph at module import time to keep it optional.
     """
     try:
-        from langgraph.graph import StateGraph, END
+        from langgraph.graph import END, StateGraph
     except Exception as e:
         raise RuntimeError("LangGraph is not installed. Please install langgraph.") from e
 
@@ -21,6 +19,7 @@ def build_langgraph_flow(tools: Any):
     if os.getenv("MONITOR_LC_TOOLS", "0") in ("1", "true", "True"):
         try:
             from core.engine.lc_tools import build_langchain_tools
+
             lc_list = build_langchain_tools(tools["ctx"])  # returns a list of Tool objects
             lc_tools = {t.name: t for t in lc_list}
         except Exception:
@@ -30,44 +29,49 @@ def build_langgraph_flow(tools: Any):
     class State(dict):
         pass
 
-    def director(state: Dict[str, Any]) -> Dict[str, Any]:
+    def director(state: dict[str, Any]) -> dict[str, Any]:
         intent = state.get("intent", "")
         return {**state, "plan": {"beats": [intent], "assumptions": []}}
 
-    def librarian(state: Dict[str, Any]) -> Dict[str, Any]:
+    def librarian(state: dict[str, Any]) -> dict[str, Any]:
         scene_id = state.get("scene_id")
         evidence = []
         if scene_id:
             try:
                 if lc_tools and "query_tool" in lc_tools:
-                    rels = lc_tools["query_tool"].invoke({"method": "relations_effective_in_scene", "scene_id": scene_id})
+                    rels = lc_tools["query_tool"].invoke(
+                        {"method": "relations_effective_in_scene", "scene_id": scene_id}
+                    )
                 else:
-                    rels = tools["query_tool"](tools["ctx"], "relations_effective_in_scene", scene_id=scene_id)
+                    rels = tools["query_tool"](
+                        tools["ctx"], "relations_effective_in_scene", scene_id=scene_id
+                    )
                 evidence.append({"relations": rels})
             except Exception:
                 pass
         return {**state, "evidence": evidence}
 
-    def steward(state: Dict[str, Any]) -> Dict[str, Any]:
+    def steward(state: dict[str, Any]) -> dict[str, Any]:
         return {**state, "validation": {"ok": True, "warnings": []}}
 
-    def narrator(state: Dict[str, Any]) -> Dict[str, Any]:
-        llm = tools["llm"]
-        msgs = [{"role": "user", "content": state.get("intent", "") }]
+    def narrator(state: dict[str, Any]) -> dict[str, Any]:
+        msgs = [{"role": "user", "content": state.get("intent", "")}]
         draft = tools["narrator"].act(msgs)
         return {**state, "draft": draft}
 
-    def critic(state: Dict[str, Any]) -> Dict[str, Any]:
+    def critic(state: dict[str, Any]) -> dict[str, Any]:
         draft = state.get("draft", "")
         return {**state, "critique": {"coherence": 0.9, "length": len(draft)}}
 
-    def archivist(state: Dict[str, Any]) -> Dict[str, Any]:
+    def archivist(state: dict[str, Any]) -> dict[str, Any]:
         draft = state.get("draft", "")
         summary = tools["archivist"].act([{"role": "user", "content": draft}])
         return {**state, "summary": summary}
 
-    def recorder(state: Dict[str, Any]) -> Dict[str, Any]:
-        commit = tools["recorder_tool"](tools["ctx"], draft=state.get("draft", ""), deltas={"scene_id": state.get("scene_id")})
+    def recorder(state: dict[str, Any]) -> dict[str, Any]:
+        commit = tools["recorder_tool"](
+            tools["ctx"], draft=state.get("draft", ""), deltas={"scene_id": state.get("scene_id")}
+        )
         return {**state, "commit": commit}
 
     workflow = StateGraph(State)
@@ -87,7 +91,7 @@ def build_langgraph_flow(tools: Any):
     workflow.add_edge("critic", "archivist")
 
     # Copilot checkpoint: allow pause before Recorder based on env flag
-    def should_pause(_: Dict[str, Any]) -> bool:
+    def should_pause(_: dict[str, Any]) -> bool:
         # Default: do NOT pause in copilot, so tests reach the recorder node unless explicitly paused
         return os.getenv("MONITOR_COPILOT_PAUSE", "0") in ("1", "true", "True")
 
@@ -104,7 +108,7 @@ def build_langgraph_flow(tools: Any):
         def __init__(self, compiled_graph):
             self._compiled = compiled_graph
 
-        def invoke(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        def invoke(self, inputs: dict[str, Any]) -> dict[str, Any]:
             try:
                 out = self._compiled.invoke(inputs)
                 if out is not None:

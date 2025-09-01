@@ -1,27 +1,22 @@
-from typing import Optional
-from pathlib import Path
 import json
-import os
+from pathlib import Path
 
-import typer
 from dotenv import load_dotenv
+import typer
 
-from core.domain.omniverse import Omniverse
-from core.domain.multiverse import Multiverse
-from core.domain.universe import Universe
-from core.domain.story import Story
-from core.domain.entity import ConcreteEntity
-from core.domain.sheet import Sheet
-from core.domain.event import Event
-from core.domain.scene import Scene
+from core.engine.orchestrator import (
+    Orchestrator,
+    OrchestratorConfig,
+    build_live_tools,
+    flush_staging,
+    run_once,
+)
+from core.generation.mock_llm import MockLLM
+from core.loaders.yaml_loader import load_omniverse_from_yaml
+from core.persistence.brancher import BranchService
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.projector import Projector
 from core.persistence.queries import QueryService
-from core.persistence.brancher import BranchService
-from core.loaders.yaml_loader import load_omniverse_from_yaml
-from core.engine.orchestrator import run_once, build_live_tools, flush_staging, Orchestrator, OrchestratorConfig
-from core.generation.mock_llm import MockLLM
-
 
 load_dotenv(override=False)
 app = typer.Typer(help="M.O.N.I.T.O.R. CLI")
@@ -61,10 +56,14 @@ def neo4j_bootstrap():
     repo.close()
 
 
+_ARG_YAML_PATH = typer.Argument(..., help="Path to multiverse YAML")
+_OPT_ENSURE = typer.Option(True, help="Ensure constraints before projecting")
+
+
 @app.command("project-from-yaml")
 def project_from_yaml(
-    path: Path = typer.Argument(..., help="Path to multiverse YAML"),
-    ensure_constraints: bool = typer.Option(True, help="Ensure constraints before projecting"),
+    path: Path = _ARG_YAML_PATH,
+    ensure_constraints: bool = _OPT_ENSURE,
 ):
     repo = Neo4jRepo().connect()
     projector = Projector(repo)
@@ -75,12 +74,17 @@ def project_from_yaml(
 
 # --- Agents / Orchestrator CLI ---
 
+
 @app.command("orchestrate-step")
 def orchestrate_step(
     intent: str = typer.Argument(..., help="User intent / high-level goal"),
-    scene_id: Optional[str] = typer.Option(None, "--scene-id", help="Scene id to scope retrieval/relations"),
+    scene_id: str | None = typer.Option(
+        None, "--scene-id", help="Scene id to scope retrieval/relations"
+    ),
     mode: str = typer.Option("copilot", "--mode", help="copilot (dry-run) or autopilot (commit)"),
-    record_fact: bool = typer.Option(False, "--record-fact", help="Also record a simple Fact from the draft"),
+    record_fact: bool = typer.Option(
+        False, "--record-fact", help="Also record a simple Fact from the draft"
+    ),
 ):
     """Run a single orchestrator step and print the result as JSON."""
     out = run_once(intent, scene_id=scene_id, mode=mode)
@@ -105,8 +109,12 @@ def orchestrate_step(
 @app.command("agents-chat")
 def agents_chat(
     mode: str = typer.Option("copilot", "--mode", help="copilot (dry-run) or autopilot (commit)"),
-    scene_id: Optional[str] = typer.Option(None, "--scene-id", help="Optional scene id for retrieval context"),
-    persist: bool = typer.Option(False, "--persist", help="Persist a simple Fact per turn from the draft"),
+    scene_id: str | None = typer.Option(
+        None, "--scene-id", help="Optional scene id for retrieval context"
+    ),
+    persist: bool = typer.Option(
+        False, "--persist", help="Persist a simple Fact per turn from the draft"
+    ),
 ):
     """Interactive REPL to chat with agents and see plan/draft/commit outputs."""
     ctx = build_live_tools(dry_run=(mode != "autopilot"))
@@ -142,12 +150,18 @@ def cli_flush_staging():
     typer.echo(json.dumps(res, indent=2, ensure_ascii=False))
 
 
+_ARG_DELTAS = typer.Argument(..., help="Path to a JSON file with proposed deltas")
+_OPT_FIXES = typer.Option(None, "--fixes", help="Optional JSON with user-provided fixes")
+_OPT_MODE = typer.Option("copilot", "--mode", help="copilot (stage) or autopilot (commit)")
+_OPT_COMMIT = typer.Option(False, "--commit", help="When --mode autopilot, actually commit")
+
+
 @app.command("resolve-deltas")
 def resolve_deltas(
-    deltas_file: Path = typer.Argument(..., help="Path to a JSON file with proposed deltas"),
-    fixes_file: Optional[Path] = typer.Option(None, "--fixes", help="Optional JSON with user-provided fixes"),
-    mode: str = typer.Option("copilot", "--mode", help="copilot (stage) or autopilot (commit)"),
-    commit: bool = typer.Option(False, "--commit", help="When --mode autopilot, actually commit"),
+    deltas_file: Path = _ARG_DELTAS,
+    fixes_file: Path | None = _OPT_FIXES,
+    mode: str = _OPT_MODE,
+    commit: bool = _OPT_COMMIT,
 ):
     """Validate deltas, apply optional fixes, and stage or commit based on mode."""
     deltas = json.loads(Path(deltas_file).read_text(encoding="utf-8"))
@@ -166,28 +180,38 @@ def resolve_deltas(
     will_commit = bool(commit and mode == "autopilot")
     ctx = build_live_tools(dry_run=(not will_commit))
     from core.engine.steward import StewardService
+
     svc = StewardService(ctx.query_service)
     ok, warns, errs = svc.validate(merged)
     result = {"ok": ok, "warnings": warns, "errors": errs, "deltas": merged}
     from core.engine.tools import recorder_tool
+
     commit_out = recorder_tool(ctx, draft="", deltas=merged)
     result["commit"] = commit_out
     typer.echo(json.dumps(result, indent=2, ensure_ascii=False))
 
 
+_OPT_BEAT = typer.Option(..., "--beat", help="Add a beat/intention; repeat flag to add multiple")
+_OPT_SCENE = typer.Option(None, "--scene-id", help="Optional scene id for retrieval context")
+_OPT_MODE2 = typer.Option("copilot", "--mode", help="copilot (dry-run) or autopilot (commit)")
+_OPT_PERSIST = typer.Option(
+    False, "--persist", help="Persist a simple Fact per beat from the draft"
+)
+
+
 @app.command("weave-story")
 def weave_story(
-    beat: list[str] = typer.Option(..., "--beat", help="Add a beat/intention; repeat flag to add multiple"),
-    scene_id: Optional[str] = typer.Option(None, "--scene-id", help="Optional scene id for retrieval context"),
-    mode: str = typer.Option("copilot", "--mode", help="copilot (dry-run) or autopilot (commit)"),
-    persist: bool = typer.Option(False, "--persist", help="Persist a simple Fact per beat from the draft"),
+    beat: list[str] = _OPT_BEAT,
+    scene_id: str | None = _OPT_SCENE,
+    mode: str = _OPT_MODE2,
+    persist: bool = _OPT_PERSIST,
 ):
     """Run a multi-step session in one run to demonstrate agents weaving a story."""
     ctx = build_live_tools(dry_run=(mode != "autopilot"))
     orch = Orchestrator(llm=MockLLM(), tools=ctx, config=OrchestratorConfig(mode=mode))
     steps = []
     full_text = []
-    for idx, b in enumerate(beat, start=1):
+    for _idx, b in enumerate(beat, start=1):
         out = orch.step(b, scene_id=scene_id)
         draft = out.get("draft") or b
         full_text.append(draft)
@@ -199,14 +223,16 @@ def weave_story(
             from core.engine.tools import recorder_tool
 
             out["persisted"] = recorder_tool(ctx, draft=draft, deltas=commit)
-        steps.append({
-            "beat": b,
-            "plan": out.get("plan"),
-            "draft": draft,
-            "summary": out.get("summary"),
-            "commit": out.get("commit"),
-            "persisted": out.get("persisted"),
-        })
+        steps.append(
+            {
+                "beat": b,
+                "plan": out.get("plan"),
+                "draft": draft,
+                "summary": out.get("summary"),
+                "commit": out.get("commit"),
+                "persisted": out.get("persisted"),
+            }
+        )
     result = {
         "scene_id": scene_id,
         "mode": mode,
@@ -257,12 +283,14 @@ def q_axioms_for_universe(universe_id: str):
     _print_json(svc.axioms_applying_to_universe(universe_id))
     repo.close()
 
+
 @queries.command("entities-in-arc")
 def q_entities_in_arc(arc_id: str):
     repo = Neo4jRepo().connect()
     svc = QueryService(repo)
     _print_json(svc.entities_in_arc(arc_id))
     repo.close()
+
 
 @queries.command("facts-for-story")
 def q_facts_for_story(story_id: str):
@@ -271,12 +299,14 @@ def q_facts_for_story(story_id: str):
     _print_json(svc.facts_for_story(story_id))
     repo.close()
 
+
 @queries.command("system-usage")
 def q_system_usage(universe_id: str):
     repo = Neo4jRepo().connect()
     svc = QueryService(repo)
     _print_json(svc.system_usage_summary(universe_id))
     repo.close()
+
 
 @queries.command("axioms-in-scene")
 def q_axioms_in_scene(scene_id: str):
@@ -285,12 +315,14 @@ def q_axioms_in_scene(scene_id: str):
     _print_json(svc.axioms_effective_in_scene(scene_id))
     repo.close()
 
+
 @queries.command("entities-in-universe")
 def q_entities_in_universe(universe_id: str):
     repo = Neo4jRepo().connect()
     svc = QueryService(repo)
     _print_json(svc.entities_in_universe(universe_id))
     repo.close()
+
 
 @queries.command("entities-in-story-by-role")
 def q_entities_in_story_by_role(story_id: str, role: str):
@@ -299,12 +331,14 @@ def q_entities_in_story_by_role(story_id: str, role: str):
     _print_json(svc.entities_in_story_by_role(story_id, role))
     repo.close()
 
+
 @queries.command("entities-in-arc-by-role")
 def q_entities_in_arc_by_role(arc_id: str, role: str):
     repo = Neo4jRepo().connect()
     svc = QueryService(repo)
     _print_json(svc.entities_in_arc_by_role(arc_id, role))
     repo.close()
+
 
 @queries.command("entities-in-universe-by-role")
 def q_entities_in_universe_by_role(universe_id: str, role: str):
@@ -313,12 +347,14 @@ def q_entities_in_universe_by_role(universe_id: str, role: str):
     _print_json(svc.entities_in_universe_by_role(universe_id, role))
     repo.close()
 
+
 @queries.command("participants-by-role-for-scene")
 def q_participants_by_role_for_scene(scene_id: str):
     repo = Neo4jRepo().connect()
     svc = QueryService(repo)
     _print_json(svc.participants_by_role_for_scene(scene_id))
     repo.close()
+
 
 @queries.command("participants-by-role-for-story")
 def q_participants_by_role_for_story(story_id: str):
@@ -327,6 +363,7 @@ def q_participants_by_role_for_story(story_id: str):
     _print_json(svc.participants_by_role_for_story(story_id))
     repo.close()
 
+
 @queries.command("next-scene-for-entity")
 def q_next_scene_for_entity(story_id: str, entity_id: str, after_sequence_index: int):
     repo = Neo4jRepo().connect()
@@ -334,12 +371,16 @@ def q_next_scene_for_entity(story_id: str, entity_id: str, after_sequence_index:
     _print_json(svc.next_scene_for_entity_in_story(story_id, entity_id, after_sequence_index) or {})
     repo.close()
 
+
 @queries.command("prev-scene-for-entity")
 def q_prev_scene_for_entity(story_id: str, entity_id: str, before_sequence_index: int):
     repo = Neo4jRepo().connect()
     svc = QueryService(repo)
-    _print_json(svc.previous_scene_for_entity_in_story(story_id, entity_id, before_sequence_index) or {})
+    _print_json(
+        svc.previous_scene_for_entity_in_story(story_id, entity_id, before_sequence_index) or {}
+    )
     repo.close()
+
 
 if __name__ == "__main__":
     app()
@@ -347,18 +388,23 @@ if __name__ == "__main__":
 
 # --- Branching CLI ---
 
+
 @app.command("branch-universe")
 def branch_universe(
     source_universe_id: str = typer.Argument(..., help="ID of the source Universe to branch"),
-    divergence_scene_id: str = typer.Argument(..., help="Scene ID where the branch diverges (inclusive)"),
+    divergence_scene_id: str = typer.Argument(
+        ..., help="Scene ID where the branch diverges (inclusive)"
+    ),
     new_universe_id: str = typer.Argument(..., help="ID for the new branched Universe"),
-    name: Optional[str] = typer.Option(None, "--name", help="Optional name for the new Universe"),
+    name: str | None = typer.Option(None, "--name", help="Optional name for the new Universe"),
     force: bool = typer.Option(False, "--force", help="Overwrite if target universe exists"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Compute counts only; no writes"),
 ):
     repo = Neo4jRepo().connect()
     svc = BranchService(repo)
-    out = svc.branch_universe_at_scene(source_universe_id, divergence_scene_id, new_universe_id, name, force=force, dry_run=dry_run)
+    out = svc.branch_universe_at_scene(
+        source_universe_id, divergence_scene_id, new_universe_id, name, force=force, dry_run=dry_run
+    )
     _print_json(out)
     repo.close()
 
@@ -367,13 +413,15 @@ def branch_universe(
 def clone_universe(
     source_universe_id: str = typer.Argument(..., help="ID of the source Universe to clone"),
     new_universe_id: str = typer.Argument(..., help="ID for the new cloned Universe"),
-    name: Optional[str] = typer.Option(None, "--name", help="Optional name for the new Universe"),
+    name: str | None = typer.Option(None, "--name", help="Optional name for the new Universe"),
     force: bool = typer.Option(False, "--force", help="Overwrite if target universe exists"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Compute counts only; no writes"),
 ):
     repo = Neo4jRepo().connect()
     svc = BranchService(repo)
-    out = svc.clone_universe_full(source_universe_id, new_universe_id, name, force=force, dry_run=dry_run)
+    out = svc.clone_universe_full(
+        source_universe_id, new_universe_id, name, force=force, dry_run=dry_run
+    )
     _print_json(out)
     repo.close()
 
@@ -382,11 +430,19 @@ def clone_universe(
 def clone_universe_subset(
     source_universe_id: str = typer.Argument(..., help="ID of the source Universe"),
     new_universe_id: str = typer.Argument(..., help="ID for the new Universe"),
-    name: Optional[str] = typer.Option(None, "--name", help="Optional name for the new Universe"),
-    stories: Optional[str] = typer.Option(None, "--stories", help="Comma-separated Story IDs to include"),
-    arcs: Optional[str] = typer.Option(None, "--arcs", help="Comma-separated Arc IDs to include"),
-    scene_max_index: Optional[int] = typer.Option(None, "--scene-max-index", help="Max scene sequence_index per story"),
-    include_all_entities: bool = typer.Option(False, "--all-entities", help="Include all entities in universe, not only those in included scenes"),
+    name: str | None = typer.Option(None, "--name", help="Optional name for the new Universe"),
+    stories: str | None = typer.Option(
+        None, "--stories", help="Comma-separated Story IDs to include"
+    ),
+    arcs: str | None = typer.Option(None, "--arcs", help="Comma-separated Arc IDs to include"),
+    scene_max_index: int | None = typer.Option(
+        None, "--scene-max-index", help="Max scene sequence_index per story"
+    ),
+    include_all_entities: bool = typer.Option(
+        False,
+        "--all-entities",
+        help="Include all entities in universe, not only those in included scenes",
+    ),
     force: bool = typer.Option(False, "--force", help="Overwrite if target universe exists"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Compute counts only; no writes"),
 ):
@@ -407,4 +463,3 @@ def clone_universe_subset(
     )
     _print_json(out)
     repo.close()
-

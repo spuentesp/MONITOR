@@ -1,5 +1,5 @@
-import sys
 from pathlib import Path
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -33,7 +33,10 @@ def test_branch_service_emits_expected_cypher_sequence():
     assert "OPTIONAL MATCH (src:Universe {id:$src})" in q0
     # Second call resolves divergence info
     q1, _ = repo.calls[1]
-    assert "MATCH (u:Universe {id:$src_uid})-[:HAS_STORY]->(st:Story)-[:HAS_SCENE]->(sc:Scene {id:$sid})" in q1
+    assert (
+        "MATCH (u:Universe {id:$src_uid})-[:HAS_STORY]->(st:Story)-[:HAS_SCENE]->(sc:Scene {id:$sid})"
+        in q1
+    )
     # Third ensures new universe and provenance
     q2, _ = repo.calls[2]
     assert "MERGE (u2:Universe {id:$new_uid})" in q2 and "BRANCHED_FROM" in q2
@@ -92,7 +95,9 @@ def test_clone_universe_subset_shapes():
     repo = R()
     repo._next = [[{"src_ok": True, "tgt_exists": False}]]
     svc = BranchService(repo)
-    out = svc.clone_universe_subset("U-1", "U-1s", stories=["ST-1"], arcs=["ARC-1"], scene_max_index=2)
+    out = svc.clone_universe_subset(
+        "U-1", "U-1s", stories=["ST-1"], arcs=["ARC-1"], scene_max_index=2
+    )
     assert out["new_universe_id"] == "U-1s"
     joined = "\n".join(q for q, _ in repo.calls)
     assert "WHERE size(stories)=0 OR st.id IN stories" in joined

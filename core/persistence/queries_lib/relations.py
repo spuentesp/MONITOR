@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class RelationsQueries:
-    def relation_state_history(self, entity_a: str, entity_b: str) -> List[Dict[str, Any]]:
+    def relation_state_history(self, entity_a: str, entity_b: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (rs:RelationState)-[:REL_STATE_FOR {endpoint:'A'}]->(a:Entity {id:$a})
@@ -21,7 +21,7 @@ class RelationsQueries:
             b=entity_b,
         )
 
-    def relations_effective_in_scene(self, scene_id: str) -> List[Dict[str, Any]]:
+    def relations_effective_in_scene(self, scene_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (st:Story)-[:HAS_SCENE]->(sc:Scene {id:$sid})

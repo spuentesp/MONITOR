@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-from typing import List
-
 from core.domain.entity import ConcreteEntity
 
 
 class EntitiesSheetsMixin:
-    def _upsert_entities_and_sheets(self, universe_id: str, entities: List[ConcreteEntity]):
+    def _upsert_entities_and_sheets(self, universe_id: str, entities: list[ConcreteEntity]):
         erows = []
         for e in entities:
-            props = {"name": e.name, "type": e.type, "attributes": e.attributes, "universe_id": universe_id, "archetype_id": e.archetype_id}
+            props = {
+                "name": e.name,
+                "type": e.type,
+                "attributes": e.attributes,
+                "universe_id": universe_id,
+                "archetype_id": e.archetype_id,
+            }
             props = {k: self._sanitize(v) for k, v in props.items()}
             erows.append({"id": e.id, "props": props})
         self.repo.run(
@@ -29,7 +33,13 @@ class EntitiesSheetsMixin:
                 continue
             shrows = []
             for sh in e.sheets:
-                props = {"name": sh.name, "type": sh.type, "attributes": sh.attributes, "story_id": sh.story_id, "system_id": sh.system_id}
+                props = {
+                    "name": sh.name,
+                    "type": sh.type,
+                    "attributes": sh.attributes,
+                    "story_id": sh.story_id,
+                    "system_id": sh.system_id,
+                }
                 props = {k: self._sanitize(v) for k, v in props.items()}
                 shrows.append({"id": sh.id, "props": props, "eid": e.id})
             self.repo.run(
@@ -45,7 +55,11 @@ class EntitiesSheetsMixin:
                 rows=shrows,
             )
             # Sheet USES_SYSTEM (optional)
-            ssys_rows = [{"sid": sh.id, "sys": sh.system_id} for sh in e.sheets if getattr(sh, "system_id", None)]
+            ssys_rows = [
+                {"sid": sh.id, "sys": sh.system_id}
+                for sh in e.sheets
+                if getattr(sh, "system_id", None)
+            ]
             if ssys_rows:
                 self.repo.run(
                     """
@@ -58,7 +72,9 @@ class EntitiesSheetsMixin:
                 )
 
         # Entity USES_SYSTEM (optional)
-        esys_rows = [{"eid": e.id, "sys": e.system_id} for e in entities if getattr(e, "system_id", None)]
+        esys_rows = [
+            {"eid": e.id, "sys": e.system_id} for e in entities if getattr(e, "system_id", None)
+        ]
         if esys_rows:
             self.repo.run(
                 """

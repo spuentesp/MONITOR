@@ -1,6 +1,7 @@
-import sys
-from pathlib import Path
 import json
+from pathlib import Path
+import sys
+
 import yaml
 
 # Ensure project root is importable
@@ -55,13 +56,17 @@ def test_example_multiverse_yaml_shape():
             facts = u.get("facts", [])
             assert len(facts) >= 2
             for f in facts:
-                assert "occurs_in" in f and f["occurs_in"], "Fact must reference a scene (occurs_in)"
+                assert "occurs_in" in f and f["occurs_in"], (
+                    "Fact must reference a scene (occurs_in)"
+                )
                 assert len(f.get("participants", [])) >= 1
             rels = u.get("relation_states", [])
             assert len(rels) >= 1
             for rs in rels:
                 # Must have at least one provenance hook
-                assert any(rs.get(k) for k in ("set_in_scene", "changed_in_scene", "ended_in_scene"))
+                assert any(
+                    rs.get(k) for k in ("set_in_scene", "changed_in_scene", "ended_in_scene")
+                )
 
 
 def test_example_multiverse_yaml_is_json_serializable(tmp_path: Path):

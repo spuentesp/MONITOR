@@ -1,5 +1,6 @@
-import sys
 from pathlib import Path
+import sys
+
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -7,15 +8,14 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 try:
-    import langgraph  # type: ignore
     HAS_LANGGRAPH = True
 except Exception:
     HAS_LANGGRAPH = False
 
-from core.generation.mock_llm import MockLLM  # noqa: E402
-from core.agents.narrator import narrator_agent  # noqa: E402
 from core.agents.archivist import archivist_agent  # noqa: E402
+from core.agents.narrator import narrator_agent  # noqa: E402
 from core.engine.langgraph_flow import build_langgraph_flow  # noqa: E402
+from core.generation.mock_llm import MockLLM  # noqa: E402
 
 
 class DummyQueryService:

@@ -1,5 +1,6 @@
-import sys
 from pathlib import Path
+import sys
+
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,7 +33,9 @@ def test_bootstrap_indexes_exist():
         )
         # Some rows may have nulls depending on DB version/config; keep only those with labels/types and properties
         sig_rows = [r for r in rows if r.get("labelsOrTypes") and r.get("properties")]
-        by_sig = {(r["entityType"], tuple(r["labelsOrTypes"]), tuple(r["properties"])) for r in sig_rows}
+        by_sig = {
+            (r["entityType"], tuple(r["labelsOrTypes"]), tuple(r["properties"])) for r in sig_rows
+        }
         assert ("NODE", ("Scene",), ("sequence_index",)) in by_sig
         assert ("NODE", ("Story",), ("arc_id",)) in by_sig
         assert ("NODE", ("Scene",), ("story_id",)) in by_sig

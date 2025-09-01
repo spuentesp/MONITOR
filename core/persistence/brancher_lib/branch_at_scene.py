@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 
 class BranchAtSceneMixin:
@@ -13,7 +13,7 @@ class BranchAtSceneMixin:
         *,
         force: bool = False,
         dry_run: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         # Guardrails
         self._check_source_and_target(source_universe_id, new_universe_id, force)
         # 1) Resolve story and sequence index for divergence

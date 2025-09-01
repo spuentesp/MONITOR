@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class AxiomsQueries:
-    def axioms_applying_to_universe(self, universe_id: str) -> List[Dict[str, Any]]:
+    def axioms_applying_to_universe(self, universe_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (a:Axiom)-[:APPLIES_TO]->(u:Universe {id:$uid})
@@ -15,7 +15,7 @@ class AxiomsQueries:
             uid=universe_id,
         )
 
-    def axioms_effective_in_scene(self, scene_id: str) -> List[Dict[str, Any]]:
+    def axioms_effective_in_scene(self, scene_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (st:Story)-[:HAS_SCENE]->(sc:Scene {id:$sid})

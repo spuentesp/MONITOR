@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class SystemsQueries:
-    def system_usage_summary(self, universe_id: str) -> List[Dict[str, Any]]:
+    def system_usage_summary(self, universe_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             CALL {
@@ -32,9 +32,9 @@ class SystemsQueries:
             uid=universe_id,
         )
 
-    def effective_system_for_universe(self, universe_id: str) -> Dict[str, Any] | None:
-     rows = self._rows(
-      """
+    def effective_system_for_universe(self, universe_id: str) -> dict[str, Any] | None:
+        rows = self._rows(
+            """
       MATCH (u:Universe {id:$uid})
       OPTIONAL MATCH (u)-[:USES_SYSTEM]->(su:System)
       OPTIONAL MATCH (m:Multiverse)-[:HAS_UNIVERSE]->(u)
@@ -45,13 +45,13 @@ class SystemsQueries:
         END AS source
       RETURN coalesce(su.id, sm.id) AS system_id, source
       """,
-      uid=universe_id,
-     )
-     return rows[0] if rows else None
+            uid=universe_id,
+        )
+        return rows[0] if rows else None
 
-    def effective_system_for_story(self, story_id: str) -> Dict[str, Any] | None:
-     rows = self._rows(
-      """
+    def effective_system_for_story(self, story_id: str) -> dict[str, Any] | None:
+        rows = self._rows(
+            """
       MATCH (st:Story {id:$sid})
       OPTIONAL MATCH (st)-[:USES_SYSTEM]->(ss:System)
       OPTIONAL MATCH (u:Universe)-[:HAS_STORY]->(st)
@@ -65,13 +65,13 @@ class SystemsQueries:
         END AS source
       RETURN coalesce(ss.id, su.id, sm.id) AS system_id, source
       """,
-      sid=story_id,
-     )
-     return rows[0] if rows else None
+            sid=story_id,
+        )
+        return rows[0] if rows else None
 
-    def effective_system_for_scene(self, scene_id: str) -> Dict[str, Any] | None:
-     rows = self._rows(
-      """
+    def effective_system_for_scene(self, scene_id: str) -> dict[str, Any] | None:
+        rows = self._rows(
+            """
       MATCH (st:Story)-[:HAS_SCENE]->(sc:Scene {id:$sid})
       OPTIONAL MATCH (st)-[:USES_SYSTEM]->(ss:System)
       OPTIONAL MATCH (u:Universe)-[:HAS_STORY]->(st)
@@ -85,13 +85,13 @@ class SystemsQueries:
         END AS source
       RETURN coalesce(ss.id, su.id, sm.id) AS system_id, source
       """,
-      sid=scene_id,
-     )
-     return rows[0] if rows else None
+            sid=scene_id,
+        )
+        return rows[0] if rows else None
 
-    def effective_system_for_entity(self, entity_id: str) -> Dict[str, Any] | None:
-     rows = self._rows(
-      """
+    def effective_system_for_entity(self, entity_id: str) -> dict[str, Any] | None:
+        rows = self._rows(
+            """
       MATCH (e:Entity {id:$eid})
       OPTIONAL MATCH (e)-[:USES_SYSTEM]->(se:System)
       // Gather sheet systems (if any)
@@ -105,13 +105,15 @@ class SystemsQueries:
         END AS source
       RETURN sid AS system_id, source
       """,
-      eid=entity_id,
-     )
-     return rows[0] if rows else None
+            eid=entity_id,
+        )
+        return rows[0] if rows else None
 
-    def effective_system_for_entity_in_story(self, entity_id: str, story_id: str) -> Dict[str, Any] | None:
-     rows = self._rows(
-      """
+    def effective_system_for_entity_in_story(
+        self, entity_id: str, story_id: str
+    ) -> dict[str, Any] | None:
+        rows = self._rows(
+            """
       MATCH (e:Entity {id:$eid})
       MATCH (st:Story {id:$sid})
       OPTIONAL MATCH (e)-[:USES_SYSTEM]->(se:System)
@@ -142,7 +144,7 @@ class SystemsQueries:
         coalesce(se.id, sh_story_sid, sh_any_sid, ss_st.id, su.id, sm.id) AS sid
       RETURN sid AS system_id, source
       """,
-      eid=entity_id,
-      sid=story_id,
-     )
-     return rows[0] if rows else None
+            eid=entity_id,
+            sid=story_id,
+        )
+        return rows[0] if rows else None

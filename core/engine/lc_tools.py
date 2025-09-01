@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
-def build_langchain_tools(ctx: Any) -> List[Any]:
+def build_langchain_tools(ctx: Any) -> list[Any]:
     """Return LangChain Tool objects wrapping query, rules, and recorder tools.
 
     Lazy-imports langchain to keep it optional.
@@ -33,7 +33,7 @@ def build_langchain_tools(ctx: Any) -> List[Any]:
         fn = getattr(ctx.query_service, method)
         return fn(**kwargs)
 
-    def _rules(action: str, **kwargs) -> Dict[str, Any]:
+    def _rules(action: str, **kwargs) -> dict[str, Any]:
         return {
             "action": action,
             "inputs": kwargs,
@@ -42,7 +42,7 @@ def build_langchain_tools(ctx: Any) -> List[Any]:
             "trace": ["lc:rules_tool"],
         }
 
-    def _recorder(draft: str, **deltas) -> Dict[str, Any]:
+    def _recorder(draft: str, **deltas) -> dict[str, Any]:
         # Call our recorder_tool to ensure cache invalidation and staging semantics
         try:
             from core.engine.tools import recorder_tool as _rt

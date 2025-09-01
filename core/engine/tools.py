@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional
-
-from core.engine.cache import ReadThroughCache, StagingStore
+from typing import Any
 
 
 @dataclass
@@ -16,12 +15,12 @@ class ToolContext:
     """
 
     query_service: Any
-    recorder: Optional[Any] = None
-    rules: Optional[Any] = None
+    recorder: Any | None = None
+    rules: Any | None = None
     dry_run: bool = True
     # Optional caches (duck-typed interfaces)
-    read_cache: Optional[Any] = None
-    staging: Optional[Any] = None
+    read_cache: Any | None = None
+    staging: Any | None = None
 
 
 def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
@@ -42,7 +41,7 @@ def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
     }
     if method not in allowed:
         raise ValueError(f"Query method not allowed: {method}")
-    fn: Optional[Callable[..., Any]] = getattr(ctx.query_service, method, None)
+    fn: Callable[..., Any] | None = getattr(ctx.query_service, method, None)
     if not callable(fn):
         raise AttributeError(f"QueryService has no callable '{method}'")
     # Optional read-through cache
@@ -65,7 +64,7 @@ def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
     return out
 
 
-def rules_tool(ctx: ToolContext, action: str, **kwargs) -> Dict[str, Any]:
+def rules_tool(ctx: ToolContext, action: str, **kwargs) -> dict[str, Any]:
     """Placeholder rules interpreter.
 
     Returns a deterministic stub resolution; to be replaced with real system logic.
@@ -79,12 +78,14 @@ def rules_tool(ctx: ToolContext, action: str, **kwargs) -> Dict[str, Any]:
     }
 
 
-def notes_tool(_: ToolContext, text: str, scope: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+def notes_tool(_: ToolContext, text: str, scope: dict[str, str] | None = None) -> dict[str, Any]:
     """Record a non-canonical note (framework-neutral stub)."""
     return {"ok": True, "text": text, "scope": scope or {}}
 
 
-def recorder_tool(ctx: ToolContext, draft: str, deltas: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def recorder_tool(
+    ctx: ToolContext, draft: str, deltas: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Recorder: dry-run by default; if recorder present and not dry_run, persist deltas."""
     deltas = deltas or {}
     if not ctx.dry_run and ctx.recorder is not None:

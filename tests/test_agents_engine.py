@@ -1,14 +1,14 @@
-import sys
 from pathlib import Path
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from core.generation.mock_llm import MockLLM  # noqa: E402
-from core.engine import default_narrative_session  # noqa: E402
-from core.agents.character import character_agent  # noqa: E402
 from core.agents.archivist import archivist_agent  # noqa: E402
+from core.agents.character import character_agent  # noqa: E402
+from core.engine import default_narrative_session  # noqa: E402
+from core.generation.mock_llm import MockLLM  # noqa: E402
 
 
 def test_narrative_session_produces_text():

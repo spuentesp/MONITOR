@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class ScenesQueries:
-    def scenes_for_entity(self, entity_id: str) -> List[Dict[str, Any]]:
+    def scenes_for_entity(self, entity_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (e:Entity {id:$eid})-[:APPEARS_IN]->(sc:Scene)
@@ -15,7 +15,7 @@ class ScenesQueries:
             eid=entity_id,
         )
 
-    def participants_by_role_for_scene(self, scene_id: str) -> List[Dict[str, Any]]:
+    def participants_by_role_for_scene(self, scene_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (f:Fact)-[:OCCURS_IN]->(s:Scene {id:$sid})
@@ -27,7 +27,7 @@ class ScenesQueries:
             sid=scene_id,
         )
 
-    def participants_by_role_for_story(self, story_id: str) -> List[Dict[str, Any]]:
+    def participants_by_role_for_story(self, story_id: str) -> list[dict[str, Any]]:
         return self._rows(
             """
             MATCH (st:Story {id:$sid})-[:HAS_SCENE]->(sc:Scene)
@@ -42,7 +42,7 @@ class ScenesQueries:
 
     def next_scene_for_entity_in_story(
         self, story_id: str, entity_id: str, after_sequence_index: int
-    ) -> Dict[str, Any] | None:
+    ) -> dict[str, Any] | None:
         rows = self._rows(
             """
             MATCH (st:Story {id:$sid})-[:HAS_SCENE]->(sc:Scene)
@@ -60,7 +60,7 @@ class ScenesQueries:
 
     def previous_scene_for_entity_in_story(
         self, story_id: str, entity_id: str, before_sequence_index: int
-    ) -> Dict[str, Any] | None:
+    ) -> dict[str, Any] | None:
         rows = self._rows(
             """
             MATCH (st:Story {id:$sid})-[:HAS_SCENE]->(sc:Scene)

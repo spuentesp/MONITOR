@@ -26,7 +26,10 @@ def test_recorder_can_create_emergent_npc_scene_fact_and_relations():
                 "id": "ent-jimmy",
                 "name": "Jimmy",
                 "type": "character",
-                "attributes": {"mutant": True, "traits": {"skin": "lizard", "feeds_on": "sunlight"}},
+                "attributes": {
+                    "mutant": True,
+                    "traits": {"skin": "lizard", "feeds_on": "sunlight"},
+                },
             }
         ],
         new_scene={

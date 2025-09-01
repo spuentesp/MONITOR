@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-from typing import List
-
 from core.domain.story import Story
 
 
 class StoriesScenesMixin:
-    def _upsert_stories_and_scenes(self, universe_id: str, stories: List[Story]):
+    def _upsert_stories_and_scenes(self, universe_id: str, stories: list[Story]):
         # Stories
         srows = []
         for s in stories:
-            props = {"title": s.title, "summary": s.summary, "universe_id": universe_id, "arc_id": s.arc_id}
+            props = {
+                "title": s.title,
+                "summary": s.summary,
+                "universe_id": universe_id,
+                "arc_id": s.arc_id,
+            }
             props = {k: self._sanitize(v) for k, v in props.items()}
             srows.append({"id": s.id, "props": props})
         self.repo.run(
@@ -25,7 +28,9 @@ class StoriesScenesMixin:
             rows=srows,
         )
         # Story USES_SYSTEM (optional, overrides universe scope while active)
-        ssys_rows = [{"sid": s.id, "sys": s.system_id} for s in stories if getattr(s, "system_id", None)]
+        ssys_rows = [
+            {"sid": s.id, "sys": s.system_id} for s in stories if getattr(s, "system_id", None)
+        ]
         if ssys_rows:
             self.repo.run(
                 """
@@ -45,7 +50,10 @@ class StoriesScenesMixin:
             MATCH (s:Story {id: row.id})
             MERGE (a)-[:HAS_STORY {sequence_index: row.seq}]->(s)
             """,
-            rows=[{"id": s.id, "props": {"arc_id": s.arc_id}, "seq": idx + 1} for idx, s in enumerate(stories)],
+            rows=[
+                {"id": s.id, "props": {"arc_id": s.arc_id}, "seq": idx + 1}
+                for idx, s in enumerate(stories)
+            ],
         )
         # Scenes per story
         for s in stories:
@@ -75,7 +83,7 @@ class StoriesScenesMixin:
                 rows=scrows,
             )
 
-    def _upsert_appears_in(self, stories: List[Story]):
+    def _upsert_appears_in(self, stories: list[Story]):
         rows = []
         for st in stories:
             if not st.scenes:

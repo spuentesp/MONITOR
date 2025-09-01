@@ -1,27 +1,27 @@
 # English version of universo.py
 
-from typing import List, Optional
-from pydantic import BaseModel, Field
 from uuid import uuid4
 
-from core.domain.story import Story
-from typing import Optional
+from pydantic import BaseModel, Field
+
+from core.domain.arc import Arc
 from core.domain.axiom import Axiom
 from core.domain.entity import ArchetypeEntity, ConcreteEntity
-from core.domain.arc import Arc
 from core.domain.fact import Fact, RelationState
+from core.domain.story import Story
+
 
 class Universe(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str
-    description: Optional[str] = None
-    stories: List[Story] = Field(default_factory=list)
-    arcs: List[Arc] = Field(default_factory=list)
-    entities: List[ConcreteEntity] = Field(default_factory=list)
-    multiverse_id: Optional[str] = None
-    system_id: Optional[str] = None  # USES_SYSTEM at Universe scope
+    description: str | None = None
+    stories: list[Story] = Field(default_factory=list)
+    arcs: list[Arc] = Field(default_factory=list)
+    entities: list[ConcreteEntity] = Field(default_factory=list)
+    multiverse_id: str | None = None
+    system_id: str | None = None  # USES_SYSTEM at Universe scope
     # Ontology attachments at universe scope
-    axioms: List[Axiom] = Field(default_factory=list)
-    archetypes: List[ArchetypeEntity] = Field(default_factory=list)
-    facts: List[Fact] = Field(default_factory=list)
-    relation_states: List[RelationState] = Field(default_factory=list)
+    axioms: list[Axiom] = Field(default_factory=list)
+    archetypes: list[ArchetypeEntity] = Field(default_factory=list)
+    facts: list[Fact] = Field(default_factory=list)
+    relation_states: list[RelationState] = Field(default_factory=list)

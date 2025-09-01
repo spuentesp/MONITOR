@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 
 class StewardService:
@@ -12,9 +12,9 @@ class StewardService:
     def __init__(self, query_service: Any):
         self.q = query_service
 
-    def validate(self, deltas: Dict[str, Any]) -> Tuple[bool, List[str], List[str]]:
-        warnings: List[str] = []
-        errors: List[str] = []
+    def validate(self, deltas: dict[str, Any]) -> tuple[bool, list[str], list[str]]:
+        warnings: list[str] = []
+        errors: list[str] = []
         scene_id = deltas.get("scene_id")
 
         # Check that participants referenced in facts exist (if provided)

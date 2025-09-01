@@ -1,20 +1,24 @@
 from __future__ import annotations
 
-import os
-from typing import Dict, Any
 import json
+import os
+from typing import Any
 
 import streamlit as st
 
-from core.engine.orchestrator import Orchestrator, OrchestratorConfig, build_live_tools, flush_staging
-from core.generation.providers import select_llm_from_env
+from core.engine.orchestrator import (
+    Orchestrator,
+    OrchestratorConfig,
+    build_live_tools,
+    flush_staging,
+)
 from core.engine.steward import StewardService
-
+from core.generation.providers import select_llm_from_env
 
 st.set_page_config(page_title="MONITOR — Agents Chat", layout="wide")
 
 
-def build_orchestrator(mode: str) -> Dict[str, Any]:
+def build_orchestrator(mode: str) -> dict[str, Any]:
     # Ensure env reflects current sidebar configuration for provider selection
     os.environ["MONITOR_LLM_BACKEND"] = st.session_state.get("llm_backend", "mock")
     if st.session_state.get("openai_api_key"):
@@ -49,7 +53,7 @@ def ensure_session_objects():
             st.session_state[k] = v
 
 
-def _deep_merge(base: Dict[str, Any], patch: Dict[str, Any]) -> Dict[str, Any]:
+def _deep_merge(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
     out = dict(base or {})
     for k, v in (patch or {}).items():
         if isinstance(v, dict) and isinstance(out.get(k), dict):
@@ -84,10 +88,16 @@ with st.sidebar:
     if st.session_state.llm_backend == "openai":
         st.session_state.openai_api_key = st.text_input("OpenAI API Key", type="password")
         st.session_state.openai_model = st.text_input("Model", value=st.session_state.openai_model)
-        st.session_state.openai_base_url = st.text_input("Base URL (optional)", value=st.session_state.openai_base_url)
+        st.session_state.openai_base_url = st.text_input(
+            "Base URL (optional)", value=st.session_state.openai_base_url
+        )
     st.session_state.mode = st.radio("Mode", ["copilot", "autopilot"], horizontal=True)
-    st.session_state.scene_id = st.text_input("Scene ID (optional)", value=st.session_state.scene_id)
-    st.session_state.persist_each = st.checkbox("Persist a simple Fact per turn", value=st.session_state.persist_each)
+    st.session_state.scene_id = st.text_input(
+        "Scene ID (optional)", value=st.session_state.scene_id
+    )
+    st.session_state.persist_each = st.checkbox(
+        "Persist a simple Fact per turn", value=st.session_state.persist_each
+    )
 
     cols = st.columns(2)
     if cols[0].button("Reset Session"):
@@ -120,19 +130,22 @@ with st.sidebar:
                 svc = StewardService(ctx_res.query_service)
                 ok, warns, errs = svc.validate(merged)
                 from core.engine.tools import recorder_tool
+
                 if ok:
                     commit_out = recorder_tool(ctx_res, draft="", deltas=merged)
                 else:
                     # stage in dry-run for traceability
                     staged_ctx = build_live_tools(dry_run=True)
                     commit_out = recorder_tool(staged_ctx, draft="", deltas=merged)
-                st.json({
-                    "ok": ok,
-                    "warnings": warns,
-                    "errors": errs,
-                    "deltas": merged,
-                    "commit": commit_out,
-                })
+                st.json(
+                    {
+                        "ok": ok,
+                        "warnings": warns,
+                        "errors": errs,
+                        "deltas": merged,
+                        "commit": commit_out,
+                    }
+                )
         # Show current staging buffer size if available
         try:
             ctx0 = st.session_state.get("ctx")
@@ -185,8 +198,10 @@ if user_intent:
         except Exception as e:  # pragma: no cover
             out["persist_error"] = str(e)
 
-    st.session_state["history"].append({
-        "intent": user_intent,
-        **out,
-    })
+    st.session_state["history"].append(
+        {
+            "intent": user_intent,
+            **out,
+        }
+    )
     st.experimental_rerun()

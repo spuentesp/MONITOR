@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 import os
-from typing import Iterable
-from neo4j import GraphDatabase, Driver
+
 from dotenv import load_dotenv
+from neo4j import Driver, GraphDatabase
 
 
 class Neo4jRepo:
-    def __init__(self, uri: str | None = None, user: str | None = None, password: str | None = None):
+    def __init__(
+        self, uri: str | None = None, user: str | None = None, password: str | None = None
+    ):
         # Load env from .env if present (non-invasive)
         load_dotenv()
         self.uri = uri or os.getenv("NEO4J_URI")
@@ -18,7 +21,9 @@ class Neo4jRepo:
     def connect(self):
         if not self._driver:
             if not self.uri or not self.user or not self.password:
-                raise ValueError("Missing Neo4j connection env. Set NEO4J_URI, NEO4J_USER, NEO4J_PASS.")
+                raise ValueError(
+                    "Missing Neo4j connection env. Set NEO4J_URI, NEO4J_USER, NEO4J_PASS."
+                )
             self._driver = GraphDatabase.driver(self.uri, auth=(self.user, self.password))
         return self
 

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class BaseQueries:
     def __init__(self, repo):
         self.repo = repo
 
-    def _rows(self, text: str, **params) -> List[Dict[str, Any]]:
+    def _rows(self, text: str, **params) -> list[dict[str, Any]]:
         rows = self.repo.run(text, **params)
         return [dict(r) for r in rows]
