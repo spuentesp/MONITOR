@@ -13,6 +13,7 @@ from core.domain.sheet import Sheet
 from core.domain.event import Event
 from core.domain.scene import Scene
 from core.persistence.neo4j_repo import Neo4jRepo
+from core.persistence.projector import Projector
 
 
 app = typer.Typer(help="M.O.N.I.T.O.R. CLI")
@@ -55,8 +56,7 @@ def init_multiverse(
     typer.echo(f"Wrote omniverse JSON to {out}")
 
 
-if __name__ == "__main__":
-    app()
+"""CLI entry point defined at bottom after all commands are registered."""
 
 
 @app.command("neo4j-bootstrap")
@@ -68,3 +68,19 @@ def neo4j_bootstrap():
         repo.bootstrap_constraints()
         typer.echo("Constraints ensured.")
     repo.close()
+
+
+@app.command("project-from-yaml")
+def project_from_yaml(
+    path: Path = typer.Argument(..., help="Path to multiverse YAML"),
+    ensure_constraints: bool = typer.Option(True, help="Ensure constraints before projecting"),
+):
+    repo = Neo4jRepo().connect()
+    projector = Projector(repo)
+    projector.project_from_yaml(path, ensure_constraints=ensure_constraints)
+    typer.echo(f"Projected YAML into Neo4j: {path}")
+    repo.close()
+
+
+if __name__ == "__main__":
+    app()
