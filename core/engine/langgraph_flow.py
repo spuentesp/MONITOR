@@ -30,7 +30,16 @@ def build_langgraph_flow(tools: Any):
         pass
 
     def director(state: dict[str, Any]) -> dict[str, Any]:
+        # Use LLM-backed Director if provided; fallback to trivial plan
         intent = state.get("intent", "")
+        try:
+            if tools.get("director"):
+                reply = tools["director"].act([
+                    {"role": "user", "content": f"Intent: {intent}. Return a tiny plan."}
+                ])
+                return {**state, "plan": reply}
+        except Exception:
+            pass
         return {**state, "plan": {"beats": [intent], "assumptions": []}}
 
     def librarian(state: dict[str, Any]) -> dict[str, Any]:
@@ -49,9 +58,27 @@ def build_langgraph_flow(tools: Any):
                 evidence.append({"relations": rels})
             except Exception:
                 pass
+        # Optionally let LLM librarian summarize evidence
+        try:
+            if tools.get("librarian") and evidence:
+                summary = tools["librarian"].act([
+                    {"role": "user", "content": f"Summarize briefly: {str(evidence)[:800]}"}
+                ])
+                return {**state, "evidence": evidence, "evidence_summary": summary}
+        except Exception:
+            pass
         return {**state, "evidence": evidence}
 
     def steward(state: dict[str, Any]) -> dict[str, Any]:
+        # LLM-backed steward for quick validation hints
+        try:
+            if tools.get("steward"):
+                hints = tools["steward"].act([
+                    {"role": "user", "content": f"Validate plan and draft context: {str({k:v for k,v in state.items() if k in ['plan','evidence']})[:800]}"}
+                ])
+                return {**state, "validation": {"ok": True, "warnings": [hints]}}
+        except Exception:
+            pass
         return {**state, "validation": {"ok": True, "warnings": []}}
 
     def narrator(state: dict[str, Any]) -> dict[str, Any]:
@@ -61,6 +88,12 @@ def build_langgraph_flow(tools: Any):
 
     def critic(state: dict[str, Any]) -> dict[str, Any]:
         draft = state.get("draft", "")
+        try:
+            if tools.get("critic"):
+                critique = tools["critic"].act([{ "role": "user", "content": draft }])
+                return {**state, "critique": critique}
+        except Exception:
+            pass
         return {**state, "critique": {"coherence": 0.9, "length": len(draft)}}
 
     def archivist(state: dict[str, Any]) -> dict[str, Any]:

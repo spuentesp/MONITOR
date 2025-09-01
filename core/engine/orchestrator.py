@@ -7,6 +7,10 @@ from typing import Any
 from core.agents.archivist import archivist_agent
 from core.agents.base import Agent, Session
 from core.agents.narrator import narrator_agent
+from core.agents.director import director_agent
+from core.agents.librarian import librarian_agent as librarian_llm_agent
+from core.agents.steward import steward_agent as steward_llm_agent
+from core.agents.critic import critic_agent
 from core.engine.cache import ReadThroughCache, StagingStore
 from core.engine.langgraph_flow import select_engine_backend
 from core.engine.librarian import LibrarianService
@@ -247,8 +251,13 @@ def run_once(
             "query_tool": query_tool,
             "recorder_tool": recorder_tool,
             "llm": llm,
-            "narrator": narrator_agent(llm),
-            "archivist": archivist_agent(llm),
+                "narrator": narrator_agent(llm),
+                "archivist": archivist_agent(llm),
+                # Additional LLM agents for flow
+                "director": director_agent(llm),
+                "librarian": librarian_llm_agent(llm),
+                "steward": steward_llm_agent(llm),
+                "critic": critic_agent(llm),
         }
         graph = build_langgraph_flow(tools_pkg)
         out = graph.invoke({"intent": user_intent, "scene_id": scene_id})
