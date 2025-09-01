@@ -188,3 +188,39 @@
 {"facts": [{"description": "x"}], "scene_id": null}
 {"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
 {"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "The lone figure stood atop the rugged, weathered cliff, the wind whipping their dark hair into a frenzy as they gazed out across the turbulent sea. The salty spray stung their face…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "I need a bit more information to begin our story. Can you please provide the context for our scene, such as:\n\n- A brief setting (e.g. forest, city, desert)\n- A main character (e.g.…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "The dimly lit alleyway, a labyrinth of shadows that seemed to writhe and twist like living things. The air was heavy with the scent of damp earth and decaying trash. You stood at t…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest. The air is heavy with the scent of damp earth and decaying leaves. A faint mist clings to your skin, making…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "The dimly lit alleyway seems to swallow the faint glow of streetlights above. Shadows dance across crumbling brick walls, as if alive. You stand amidst the silence, the only sound …", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "Scene s1: \n\nYou find yourself standing at the edge of a dense fog, the air thick with dampness and the scent of wet earth. A faint, flickering light beckons you from deeper within …", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest, the trees towering above like sentinels. The air is heavy with the scent of damp earth and decaying leaves.…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "I'm happy to begin our story, but I need a character name or a brief description of the protagonist to proceed.\n\nAlternatively, I can offer you a pre-defined character concept to w…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}

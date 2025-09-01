@@ -75,3 +75,25 @@ class ScenesQueries:
             idx=before_sequence_index,
         )
         return rows[0] if rows else None
+
+    def stories_in_universe(self, universe_id: str) -> list[dict[str, Any]]:
+        return self._rows(
+            """
+            MATCH (u:Universe {id:$uid})-[:HAS_STORY]->(st:Story)
+            OPTIONAL MATCH (a:Arc)-[:HAS_STORY]->(st)
+            RETURN st.id AS id, st.title AS title, st.sequence_index AS sequence_index,
+                   a.id AS arc_id
+            ORDER BY sequence_index, title
+            """,
+            uid=universe_id,
+        )
+
+    def scenes_in_story(self, story_id: str) -> list[dict[str, Any]]:
+        return self._rows(
+            """
+            MATCH (:Story {id:$sid})-[:HAS_SCENE]->(sc:Scene)
+            RETURN sc.id AS id, sc.title AS title, sc.sequence_index AS sequence_index
+            ORDER BY sequence_index
+            """,
+            sid=story_id,
+        )

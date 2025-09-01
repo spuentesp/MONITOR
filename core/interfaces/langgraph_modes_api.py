@@ -19,6 +19,7 @@ class ChatReq(BaseModel):
     message: str = Field(..., description="Mensaje del usuario")
     universe_id: Optional[str] = Field(None, description="Universo activo")
     override: Optional[str] = Field(None, description="Forzar 'narration' o 'monitor'")
+    mode: str = Field("copilot", description="'copilot' (dry-run/staging) o 'autopilot' (persistir)")
 
 
 class ChatRes(BaseModel):
@@ -40,7 +41,8 @@ def chat(req: ChatReq, request: Request) -> ChatRes:
         state.pop("override_mode", None)
 
     # Inyecta ToolContext
-    tools = build_live_tools(dry_run=True)
+    # Construye ToolContext con o sin persistencia según modo
+    tools = build_live_tools(dry_run=(req.mode != "autopilot"))
     # Extrae ContextToken del header si existe para omniverse/multiverse/universe
     try:
         token_raw = request.headers.get("X-Context-Token")

@@ -35,15 +35,36 @@ def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
     Example: query_tool(ctx, "relations_effective_in_scene", scene_id="scene:1").
     """
     allowed = {
+        # Systems
         "system_usage_summary",
         "effective_system_for_universe",
         "effective_system_for_story",
         "effective_system_for_scene",
         "effective_system_for_entity",
         "effective_system_for_entity_in_story",
+        # Relations
         "relation_state_history",
         "relations_effective_in_scene",
         "relation_is_active_in_scene",
+        # Entities / participants
+        "entities_in_scene",
+        "entities_in_story",
+        "entities_in_universe",
+        "entities_in_story_by_role",
+        "entities_in_universe_by_role",
+        "participants_by_role_for_scene",
+        "participants_by_role_for_story",
+        # Facts / scenes
+        "facts_for_scene",
+        "facts_for_story",
+        "scenes_for_entity",
+        "scenes_in_story",
+        # Catalog/listing helpers
+        "stories_in_universe",
+        "list_multiverses",
+        "list_universes_for_multiverse",
+        # Entity lookup helpers
+        "entity_by_name_in_universe",
     }
     if method not in allowed:
         raise ValueError(f"Query method not allowed: {method}")

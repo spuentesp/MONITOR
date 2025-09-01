@@ -92,3 +92,16 @@ class EntitiesQueries:
             uid=universe_id,
             role=role,
         )
+
+    def entity_by_name_in_universe(self, universe_id: str, name: str) -> dict[str, Any] | None:
+        rows = self._rows(
+            """
+            MATCH (u:Universe {id:$uid})-[:HAS_STORY]->(:Story)-[:HAS_SCENE]->(:Scene)<-[:APPEARS_IN]-(e:Entity)
+            WHERE toLower(e.name) = toLower($name)
+            RETURN e.id AS id, e.name AS name, e.type AS type
+            LIMIT 1
+            """,
+            uid=universe_id,
+            name=name,
+        )
+        return rows[0] if rows else None

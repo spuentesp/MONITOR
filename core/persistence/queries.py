@@ -14,6 +14,7 @@ from core.persistence.queries_lib.facts import FactsQueries
 from core.persistence.queries_lib.relations import RelationsQueries
 from core.persistence.queries_lib.scenes import ScenesQueries
 from core.persistence.queries_lib.systems import SystemsQueries
+from core.persistence.queries_lib.catalog import CatalogQueries
 
 
 class QueryService(
@@ -24,6 +25,7 @@ class QueryService(
     RelationsQueries,
     AxiomsQueries,
     SystemsQueries,
+    CatalogQueries,
 ):
     def __init__(self, repo: RepoPort | Any):
         super().__init__(repo)  # BaseQueries expects a repo duck-typed to RepoPort
