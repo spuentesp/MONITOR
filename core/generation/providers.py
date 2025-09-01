@@ -48,6 +48,43 @@ class OpenAIChat(LLM):
         return resp.choices[0].message.content or ""  # type: ignore
 
 
+class GroqChat(LLM):
+    """Groq chat backend.
+
+    Uses the groq Python client (pip install groq).
+    Model via MONITOR_GROQ_MODEL (e.g., llama3-8b-8192).
+    """
+
+    def __init__(self, api_key: str, model: str):
+        try:
+            from groq import Groq  # type: ignore
+        except Exception as e:  # pragma: no cover
+            raise RuntimeError("groq package not installed; pip install groq") from e
+        self._client = Groq(api_key=api_key)  # type: ignore
+        self._model = model
+
+    def complete(
+        self,
+        *,
+        system_prompt: str,
+        messages: list[Message],
+        temperature: float = 0.7,
+        max_tokens: int = 400,
+        extra: dict[str, Any] | None = None,
+    ) -> str:
+        msgs = [{"role": "system", "content": system_prompt}] + [
+            {"role": m["role"], "content": m["content"]} for m in messages
+        ]
+        resp = self._client.chat.completions.create(  # type: ignore
+            model=self._model,
+            messages=msgs,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            **({} if extra is None else extra),
+        )
+        return resp.choices[0].message.content or ""  # type: ignore
+
+
 def select_llm_from_env() -> LLM:
     backend = os.getenv("MONITOR_LLM_BACKEND", "mock").lower()
     if backend == "openai":
@@ -59,6 +96,15 @@ def select_llm_from_env() -> LLM:
             return MockLLM()
         try:
             return OpenAIChat(api_key=api_key, model=model, base_url=base_url)
+        except Exception:
+            return MockLLM()
+    elif backend == "groq":
+        api_key = os.getenv("MONITOR_GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+        model = os.getenv("MONITOR_GROQ_MODEL", "llama3-8b-8192")
+        if not api_key:
+            return MockLLM()
+        try:
+            return GroqChat(api_key=api_key, model=model)
         except Exception:
             return MockLLM()
     # default mock

@@ -34,6 +34,11 @@ def build_orchestrator(mode: str) -> dict[str, Any]:
         os.environ["MONITOR_OPENAI_MODEL"] = st.session_state.get("openai_model")
     if st.session_state.get("openai_base_url"):
         os.environ["MONITOR_OPENAI_BASE_URL"] = st.session_state.get("openai_base_url")
+    # Groq mapping (reuse state keys set above for simplicity)
+    if st.session_state.get("groq_api_key"):
+        os.environ["MONITOR_GROQ_API_KEY"] = st.session_state.get("groq_api_key")
+    if st.session_state.get("groq_model"):
+        os.environ["MONITOR_GROQ_MODEL"] = st.session_state.get("groq_model")
 
     ctx = build_live_tools(dry_run=(mode != "autopilot"))
     llm = select_llm_from_env()
@@ -91,13 +96,16 @@ ensure_session_objects()
 
 with st.sidebar:
     st.header("Agents Settings")
-    st.session_state.llm_backend = st.selectbox("LLM Backend", ["mock", "openai"], index=0)
+    st.session_state.llm_backend = st.selectbox("LLM Backend", ["mock", "openai", "groq"], index=0)
     if st.session_state.llm_backend == "openai":
         st.session_state.openai_api_key = st.text_input("OpenAI API Key", type="password")
         st.session_state.openai_model = st.text_input("Model", value=st.session_state.openai_model)
         st.session_state.openai_base_url = st.text_input(
             "Base URL (optional)", value=st.session_state.openai_base_url
         )
+    elif st.session_state.llm_backend == "groq":
+        st.session_state.openai_api_key = st.text_input("Groq API Key", type="password", key="groq_api_key")
+        st.session_state.openai_model = st.text_input("Groq Model", value="llama3-8b-8192", key="groq_model")
     st.session_state.mode = st.radio("Mode", ["copilot", "autopilot"], horizontal=True)
     st.session_state.scene_id = st.text_input(
         "Scene ID (optional)", value=st.session_state.scene_id
