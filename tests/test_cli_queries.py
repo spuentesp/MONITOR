@@ -42,6 +42,8 @@ def test_cli_query_commands_exist_and_print_json(monkeypatch):
             return {"ok": True}
         def clone_universe_full(self, *_args):
             return {"ok": True}
+        def clone_universe_subset(self, *_args, **kwargs):
+            return {"ok": True}
 
     import core.interfaces.cli_interface as cli
     monkeypatch.setattr(cli, "Neo4jRepo", lambda: FakeRepo())
@@ -59,6 +61,7 @@ def test_cli_query_commands_exist_and_print_json(monkeypatch):
     ["q", "axioms-in-scene", "SC-7"],
     ["branch-universe", "U-1", "SC-3", "U-1b"],
     ["clone-universe", "U-1", "U-1c"],
+    ["clone-universe-subset", "U-1", "U-1s", "--stories", "ST-1,ST-2", "--arcs", "ARC-1", "--scene-max-index", "2"],
     ]:
         res = runner.invoke(app, sub)
     assert res.exit_code == 0

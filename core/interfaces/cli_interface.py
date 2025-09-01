@@ -208,10 +208,12 @@ def branch_universe(
     divergence_scene_id: str = typer.Argument(..., help="Scene ID where the branch diverges (inclusive)"),
     new_universe_id: str = typer.Argument(..., help="ID for the new branched Universe"),
     name: Optional[str] = typer.Option(None, "--name", help="Optional name for the new Universe"),
+    force: bool = typer.Option(False, "--force", help="Overwrite if target universe exists"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Compute counts only; no writes"),
 ):
     repo = Neo4jRepo().connect()
     svc = BranchService(repo)
-    out = svc.branch_universe_at_scene(source_universe_id, divergence_scene_id, new_universe_id, name)
+    out = svc.branch_universe_at_scene(source_universe_id, divergence_scene_id, new_universe_id, name, force=force, dry_run=dry_run)
     _print_json(out)
     repo.close()
 
@@ -221,10 +223,43 @@ def clone_universe(
     source_universe_id: str = typer.Argument(..., help="ID of the source Universe to clone"),
     new_universe_id: str = typer.Argument(..., help="ID for the new cloned Universe"),
     name: Optional[str] = typer.Option(None, "--name", help="Optional name for the new Universe"),
+    force: bool = typer.Option(False, "--force", help="Overwrite if target universe exists"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Compute counts only; no writes"),
 ):
     repo = Neo4jRepo().connect()
     svc = BranchService(repo)
-    out = svc.clone_universe_full(source_universe_id, new_universe_id, name)
+    out = svc.clone_universe_full(source_universe_id, new_universe_id, name, force=force, dry_run=dry_run)
+    _print_json(out)
+    repo.close()
+
+
+@app.command("clone-universe-subset")
+def clone_universe_subset(
+    source_universe_id: str = typer.Argument(..., help="ID of the source Universe"),
+    new_universe_id: str = typer.Argument(..., help="ID for the new Universe"),
+    name: Optional[str] = typer.Option(None, "--name", help="Optional name for the new Universe"),
+    stories: Optional[str] = typer.Option(None, "--stories", help="Comma-separated Story IDs to include"),
+    arcs: Optional[str] = typer.Option(None, "--arcs", help="Comma-separated Arc IDs to include"),
+    scene_max_index: Optional[int] = typer.Option(None, "--scene-max-index", help="Max scene sequence_index per story"),
+    include_all_entities: bool = typer.Option(False, "--all-entities", help="Include all entities in universe, not only those in included scenes"),
+    force: bool = typer.Option(False, "--force", help="Overwrite if target universe exists"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Compute counts only; no writes"),
+):
+    repo = Neo4jRepo().connect()
+    svc = BranchService(repo)
+    story_list = [s.strip() for s in stories.split(",")] if stories else None
+    arc_list = [a.strip() for a in arcs.split(",")] if arcs else None
+    out = svc.clone_universe_subset(
+        source_universe_id,
+        new_universe_id,
+        name,
+        stories=story_list,
+        arcs=arc_list,
+        scene_max_index=scene_max_index,
+        include_all_entities=include_all_entities,
+        force=force,
+        dry_run=dry_run,
+    )
     _print_json(out)
     repo.close()
 
