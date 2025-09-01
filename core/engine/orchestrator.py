@@ -7,6 +7,8 @@ from core.agents.base import Agent, AgentConfig, Session
 from core.agents.narrator import narrator_agent
 from core.agents.archivist import archivist_agent
 from core.engine.tools import ToolContext, query_tool, rules_tool, notes_tool, recorder_tool
+from core.engine.librarian import LibrarianService
+from core.engine.steward import StewardService
 import os
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.queries import QueryService
@@ -38,6 +40,13 @@ class Orchestrator:
         self.narrator: Agent = narrator_agent(llm)
         self.archivist: Agent = archivist_agent(llm)
         self.session = Session(primary=self.narrator)
+        self.librarian_svc = LibrarianService(self.tools.query_service)
+        self.steward_svc = StewardService(self.tools.query_service)
+
+    def _build_context(self, scene_id: Optional[str]) -> str:
+        if not scene_id:
+            return ""
+        return self.librarian_svc.scene_brief(scene_id)
 
     def step(self, user_intent: str, scene_id: Optional[str] = None) -> Dict[str, Any]:
         # Director (stub): interpret intent as goals
@@ -55,9 +64,16 @@ class Orchestrator:
         # Steward: validate (stub)
         validation = {"ok": True, "warnings": []}
 
-        # Narrator: draft
+        # Narrator: draft (RAG-style context injection as ephemeral system message)
+        context_msg = self._build_context(scene_id)
+        messages = list(self.session.history)
+        if context_msg:
+            messages.append({"role": "system", "content": context_msg})
+        messages.append({"role": "user", "content": user_intent})
+        draft = self.narrator.act(messages)
+        # Update session history without persisting the ephemeral system context
         self.session.user(user_intent)
-        draft = self.session.step()
+        self.session.history.append({"role": "assistant", "content": draft})
 
         # Critic: score (stub)
         critique = {"coherence": 0.9, "length": len(draft)}
@@ -65,8 +81,14 @@ class Orchestrator:
         # Archivist: summarize
         summary = self.archivist.act([{"role": "user", "content": draft}])
 
-        # Recorder: dry-run commit plan
-        commit = recorder_tool(self.tools, draft=draft, deltas={"scene_id": scene_id})
+        # Steward: pre-commit validation; commit only if no errors
+        proposed = {"scene_id": scene_id}
+        ok, warns, errs = self.steward_svc.validate(proposed)
+        validation = {"ok": ok, "warnings": warns, "errors": errs}
+        if ok:
+            commit = recorder_tool(self.tools, draft=draft, deltas=proposed)
+        else:
+            commit = {"mode": "blocked", "reason": "steward_errors", "errors": errs}
 
         return {
             "plan": plan,
@@ -117,7 +139,8 @@ def run_once(user_intent: str, scene_id: Optional[str] = None, mode: str = "copi
     """
     tools = build_live_tools(dry_run=(mode != "autopilot"))
     backend = select_engine_backend()
-    from core.generation.mock_llm import MockLLM  # local import to avoid hard dep
+    from core.generation.providers import select_llm_from_env
+    llm = select_llm_from_env()
     if backend == "langgraph":
         try:
             from core.engine.langgraph_flow import build_langgraph_flow
@@ -129,13 +152,13 @@ def run_once(user_intent: str, scene_id: Optional[str] = None, mode: str = "copi
             "ctx": tools,
             "query_tool": query_tool,
             "recorder_tool": recorder_tool,
-            "llm": MockLLM(),
-            "narrator": narrator_agent(MockLLM()),
-            "archivist": archivist_agent(MockLLM()),
+            "llm": llm,
+            "narrator": narrator_agent(llm),
+            "archivist": archivist_agent(llm),
         }
         graph = build_langgraph_flow(tools_pkg)
         out = graph.invoke({"intent": user_intent, "scene_id": scene_id})
         return out
     # fallback to in-memory orchestrator
-    orch = Orchestrator(llm=MockLLM(), tools=tools, config=OrchestratorConfig(mode=mode))
+    orch = Orchestrator(llm=llm, tools=tools, config=OrchestratorConfig(mode=mode))
     return orch.step(user_intent=user_intent, scene_id=scene_id)

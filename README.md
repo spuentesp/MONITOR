@@ -187,10 +187,19 @@ Orchestration stack: **LangGraph** or **CrewAI** (pluggable).
 2. **Clone repo** & copy example env: `.env.example → .env` (LLM keys optional).
 3. **Start services**: `docker compose up -d` (Neo4j/Memgraph, Meilisearch, Qdrant/Weaviate, MinIO, Redis, Langfuse).
 4. **Backend**: `uvicorn backend.main:app --reload` (FastAPI).
-5. **Frontend**: `streamlit run frontend/Home.py`.
+5. **Frontend**: `streamlit run frontend/Chat.py` (agents chat UI; copilot/autopilot toggle).
 6. **Open**: Streamlit UI → select context → try **co-pilot** narration.
 
 > Ingestion: upload a PDF/MD/HTML **or edit YAML**; the pipeline extracts/loads, chunks, embeds, and indexes to FTS & vectors with proper scoping.
+
+### LLM configuration
+
+- Default backend: mock (no API keys required)
+- To use OpenAI-compatible chat:
+	- `export MONITOR_LLM_BACKEND=openai`
+	- `export OPENAI_API_KEY=sk-...`
+	- Optional: `export MONITOR_OPENAI_MODEL=gpt-4o-mini` and `export MONITOR_OPENAI_BASE_URL=...`
+
 
 ---
 

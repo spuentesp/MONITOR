@@ -19,6 +19,8 @@ from core.persistence.projector import Projector
 from core.persistence.queries import QueryService
 from core.persistence.brancher import BranchService
 from core.loaders.yaml_loader import load_omniverse_from_yaml
+from core.engine.orchestrator import run_once, build_live_tools, flush_staging, Orchestrator, OrchestratorConfig
+from core.generation.mock_llm import MockLLM
 
 
 load_dotenv(override=False)
@@ -69,6 +71,149 @@ def project_from_yaml(
     projector.project_from_yaml(path, ensure_constraints=ensure_constraints)
     typer.echo(f"Projected YAML into Neo4j: {path}")
     repo.close()
+
+
+# --- Agents / Orchestrator CLI ---
+
+@app.command("orchestrate-step")
+def orchestrate_step(
+    intent: str = typer.Argument(..., help="User intent / high-level goal"),
+    scene_id: Optional[str] = typer.Option(None, "--scene-id", help="Scene id to scope retrieval/relations"),
+    mode: str = typer.Option("copilot", "--mode", help="copilot (dry-run) or autopilot (commit)"),
+    record_fact: bool = typer.Option(False, "--record-fact", help="Also record a simple Fact from the draft"),
+):
+    """Run a single orchestrator step and print the result as JSON."""
+    out = run_once(intent, scene_id=scene_id, mode=mode)
+    # Optional: persist a simple Fact (draft summary) to demonstrate Recorder
+    if record_fact:
+        ctx = build_live_tools(dry_run=(mode != "autopilot"))
+        draft = out.get("draft") or intent
+        fact = {"description": (draft[:180] + ("…" if len(draft) > 180 else ""))}
+        if scene_id:
+            fact["occurs_in"] = scene_id
+        commit = {
+            "facts": [fact],
+            "scene_id": scene_id,
+        }
+        from core.engine.tools import recorder_tool
+
+        persisted = recorder_tool(ctx, draft=draft, deltas=commit)
+        out["persisted"] = persisted
+    typer.echo(json.dumps(out, indent=2, ensure_ascii=False))
+
+
+@app.command("agents-chat")
+def agents_chat(
+    mode: str = typer.Option("copilot", "--mode", help="copilot (dry-run) or autopilot (commit)"),
+    scene_id: Optional[str] = typer.Option(None, "--scene-id", help="Optional scene id for retrieval context"),
+    persist: bool = typer.Option(False, "--persist", help="Persist a simple Fact per turn from the draft"),
+):
+    """Interactive REPL to chat with agents and see plan/draft/commit outputs."""
+    ctx = build_live_tools(dry_run=(mode != "autopilot"))
+    orch = Orchestrator(llm=MockLLM(), tools=ctx, config=OrchestratorConfig(mode=mode))
+    typer.echo("Agents chat. Type :q to quit.")
+    while True:
+        try:
+            intent = input("> ").strip()
+        except EOFError:
+            break
+        if not intent or intent in (":q", "quit", "exit"):
+            break
+        out = orch.step(intent, scene_id=scene_id)
+        # Optional: persist a simple Fact (draft summary) each turn
+        if persist:
+            draft = out.get("draft") or intent
+            fact = {"description": (draft[:180] + ("…" if len(draft) > 180 else ""))}
+            if scene_id:
+                fact["occurs_in"] = scene_id
+            commit = {"facts": [fact], "scene_id": scene_id}
+            from core.engine.tools import recorder_tool
+
+            persisted = recorder_tool(ctx, draft=draft, deltas=commit)
+            out["persisted"] = persisted
+        typer.echo(json.dumps(out, indent=2, ensure_ascii=False))
+
+
+@app.command("flush-staging")
+def cli_flush_staging():
+    """Flush staged deltas to the graph (commit) and clear caches."""
+    ctx = build_live_tools(dry_run=False)
+    res = flush_staging(ctx)
+    typer.echo(json.dumps(res, indent=2, ensure_ascii=False))
+
+
+@app.command("resolve-deltas")
+def resolve_deltas(
+    deltas_file: Path = typer.Argument(..., help="Path to a JSON file with proposed deltas"),
+    fixes_file: Optional[Path] = typer.Option(None, "--fixes", help="Optional JSON with user-provided fixes"),
+    mode: str = typer.Option("copilot", "--mode", help="copilot (stage) or autopilot (commit)"),
+    commit: bool = typer.Option(False, "--commit", help="When --mode autopilot, actually commit"),
+):
+    """Validate deltas, apply optional fixes, and stage or commit based on mode."""
+    deltas = json.loads(Path(deltas_file).read_text(encoding="utf-8"))
+    fixes = json.loads(Path(fixes_file).read_text(encoding="utf-8")) if fixes_file else None
+
+    def _deep_merge(a: dict, b: dict) -> dict:
+        out = dict(a or {})
+        for k, v in (b or {}).items():
+            if isinstance(v, dict) and isinstance(out.get(k), dict):
+                out[k] = _deep_merge(out[k], v)  # type: ignore[arg-type]
+            else:
+                out[k] = v
+        return out
+
+    merged = _deep_merge(deltas, fixes or {})
+    will_commit = bool(commit and mode == "autopilot")
+    ctx = build_live_tools(dry_run=(not will_commit))
+    from core.engine.steward import StewardService
+    svc = StewardService(ctx.query_service)
+    ok, warns, errs = svc.validate(merged)
+    result = {"ok": ok, "warnings": warns, "errors": errs, "deltas": merged}
+    from core.engine.tools import recorder_tool
+    commit_out = recorder_tool(ctx, draft="", deltas=merged)
+    result["commit"] = commit_out
+    typer.echo(json.dumps(result, indent=2, ensure_ascii=False))
+
+
+@app.command("weave-story")
+def weave_story(
+    beat: list[str] = typer.Option(..., "--beat", help="Add a beat/intention; repeat flag to add multiple"),
+    scene_id: Optional[str] = typer.Option(None, "--scene-id", help="Optional scene id for retrieval context"),
+    mode: str = typer.Option("copilot", "--mode", help="copilot (dry-run) or autopilot (commit)"),
+    persist: bool = typer.Option(False, "--persist", help="Persist a simple Fact per beat from the draft"),
+):
+    """Run a multi-step session in one run to demonstrate agents weaving a story."""
+    ctx = build_live_tools(dry_run=(mode != "autopilot"))
+    orch = Orchestrator(llm=MockLLM(), tools=ctx, config=OrchestratorConfig(mode=mode))
+    steps = []
+    full_text = []
+    for idx, b in enumerate(beat, start=1):
+        out = orch.step(b, scene_id=scene_id)
+        draft = out.get("draft") or b
+        full_text.append(draft)
+        if persist:
+            fact = {"description": (draft[:180] + ("…" if len(draft) > 180 else ""))}
+            if scene_id:
+                fact["occurs_in"] = scene_id
+            commit = {"facts": [fact], "scene_id": scene_id}
+            from core.engine.tools import recorder_tool
+
+            out["persisted"] = recorder_tool(ctx, draft=draft, deltas=commit)
+        steps.append({
+            "beat": b,
+            "plan": out.get("plan"),
+            "draft": draft,
+            "summary": out.get("summary"),
+            "commit": out.get("commit"),
+            "persisted": out.get("persisted"),
+        })
+    result = {
+        "scene_id": scene_id,
+        "mode": mode,
+        "steps": steps,
+        "combined_draft": "\n\n".join(full_text),
+    }
+    typer.echo(json.dumps(result, indent=2, ensure_ascii=False))
 
 
 # --- Queries CLI ---
