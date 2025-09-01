@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -25,7 +25,6 @@ class ConcreteEntity(BaseModel):
     relations: Dict[str, str] = Field(default_factory=dict)  # e.g., {"ally_of": "concrete-103"}
     system_id: Optional[str] = None
     sheets: List["Sheet"] = Field(default_factory=list)
-
-    class Config:
-        arbitrary_types_allowed = True
+    # Pydantic v2 config
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     sheets: List[Sheet] = Field(default_factory=list)
