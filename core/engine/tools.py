@@ -4,6 +4,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+try:  # Optional typing only; no runtime import dependency
+    from core.ports.cache import CachePort, StagingPort  # type: ignore
+    from core.ports.storage import QueryReadPort, RecorderWritePort  # type: ignore
+except Exception:  # pragma: no cover
+    CachePort = StagingPort = QueryReadPort = RecorderWritePort = Any  # type: ignore
+
 
 @dataclass
 class ToolContext:
@@ -14,13 +20,13 @@ class ToolContext:
     dry_run: if True, Recorder won't persist; returns a plan/diff instead.
     """
 
-    query_service: Any
-    recorder: Any | None = None
+    query_service: QueryReadPort | Any
+    recorder: RecorderWritePort | Any | None = None
     rules: Any | None = None
     dry_run: bool = True
     # Optional caches (duck-typed interfaces)
-    read_cache: Any | None = None
-    staging: Any | None = None
+    read_cache: CachePort | Any | None = None
+    staging: StagingPort | Any | None = None
 
 
 def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
