@@ -105,13 +105,53 @@ class Orchestrator:
 
 
 def build_live_tools(dry_run: bool = True) -> ToolContext:
-    """Construct a ToolContext backed by the live Neo4j graph using env vars, with optional caching."""
-    repo = Neo4jRepo().connect()
+    """Construct a ToolContext backed by the live Neo4j graph using env vars, with optional caching.
+
+    Falls back to a demo in-memory stub when Neo4j connection/env is missing so Streamlit can run.
+    """
     from core.services.query_service import QueryServiceFacade
     from core.services.recorder_service import RecorderServiceFacade
 
-    qs = QueryServiceFacade(QueryService(repo))
-    recorder = RecorderServiceFacade(RecorderService(repo))
+    try:
+        repo = Neo4jRepo().connect()
+        qs = QueryServiceFacade(QueryService(repo))
+        recorder = RecorderServiceFacade(RecorderService(repo))
+    except Exception:
+        # Demo fallback: minimal stubs that satisfy allowed query and recorder operations
+        class _QDemo:
+            def system_usage_summary(self, *_a, **_k):
+                return {}
+
+            def effective_system_for_universe(self, *_a, **_k):
+                return {}
+
+            def effective_system_for_story(self, *_a, **_k):
+                return {}
+
+            def effective_system_for_scene(self, *_a, **_k):
+                return {}
+
+            def effective_system_for_entity(self, *_a, **_k):
+                return {}
+
+            def effective_system_for_entity_in_story(self, *_a, **_k):
+                return {}
+
+            def relation_state_history(self, *_a, **_k):
+                return []
+
+            def relations_effective_in_scene(self, *_a, **_k):
+                return []
+
+            def relation_is_active_in_scene(self, *_a, **_k):
+                return False
+
+        class _RDemo:
+            def commit_deltas(self, **_payload):
+                return {"ok": True, "written": {}, "warnings": []}
+
+        qs = QueryServiceFacade(_QDemo())
+        recorder = RecorderServiceFacade(_RDemo())
     backend = os.getenv("MONITOR_CACHE_BACKEND", "").lower()  # "redis" or ""
     ttl = float(os.getenv("MONITOR_CACHE_TTL", "60"))
     if backend == "redis" and RedisReadThroughCache and RedisStagingStore:

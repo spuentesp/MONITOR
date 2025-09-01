@@ -87,3 +87,14 @@
 {"facts": [{"description": "x"}], "scene_id": null}
 {"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
 {"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "The scene unfolds: x What do you do?", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
