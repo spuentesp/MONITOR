@@ -12,9 +12,9 @@ Purpose
   - Contract: `core/generation/interfaces/llm.py`
   - Mock for tests: `core/generation/mock_llm.py`
 - Agents (MVP)
-  - Narrador (GM): `core/agents/narrador.py`
-  - Personificador (Character): `core/agents/personificador.py`
-  - Archivista (Librarian): `core/agents/archivista.py`
+  - Narrator (GM): `core/agents/narrator.py`
+  - Character (Character): `core/agents/character.py`
+  - Archivist (Librarian): `core/agents/archivist.py`
   - Base + Session: `core/agents/base.py`
 - Engine facade
   - `core/engine/__init__.py` → `default_narrative_session(llm)`
@@ -41,9 +41,9 @@ Purpose
 
 ## Prompts (guidelines)
 
-- Narrador: short, evocative, scene‑focused; end with 1 guiding question
-- Personificador: first‑person, concise reactions; maintain voice
-- Archivista: bullet points (summary, threads, inconsistencies)
+- Narrator: short, evocative, scene‑focused; end with 1 guiding question
+- Character: first‑person, concise reactions; maintain voice
+- Archivist: bullet points (summary, threads, inconsistencies)
 - Safety default: PG‑13; configurable per Story (planned)
 
 ---

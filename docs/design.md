@@ -260,7 +260,7 @@ workflow:
 
 **Decision:** Prefer **LangChain/LangGraph** for fine‑grained control over state, tools, and branching. **CrewAI** remains an optional composition layer for quick multi‑agent setups.
 
-**Current status:** The repo includes a lightweight, framework‑agnostic agent layer (Narrador/Archivista/Personificador + Session with a pluggable LLM interface) to unblock narrative tests and local iteration without external services.
+**Current status:** The repo includes a lightweight, framework‑agnostic agent layer (Narrator/Archivist/Character + Session with a pluggable LLM interface) to unblock narrative tests and local iteration without external services.
 
 **Sprint 4 plan:**
 - Keep agent contracts stable (AgentConfig, act(), Session.history).

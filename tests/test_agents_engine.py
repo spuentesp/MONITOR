@@ -7,8 +7,8 @@ if str(ROOT) not in sys.path:
 
 from core.generation.mock_llm import MockLLM  # noqa: E402
 from core.engine import default_narrative_session  # noqa: E402
-from core.agents.personificador import character_agent  # noqa: E402
-from core.agents.archivista import archivist_agent  # noqa: E402
+from core.agents.character import character_agent  # noqa: E402
+from core.agents.archivist import archivist_agent  # noqa: E402
 
 
 def test_narrative_session_produces_text():

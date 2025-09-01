@@ -6,7 +6,7 @@ M.O.N.I.T.O.R. is a personal system for **worldbuilding and assisted narration**
 
 > Goal: make it easy to create and explore canon and “what-if” branches, while keeping timelines, relations, and evidence consistent.
 
-M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assisted narration across multiple universes. It uses a harmonized graph-based ontology (Omniverse → Multiverse → Universe → Story → Scene) to model narrative continuity, facts, entities, and relations. The system supports hybrid search (full-text + vector), document ingestion, and branching for "what-if" scenarios. Agents (Orchestrator, Director, Librarian, Steward, Narrator, Critic, Personifier, Chat Host) orchestrate planning, evidence retrieval, validation, drafting, and critique. All canonical data is authored in YAML, with polyglot projections to databases for optimized querying and retrieval. The architecture is modular, with FastAPI backend, Streamlit frontend, and Dockerized services (Neo4j/Memgraph, Meilisearch, Qdrant/Weaviate, MinIO, Redis, Langfuse, ClickHouse).
+M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assisted narration across multiple universes. It uses a harmonized graph-based ontology (Omniverse → Multiverse → Universe → Story → Scene) to model narrative continuity, facts, entities, and relations. The system supports hybrid search (full-text + vector), document ingestion, and branching for "what-if" scenarios. Agents (Orchestrator, Director, Librarian, Steward, Narrator, Critic, Character, Chat Host) orchestrate planning, evidence retrieval, validation, drafting, and critique. All canonical data is authored in YAML, with polyglot projections to databases for optimized querying and retrieval. The architecture is modular, with FastAPI backend, Streamlit frontend, and Dockerized services (Neo4j/Memgraph, Meilisearch, Qdrant/Weaviate, MinIO, Redis, Langfuse, ClickHouse).
 
 ---
 
@@ -88,7 +88,7 @@ M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assist
 * **Steward**: validates continuity (axioms, archetype coverage, temporal overlaps, relation lifecycles).
 * **Narrator**: drafts narrative text (co-pilot and auto-pilot modes).
 * **Critic**: scores clarity, tone, coherence; suggests revisions.
-* **Personifier** (optional): chats as NPCs; scene-level roleplay.
+* **Character** (optional): chats as NPCs; scene-level roleplay.
 * **Chat Host**: user interface guardrails, ContextToken enforcement.
 
 * **Orchestrator**: Coordinates the end-to-end flow (planning → retrieval → validation → drafting → critique → persistence).
@@ -97,7 +97,7 @@ M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assist
 * **Steward**: Validates continuity (axioms, archetype coverage, temporal overlaps, relation lifecycles).
 * **Narrator**: Drafts narrative text (co-pilot and auto-pilot modes).
 * **Critic**: Scores clarity, tone, coherence; suggests revisions.
-* **Personifier**: Chats as NPCs; scene-level roleplay.
+* **Character**: Chats as NPCs; scene-level roleplay.
 * **Chat Host**: User interface guardrails, ContextToken enforcement.
 
 Orchestration stack: **LangGraph** or **CrewAI** (pluggable).

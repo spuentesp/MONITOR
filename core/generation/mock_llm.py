@@ -20,10 +20,10 @@ class MockLLM(LLM):
         max_tokens: int = 400,
         extra: Optional[Dict[str, Any]] = None,
     ) -> str:
-        last_user = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "" )
+        last_user = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
         last_user = last_user.strip().split("\n")[0][:120]
-        if "Archivista" in system_prompt:
+        if "Archivist" in system_prompt:
             return f"- Summary: {last_user or 'No events yet.'}\n- Threads: [tbd]"
-        if "Narrador" in system_prompt:
+        if "Narrator" in system_prompt:
             return f"The scene unfolds: {last_user or 'A quiet start.'} What do you do?"
         return f"[{system_prompt.split(',')[0]}] {last_user or 'Ready.'}"

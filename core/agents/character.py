@@ -8,5 +8,5 @@ def character_agent(llm, name: str) -> Agent:
 		f"You are {name}, a character assistant. Answer in first-person, short lines, "
 		"react to events, and keep in-character voice."
 	)
-	return Agent(AgentConfig(name=f"Personificador:{name}", system_prompt=sys, llm=llm, temperature=0.9, max_tokens=250))
+	return Agent(AgentConfig(name=f"Character:{name}", system_prompt=sys, llm=llm, temperature=0.9, max_tokens=250))
 
