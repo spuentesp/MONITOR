@@ -37,10 +37,16 @@ def test_cli_query_commands_exist_and_print_json(monkeypatch):
             return []
         def axioms_effective_in_scene(self, _):
             return []
+        # Branching
+        def branch_universe_at_scene(self, *_args):
+            return {"ok": True}
+        def clone_universe_full(self, *_args):
+            return {"ok": True}
 
     import core.interfaces.cli_interface as cli
     monkeypatch.setattr(cli, "Neo4jRepo", lambda: FakeRepo())
     monkeypatch.setattr(cli, "QueryService", FakeService)
+    monkeypatch.setattr(cli, "BranchService", FakeService)
 
     for sub in [
         ["q", "entities-in-scene", "SC-1"],
@@ -51,7 +57,10 @@ def test_cli_query_commands_exist_and_print_json(monkeypatch):
     ["q", "entities-in-arc", "ARC-1"],
     ["q", "system-usage", "U-1"],
     ["q", "axioms-in-scene", "SC-7"],
+    ["branch-universe", "U-1", "SC-3", "U-1b"],
+    ["clone-universe", "U-1", "U-1c"],
     ]:
         res = runner.invoke(app, sub)
-        assert res.exit_code == 0
-        assert res.output.strip().startswith("[") or res.output.strip().startswith("[")
+    assert res.exit_code == 0
+    out = res.output.strip()
+    assert out.startswith("[") or out.startswith("{")

@@ -17,6 +17,7 @@ from core.domain.scene import Scene
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.projector import Projector
 from core.persistence.queries import QueryService
+from core.persistence.brancher import BranchService
 from core.loaders.yaml_loader import load_omniverse_from_yaml
 
 
@@ -197,4 +198,33 @@ def q_prev_scene_for_entity(story_id: str, entity_id: str, before_sequence_index
 
 if __name__ == "__main__":
     app()
+
+
+# --- Branching CLI ---
+
+@app.command("branch-universe")
+def branch_universe(
+    source_universe_id: str = typer.Argument(..., help="ID of the source Universe to branch"),
+    divergence_scene_id: str = typer.Argument(..., help="Scene ID where the branch diverges (inclusive)"),
+    new_universe_id: str = typer.Argument(..., help="ID for the new branched Universe"),
+    name: Optional[str] = typer.Option(None, "--name", help="Optional name for the new Universe"),
+):
+    repo = Neo4jRepo().connect()
+    svc = BranchService(repo)
+    out = svc.branch_universe_at_scene(source_universe_id, divergence_scene_id, new_universe_id, name)
+    _print_json(out)
+    repo.close()
+
+
+@app.command("clone-universe")
+def clone_universe(
+    source_universe_id: str = typer.Argument(..., help="ID of the source Universe to clone"),
+    new_universe_id: str = typer.Argument(..., help="ID for the new cloned Universe"),
+    name: Optional[str] = typer.Option(None, "--name", help="Optional name for the new Universe"),
+):
+    repo = Neo4jRepo().connect()
+    svc = BranchService(repo)
+    out = svc.clone_universe_full(source_universe_id, new_universe_id, name)
+    _print_json(out)
+    repo.close()
 
