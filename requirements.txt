@@ -7,3 +7,6 @@ pyyaml
 neo4j
 pytest
 pytest-cov
+langchain>=0.2
+langchain-community>=0.2
+langgraph>=0.2

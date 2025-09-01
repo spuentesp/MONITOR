@@ -36,6 +36,7 @@ Purpose
   - Modes:
     - Co‑pilot vs Auto‑pilot (user approval gates persistence in co‑pilot)
   - Guardrails: tone/rating checks; refusal if policy violated
+  - Integration: a minimal LangGraph flow (`core/engine/langgraph_flow.py`) mirrors the orchestrator; install `langgraph` to enable. Tests will skip if not installed.
 
 ---
 
@@ -175,10 +176,28 @@ Purpose
   - `relations_effective_in_scene(scene_id)`
   - Effective system resolution for universe/story/scene/entity
   - Entities/stories/scenes/facts retrieval helpers
-- Writes (planned):
+- Writes (dev/autopilot via RecorderService):
+  - Multiverse/Universe/Arc/Story/Scene/Entity upserts with ownership links
   - Facts: `Fact(id, description, occurs_in, participants, when|time_span, derived_from)`
   - RelationState deltas: set/changed/ended per Scene
-  - All writes produce an `ops/agent_runs.yaml` record with context and trace
+  - Simple Relations: `Entity-[:REL {type, weight, temporal?}]->Entity`
+  - APPEARS_IN and PARTICIPATES_AS edges wired by participants where provided
+  - All writes should produce an `ops/agent_runs.yaml` record with context and trace (planned)
+
+Delta schema (recorder_tool → commit_deltas):
+- ids/context
+  - `scene_id?`, `universe_id?`
+- creation
+  - `new_multiverse: {id?, name?, description?, omniverse_id?}`
+  - `new_universe: {id?, name?, description?, multiverse_id?}`
+  - `new_arc: {id?, title, tags?, ordering_mode?, universe_id?}`
+  - `new_story: {id?, title, summary?, universe_id?, arc_id?, sequence_index?}`
+  - `new_scene: {id?, story_id?, sequence_index?, when?, time_span?, recorded_at?, location?, participants?: [entity_id]}`
+  - `new_entities: [{id?, name, type?, universe_id?, attributes?}]`
+- facts & relations
+  - `facts: [{id?, description, occurs_in?, when?, time_span?, participants?: [{entity_id, role}], confidence?, derived_from?}]`
+  - `relation_states: [{id?, type, entity_a, entity_b, set_in_scene?|changed_in_scene?|ended_in_scene?, started_at?, ended_at?}]`
+  - `relations: [{from|a, to|b, type, weight?, temporal?}]`  # timeless/interval
 
 ---
 
