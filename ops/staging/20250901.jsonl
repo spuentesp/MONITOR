@@ -143,3 +143,48 @@
 {"facts": [{"description": "x"}], "scene_id": null}
 {"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
 {"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest, the air heavy with the scent of damp earth and decaying leaves. The trees loom before you, their branches t…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "It seems like you haven't provided any context yet. Please give me some context for the game world, your character, or the situation you'd like to explore. I'll get started with a …", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "You find yourself standing at the edge of a dense forest, the trees towering above you like sentinels. A faint mist clings to the underbrush, casting an eerie veil over the landsca…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "I need more context to begin our game. Please provide some background information about the game world, the characters, or any relevant settings. The more I know, the more immersiv…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "You stand on the worn wooden dock, the wooden slats creaking beneath your feet. The air is alive with the scent of saltwater and the distant call of gulls. A small sailboat, its ca…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "I don't have a context or a character defined. Can you introduce your character and the setting for this story? What's the scene s1 about?", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "You stand at the edge of a worn, wooden dock, the worn planks creaking beneath your feet. The air is heavy with the smell of saltwater and seaweed. To your left, a rickety fishing …", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "It seems we haven't established any context yet. What kind of world, story, or scenario would you like to explore?", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
