@@ -58,6 +58,7 @@ def load_omniverse_from_yaml(path: Path | str) -> Omniverse:
                     summary=st.get("summary"),
                     universe_id=u.get("id"),
                     arc_id=st.get("arc_id"),
+                    system_id=st.get("system_id"),
                     scenes=scenes,
                     events=events,
                     sheets=[],
@@ -74,6 +75,7 @@ def load_omniverse_from_yaml(path: Path | str) -> Omniverse:
                     archetype_id=e.get("archetype_id"),
                     type=e.get("type", "manifestation"),
                     attributes=e.get("attributes", {}),
+                    system_id=e.get("system_id"),
                 )
                 # Convert sheets and attach to entity
                 for sh in e.get("sheets", []):
@@ -120,6 +122,7 @@ def load_omniverse_from_yaml(path: Path | str) -> Omniverse:
                 stories=stories,
                 arcs=arcs,
                 entities=entities,
+                system_id=u.get("system_id"),
                 axioms=u_axioms,
                 archetypes=u_archetypes,
                 facts=facts,

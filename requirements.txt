@@ -5,3 +5,5 @@ python-dotenv
 typer
 pyyaml
 neo4j
+pytest
+pytest-cov

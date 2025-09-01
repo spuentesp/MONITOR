@@ -1,9 +1,8 @@
 # English version of modelo_base.py
 
-from pydantic import BaseModel
+from pydantic import BaseModel as PydBaseModel
+from pydantic import ConfigDict
 
-class Config:
-    arbitrary_types_allowed = True
 
-class BaseModel(BaseModel):
-    model_config = Config
+class BaseModel(PydBaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)

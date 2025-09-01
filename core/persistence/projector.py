@@ -100,6 +100,18 @@ class Projector:
             mv_id=mv_id,
         )
 
+        # Universe USES_SYSTEM
+        if getattr(u, "system_id", None):
+            self.repo.run(
+                """
+                MATCH (u:Universe {id:$uid})
+                MATCH (s:System {id:$sid})
+                MERGE (u)-[:USES_SYSTEM]->(s)
+                """,
+                uid=u.id,
+                sid=u.system_id,
+            )
+
         # Axioms & Archetypes at Universe level
         if u.archetypes:
             self._upsert_archetypes(u.archetypes)
@@ -255,6 +267,18 @@ class Projector:
             uid=universe_id,
             rows=srows,
         )
+        # Story USES_SYSTEM (optional, overrides universe scope while active)
+        ssys_rows = [{"sid": s.id, "sys": s.system_id} for s in stories if getattr(s, "system_id", None)]
+        if ssys_rows:
+            self.repo.run(
+                """
+                UNWIND $rows AS row
+                MATCH (st:Story {id: row.sid})
+                MATCH (sys:System {id: row.sys})
+                MERGE (st)-[:USES_SYSTEM]->(sys)
+                """,
+                rows=ssys_rows,
+            )
         # Arc->Story ordering by input order
         self.repo.run(
             """
@@ -331,6 +355,31 @@ class Projector:
                 SET hs.story_id = row.props.story_id, hs.system_id = row.props.system_id
                 """,
                 rows=shrows,
+            )
+            # Sheet USES_SYSTEM (optional)
+            ssys_rows = [{"sid": sh.id, "sys": sh.system_id} for sh in e.sheets if getattr(sh, "system_id", None)]
+            if ssys_rows:
+                self.repo.run(
+                    """
+                    UNWIND $rows AS row
+                    MATCH (sh:Sheet {id: row.sid})
+                    MATCH (sys:System {id: row.sys})
+                    MERGE (sh)-[:USES_SYSTEM]->(sys)
+                    """,
+                    rows=ssys_rows,
+                )
+
+        # Entity USES_SYSTEM (optional)
+        esys_rows = [{"eid": e.id, "sys": e.system_id} for e in entities if getattr(e, "system_id", None)]
+        if esys_rows:
+            self.repo.run(
+                """
+                UNWIND $rows AS row
+                MATCH (e:Entity {id: row.eid})
+                MATCH (sys:System {id: row.sys})
+                MERGE (e)-[:USES_SYSTEM]->(sys)
+                """,
+                rows=esys_rows,
             )
 
         # APPEARS_IN from scene participants (we need participants from YAML; traverse via scenes created earlier)
