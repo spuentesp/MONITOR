@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+import json
 from uuid import uuid4
 
 from core.persistence.neo4j_repo import Neo4jRepo
@@ -18,6 +19,25 @@ class RecorderService:
     @staticmethod
     def _ensure_id(prefix: str, id_: Optional[str]) -> str:
         return id_ or f"{prefix}:{uuid4()}"
+
+    @staticmethod
+    def _is_primitive(x: Any) -> bool:
+        return isinstance(x, (str, int, float, bool)) or x is None
+
+    @classmethod
+    def _sanitize(cls, value: Any):
+        if cls._is_primitive(value):
+            return value
+        if isinstance(value, list):
+            if all(cls._is_primitive(i) for i in value):
+                return value
+            return json.dumps(value, ensure_ascii=False)
+        if isinstance(value, dict):
+            if not value:
+                # Avoid empty Map{} (invalid in Neo4j); store as JSON string
+                return json.dumps(value, ensure_ascii=False)
+            return json.dumps(value, ensure_ascii=False)
+        return str(value)
 
     def commit_deltas(
         self,
@@ -50,6 +70,23 @@ class RecorderService:
             "universes": 0,
             "multiverses": 0,
         }
+        warnings: List[str] = []
+
+        # Preflight: basic mismatch checks without DB I/O
+        if new_story and universe_id and new_story.get("universe_id") and new_story.get("universe_id") != universe_id:
+            warnings.append(
+                f"new_story.universe_id ({new_story.get('universe_id')}) differs from provided universe_id ({universe_id})"
+            )
+        if new_arc and universe_id and new_arc.get("universe_id") and new_arc.get("universe_id") != universe_id:
+            warnings.append(
+                f"new_arc.universe_id ({new_arc.get('universe_id')}) differs from provided universe_id ({universe_id})"
+            )
+        if new_entities and universe_id:
+            for e in new_entities:
+                if e.get("universe_id") and e.get("universe_id") != universe_id:
+                    warnings.append(
+                        f"entity {e.get('id') or e.get('name')} universe_id ({e.get('universe_id')}) differs from provided universe_id ({universe_id})"
+                    )
 
         # -2) Multiverse upsert and Omniverse link
         if new_multiverse:
@@ -152,7 +189,7 @@ class RecorderService:
                         "name": e.get("name"),
                         "type": e.get("type"),
                         "universe_id": e.get("universe_id") or universe_id,
-                        "attributes": e.get("attributes") or {},
+                        "attributes": self._sanitize(e.get("attributes") or {}),
                     }
                 )
             self.repo.run(
@@ -178,7 +215,7 @@ class RecorderService:
                 "story_id": new_scene.get("story_id"),
                 "sequence_index": new_scene.get("sequence_index"),
                 "when": new_scene.get("when"),
-                "time_span": new_scene.get("time_span"),
+                "time_span": self._sanitize(new_scene.get("time_span")),
                 "recorded_at": new_scene.get("recorded_at"),
                 "location": new_scene.get("location"),
             }
@@ -218,6 +255,20 @@ class RecorderService:
                     sid=sc_id,
                 )
                 written["appears_in"] = len(participants)
+            # Optional DB existence check for participants
+            try:
+                if hasattr(self.repo, "ping") and self.repo.ping() and participants:
+                    rows = self.repo.run(
+                        "MATCH (e:Entity) WHERE e.id IN $ids RETURN collect(e.id) AS ids",
+                        ids=participants,
+                    )
+                    present = set((rows[0]["ids"] if rows else []) or [])
+                    missing = [x for x in participants if x not in present]
+                    if missing:
+                        warnings.append(f"APPEARS_IN skipped for missing entities: {missing}")
+            except Exception:
+                # Never fail commit for warning checks
+                pass
             written["scenes"] = 1
             # Set scene_id for subsequent facts/relation_states defaulting
             scene_id = scene_id or sc_id
@@ -230,9 +281,9 @@ class RecorderService:
                     "universe_id": f.get("universe_id") or universe_id,
                     "description": f.get("description"),
                     "when": f.get("when"),
-                    "time_span": f.get("time_span"),
+                    "time_span": self._sanitize(f.get("time_span")),
                     "confidence": f.get("confidence"),
-                    "derived_from": f.get("derived_from"),
+                    "derived_from": self._sanitize(f.get("derived_from")),
                 }
                 participants = f.get("participants", [])
                 rows.append(
@@ -269,7 +320,11 @@ class RecorderService:
         if relation_states:
             rows = []
             for r in relation_states:
-                rid = self._ensure_id("relstate", r.get("id"))
+                # Canonical ID for dedupe when not provided
+                rid = r.get("id")
+                if not rid and r.get("type") and r.get("entity_a") and r.get("entity_b"):
+                    rid = f"relstate:{r.get('type')}:{r.get('entity_a')}:{r.get('entity_b')}"
+                rid = self._ensure_id("relstate", rid)
                 rows.append(
                     {
                         "id": rid,
@@ -285,6 +340,10 @@ class RecorderService:
                         "end": r.get("ended_in_scene"),
                     }
                 )
+                if not (r.get("set_in_scene") or r.get("changed_in_scene") or r.get("ended_in_scene") or scene_id):
+                    warnings.append(
+                        f"RelationState {rid} has no provenance scene (set/changed/ended) and no default scene_id"
+                    )
             self.repo.run(
                 """
                 UNWIND $rows AS row
@@ -319,7 +378,7 @@ class RecorderService:
                         "b": rel.get("to") or rel.get("b"),
                         "type": rel.get("type"),
                         "weight": rel.get("weight"),
-                        "temporal": rel.get("temporal"),  # {started_at, ended_at} optional
+                        "temporal": self._sanitize(rel.get("temporal")),  # {started_at, ended_at} optional
                     }
                 )
             self.repo.run(
@@ -335,4 +394,4 @@ class RecorderService:
             )
             written["relations"] = len(rrows)
 
-        return {"ok": True, "written": written}
+        return {"ok": True, "written": written, "warnings": warnings}
