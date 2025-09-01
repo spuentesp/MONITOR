@@ -7,12 +7,11 @@ services:
     ports:
       - "7474:7474"   # HTTP
       - "7687:7687"   # Bolt
-    env_file:
-      - .env
     environment:
-      NEO4J_AUTH: "${NEO4J_USER}/${NEO4J_PASS}"  # Removed inline defaults
+      # Set DB auth explicitly; avoid passing NEO4J_USER/PASS into container (they map to invalid config keys)
+      NEO4J_AUTH: "neo4j/monitor_pass"
       NEO4J_dbms_security_procedures_unrestricted: apoc.*
-      NEO4JLABS_PLUGINS: '["apoc"]'
+      NEO4J_PLUGINS: '["apoc"]'
     volumes:
       - neo4j-data:/data
       - neo4j-logs:/logs
