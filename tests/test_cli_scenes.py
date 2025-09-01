@@ -14,10 +14,7 @@ def test_cli_init_includes_scenes(tmp_path: Path):
     out = tmp_path / "omniverse.json"
     # Run CLI function directly
     init_multiverse(
-        name="Test Omni",
-        multiverse_name="Test MV",
-        universe_name="Test U",
-        include_story=True,
+        scaffold=Path("scaffolds/sample_init.yaml"),
         out=out,
     )
     assert out.exists(), "Output JSON was not created"

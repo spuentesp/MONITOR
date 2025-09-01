@@ -6,25 +6,37 @@ Development is organized into **6 sprints (weekly)** with clear deliverables, ac
 
 ---
 
-Update (2025-08-31)
-- Ontology aligned: Omniverse, Multiverse, Universe, Arc, Story, Scene, Axiom, Archetype, Entity, Fact, System, Sheet; edges updated (HAS_ARC, HAS_STORY, USES_SYSTEM, HAS_SHEET).
-- Domain updated: English models added; Universe/Story wired with system_id and Arc; Sheet and System models created.
+Update (2025-09-01)
+- Ontology aligned and implemented: Omniverse, Multiverse, Universe, Arc, Story, Scene, Axiom, Archetype, Entity, Fact, RelationState, System, Sheet; core edges implemented (HAS_ARC, HAS_STORY, HAS_SCENE, BELONGS_TO, HAS_SHEET, OCCURS_IN, PARTICIPATES_AS, REL_STATE_FOR, APPEARS_IN, REFERS_TO, APPLIES_TO).
+- YAML-first authoring solidified: example multiverse fixture, strict loader, validations/tests (10/10 passing).
+- Persistence: Neo4j 5 via Docker Compose with constraints bootstrap; end-to-end projection from YAML working.
+- Configuration: no hardcoded creds/paths; .env-based settings; sample scaffolds in YAML; CLI commands for bootstrap/projection and scaffolded init.
+- Projector: property sanitization for Neo4j primitives; Cypher fixes; appears_in edges from scene participants.
 
-## 🏁 Sprint 1 — Foundations & Infrastructure
-**Goal:** stand up base services and context system.  
+## 🏁 Sprint 1 — Foundations & Persistence (✅ Completed)
+**Goal:** establish domain, YAML flow, and graph persistence.  
 
-- **Deliverables**: Docker Compose (Neo4j, Meilisearch, Qdrant, MinIO, Redis, Postgres + Langfuse, Tika), `Context Token`, FastAPI stubs.  
-- **Acceptance**: services respond to healthchecks; endpoints reject missing tokens.  
-- **KPIs**: boot < 5 min, 0 data leaks across omniverses.  
+- **Deliverables**:
+	- Domain models (EN) and ontology containers wired (Axiom, Archetype, Fact, RelationState, System, Sheet).
+	- YAML loader + comprehensive example fixture; integrity/reference tests.
+	- Docker Compose: Neo4j 5 Community with APOC; constraints bootstrap command.
+	- CLI: `neo4j-bootstrap`, `project-from-yaml`, `init-multiverse --scaffold`.
+	- .env-based config; `.env.example`; no hardcoded credentials/URIs; scaffolds decoupled from code.
+	- Projector upserts all nodes/edges with property sanitization; Cypher validated.
+- **Acceptance**:
+	- Tests: 10/10 pass; YAML loads into domain with relations.
+	- Projection: example YAML imports successfully; expected node/edge counts present.
+- **KPIs**:
+	- Setup < 5 min; projection completes without errors; config via env-only.
 
 ---
 
 ## 🏗️ Sprint 2 — Graph Model & Temporal Rules
 **Goal:** model continuity and n-ary facts in Neo4j.  
 
-- **Deliverables**: entities, facts, participations, sources; Cypher queries; Steward v1 rules; Arc grouping (Universe→Arc→Story) with direct Story→Universe; System & Sheet integration (models + YAML schema + effective resolver).  
-- **Acceptance**: timeline/relations respect `time_ref`; Steward flags issues.  
-- **KPIs**: p95 Cypher ≤ 300 ms, ≤10% false positives/negatives.  
+- **Deliverables**: finalize query library (counts, traversals), indexing helpers; provenance on relation states; optional `USES_SYSTEM` edges; integration tests against live DB.  
+- **Acceptance**: timeline/relations consistent; Cypher library returns expected results on sample graph.  
+- **KPIs**: p95 Cypher ≤ 300 ms on core traversals.  
 
 ---
 

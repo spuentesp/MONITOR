@@ -1,0 +1,35 @@
+# Example scaffold for init-multiverse (used by CLI if provided)
+omniverse:
+  id: omniverse-001
+  name: M.O.N.I.T.O.R.
+  multiverses:
+    - id: mv-001
+      name: Sample Multiverse
+      description: Demo multiverse
+      universes:
+        - id: u-001
+          name: Earth-Prime
+          description: Primary test universe
+          stories:
+            - id: st-001
+              title: A Hero's Start
+              summary: Alex begins their journey.
+              scenes:
+                - id: sc-001
+                  sequence_index: 1
+                  location: Downtown
+                  participants: [ ent-hero-001 ]
+                - id: sc-002
+                  sequence_index: 2
+                  location: Rooftop
+                  participants: [ ent-hero-001 ]
+          entities:
+            - id: ent-hero-001
+              name: Alex
+              type: character
+              universe_id: u-001
+              sheets:
+                - id: sheet-hero-001
+                  name: Alex Sheet
+                  type: PC
+                  entity_id: ent-hero-001

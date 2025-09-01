@@ -138,8 +138,8 @@ def load_omniverse_from_yaml(path: Path | str) -> Omniverse:
         multiverses.append(m)
 
     omni = Omniverse(
-        id=omni_dict.get("id", "omniverse-001"),
-        name=omni_dict.get("name", "M.O.N.I.T.O.R."),
+        id=omni_dict["id"],
+        name=omni_dict["name"],
         multiverses=multiverses,
     )
     return omni

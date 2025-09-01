@@ -6,6 +6,6 @@ from core.domain.multiverse import Multiverse
 
 
 class Omniverse(BaseModel):
-    id: str = "omniverse-001"
-    name: str = "M.O.N.I.T.O.R."
+    id: str = Field(default_factory=lambda: "omniverse-001")
+    name: str = Field(default_factory=lambda: "M.O.N.I.T.O.R.")
     multiverses: List[Multiverse] = Field(default_factory=list)
