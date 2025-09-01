@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Any
+from datetime import datetime
 
 import streamlit as st
 
@@ -20,7 +21,7 @@ from core.engine.orchestrator import (
     flush_staging,
 )
 from core.engine.steward import StewardService
-from core.generation.providers import select_llm_from_env
+from core.generation.providers import select_llm_from_env, list_groq_models
 
 st.set_page_config(page_title="MONITOR — Agents Chat", layout="wide")
 
@@ -39,6 +40,8 @@ def build_orchestrator(mode: str) -> dict[str, Any]:
         os.environ["MONITOR_GROQ_API_KEY"] = st.session_state.get("groq_api_key")
     if st.session_state.get("groq_model"):
         os.environ["MONITOR_GROQ_MODEL"] = st.session_state.get("groq_model")
+    elif st.session_state.get("llm_backend") == "groq" and not os.getenv("MONITOR_GROQ_MODEL"):
+        os.environ["MONITOR_GROQ_MODEL"] = "llama-3.1-8b-instant"
 
     ctx = build_live_tools(dry_run=(mode != "autopilot"))
     llm = select_llm_from_env()
@@ -105,7 +108,74 @@ with st.sidebar:
         )
     elif st.session_state.llm_backend == "groq":
         st.session_state.openai_api_key = st.text_input("Groq API Key", type="password", key="groq_api_key")
-        st.session_state.openai_model = st.text_input("Groq Model", value="llama3-8b-8192", key="groq_model")
+        # Controls to refresh the models list on demand
+        rcols = st.columns([1, 1])
+        if rcols[0].button("Refresh models", use_container_width=True, key="refresh_groq_models"):
+            st.session_state.pop("_groq_models", None)
+            st.session_state.pop("_groq_models_fetched_at", None)
+        if st.session_state.get("_groq_models_fetched_at"):
+            rcols[1].caption(
+                f"Last updated: {st.session_state['_groq_models_fetched_at']}"
+            )
+        # Try to fetch models dynamically (cache across reruns for this session)
+        default_groq_model = "llama-3.1-8b-instant"
+        groq_models = []
+        fetch_warn = None
+        api_key = st.session_state.get("groq_api_key") or os.getenv("MONITOR_GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+        if api_key:
+            try:
+                if "_groq_models" not in st.session_state:
+                    st.session_state["_groq_models"] = list_groq_models(api_key)
+                    # Record timestamp when fetched successfully
+                    if st.session_state["_groq_models"]:
+                        st.session_state["_groq_models_fetched_at"] = datetime.now().strftime("%H:%M:%S")
+                groq_models = st.session_state.get("_groq_models") or []
+            except Exception as e:  # pragma: no cover
+                fetch_warn = f"Could not fetch models dynamically: {e}"
+        if not groq_models:
+            # Fallback curated list (kept in sync with providers.SUPPORTED_GROQ_MODELS)
+            groq_models = [
+                "llama-3.1-8b-instant",
+                "llama-3.3-70b-versatile",
+                "meta-llama/llama-guard-4-12b",
+                "openai/gpt-oss-120b",
+                "openai/gpt-oss-20b",
+                "whisper-large-v3",
+                "whisper-large-v3-turbo",
+                # Preview
+                "deepseek-r1-distill-llama-70b",
+                "meta-llama/llama-4-maverick-17b-128e-instruct",
+                "meta-llama/llama-4-scout-17b-16e-instruct",
+                "meta-llama/llama-prompt-guard-2-22m",
+                "meta-llama/llama-prompt-guard-2-86m",
+                "moonshotai/kimi-k2-instruct",
+                "playai-tts",
+                "playai-tts-arabic",
+                "qwen/qwen3-32b",
+                "compound-beta",
+                "compound-beta-mini",
+            ]
+        if fetch_warn:
+            st.caption(fetch_warn)
+        elif not api_key:
+            st.caption("Set a Groq API key to fetch live models.")
+        elif groq_models:
+            st.caption(
+                f"Loaded {len(groq_models)} models"
+                + (
+                    f" at {st.session_state.get('_groq_models_fetched_at')}"
+                    if st.session_state.get("_groq_models_fetched_at")
+                    else ""
+                )
+            )
+        else:
+            st.caption("Using fallback model list.")
+        # Default selection: prefer the env/session value if it's in the list, else default
+        current = st.session_state.get("groq_model") or os.getenv("MONITOR_GROQ_MODEL") or default_groq_model
+        idx = groq_models.index(current) if current in groq_models else groq_models.index(default_groq_model)
+        sel = st.selectbox("Groq Model", options=groq_models, index=idx)
+    st.session_state.openai_model = sel
+    st.session_state["groq_model"] = sel
     st.session_state.mode = st.radio("Mode", ["copilot", "autopilot"], horizontal=True)
     st.session_state.scene_id = st.text_input(
         "Scene ID (optional)", value=st.session_state.scene_id
@@ -196,7 +266,12 @@ if user_intent:
     scene_id = st.session_state.scene_id or None
     orch: Orchestrator = st.session_state["orch"]
     ctx = st.session_state["ctx"]
-    out = orch.step(user_intent, scene_id=scene_id)
+    try:
+        out = orch.step(user_intent, scene_id=scene_id)
+    except Exception as e:
+        # Display a concise, friendly error and keep the session alive
+        st.error(f"LLM error: {e}")
+        out = {"draft": "", "error": str(e)}
 
     # Optional lightweight persistence per turn (simple Fact from draft)
     if st.session_state.persist_each:

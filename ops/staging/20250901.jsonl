@@ -107,3 +107,39 @@
 {"facts": [{"description": "x"}], "scene_id": null}
 {"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
 {"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "**Scene 1: The Abandoned Warehouse**\n\nYou stand at the creaky entrance of the abandoned warehouse, the wind whipping loose strands of your hair into a frenzy. The once-majestic bui…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "I'm unable to understand the context for scene 1 since 'x' does not provide any information. Could you please provide more context or details about the scene, such as characters, s…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "You find yourself standing in the midst of a dense, mist-shrouded forest. The air is heavy with the scent of wet earth and decaying leaves. Towering trees loom above, their branche…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "I'm afraid I don't have any information or context to work with. Could you please provide some context or background for the scene?\n\nFor example, what kind of story are we telling?…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "You find yourself standing at the edge of a dense, primeval forest. Towering trees, their trunks as wide as houses, stretch towards the sky like colossal pillars. The air is heavy …", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "It seems there is no context for scene 1. To begin, let's create a setting. \n\nImagine a dense, mist-shrouded forest, the last remnants of a fading autumn. The trees tower above, th…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "Scene s1: \n\nSilence envelops the dimly lit, abandoned alleyway, except for the faint hum of a lone streetlamp overhead. It casts long, ominous shadows on the crumbling walls as a l…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1"}
+{"facts": [{"description": "The darkness of the abandoned asylum's corridor seemed to swallow you whole. Flickering fluorescent lights above cast an eerie glow on the peeling walls. You stood before the door …", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
