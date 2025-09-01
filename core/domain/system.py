@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel
 
 
@@ -8,13 +8,13 @@ class System(BaseModel):
     version: Optional[str] = None
     description: Optional[str] = None
     dice_pool: List[str] = []
-    stats: List[Dict[str, Any]] = []
-    resources: List[Dict[str, Any]] = []
-    conditions: List[Dict[str, Any]] = []
-    tags: List[Dict[str, Any]] = []
-    actions: List[Dict[str, Any]] = []
-    roll_mechanic: Optional[Dict[str, Any]] = None
-    resolution_rules: List[Dict[str, Any]] = []
+    stats: List[Union[str, Dict[str, Any]]] = []
+    resources: List[Union[str, Dict[str, Any]]] = []
+    conditions: List[Union[str, Dict[str, Any]]] = []
+    tags: List[Union[str, Dict[str, Any]]] = []
+    actions: List[Union[str, Dict[str, Any]]] = []
+    roll_mechanic: Optional[Union[str, Dict[str, Any]]] = None
+    resolution_rules: List[Union[str, Dict[str, Any]]] = []
     progression: Optional[Dict[str, Any]] = None
     character_creation: Optional[Dict[str, Any]] = None
     critical_rules: Optional[Dict[str, Any]] = None

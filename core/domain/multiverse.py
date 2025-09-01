@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 from uuid import uuid4
 
 from core.domain.universe import Universe
+from core.domain.axiom import Axiom
+from core.domain.entity import ArchetypeEntity
 
 class Multiverse(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
@@ -12,3 +14,6 @@ class Multiverse(BaseModel):
     description: Optional[str] = None
     universes: List[Universe] = Field(default_factory=list)
     omniverse_id: Optional[str] = None
+    # Ontology attachments at multiverse scope
+    axioms: List[Axiom] = Field(default_factory=list)
+    archetypes: List[ArchetypeEntity] = Field(default_factory=list)

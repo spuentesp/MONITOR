@@ -1,0 +1,369 @@
+# Comprehensive example multiverse with 2 of each element per layer
+omniverse:
+  id: OMNI-EX
+  name: "Test Omniverse"
+  multiverses:
+    - id: MV-001
+      name: "Prime Multiverse"
+      description: "Sample with two universes, axioms, archetypes, arcs, stories, scenes, entities, sheets."
+      axioms:
+        - id: AX-MV-EXISTENCE
+          type: universal
+          semantics: existence
+          description: "At least one hero exists in every universe."
+          refers_to_archetype: ARC-HERO
+          applies_to: [U-001, U-002]
+        - id: AX-MV-PAIRING
+          type: conditional
+          semantics: implication
+          description: "If a villain exists, a rival hero exists."
+          refers_to_archetype: ARC-HERO
+          applies_to: [U-001, U-002]
+      archetypes:
+        - id: ARC-HERO
+          name: "Hero"
+          constraints:
+            allowed_kinds: ["character"]
+            must_have_tags: ["brave"]
+        - id: ARC-VILLAIN
+          name: "Villain"
+          constraints:
+            allowed_kinds: ["character"]
+            must_have_tags: ["cruel"]
+      universes:
+        - id: U-001
+          name: "Earth-Alpha"
+          description: "Universe 1"
+          axioms:
+            - id: AX-U1-FOG
+              type: probabilistic
+              semantics: constraint
+              description: "Frequent fog in city affects perception."
+              probability: 0.6
+              applies_to: [U-001]
+            - id: AX-U1-LEGACY
+              type: universal
+              semantics: existence
+              description: "Exactly two legacy lineages must persist."
+              min_count: 2
+              refers_to_archetype: ARC-HERO
+              applies_to: [U-001]
+          archetypes:
+            - id: ARC-U1-DETECTIVE
+              name: "Detective"
+              constraints:
+                allowed_kinds: ["character"]
+                must_have_tags: ["investigator"]
+            - id: ARC-U1-CRIMEBOSS
+              name: "Crime Boss"
+              constraints:
+                allowed_kinds: ["character"]
+                must_have_tags: ["leader", "criminal"]
+          arcs:
+            - id: ARC-U1-001
+              title: "Shadow Games"
+              story_ids: [ST-U1-001, ST-U1-002]
+            - id: ARC-U1-002
+              title: "City on Edge"
+              story_ids: [ST-U1-003, ST-U1-004]
+          stories:
+            - id: ST-U1-001
+              title: "The First Night"
+              arc_id: ARC-U1-001
+              scenes:
+                - id: SC-U1-001-1
+                  sequence_index: 1
+                  location: "Downtown"
+                  participants: [E-U1-HERO-1, E-U1-VILLAIN-1]
+                - id: SC-U1-001-2
+                  sequence_index: 2
+                  location: "Rooftops"
+                  participants: [E-U1-HERO-1]
+            - id: ST-U1-002
+              title: "Crossfire"
+              arc_id: ARC-U1-001
+              scenes:
+                - id: SC-U1-002-1
+                  sequence_index: 1
+                  location: "Warehouse"
+                  participants: [E-U1-HERO-2, E-U1-VILLAIN-1]
+                - id: SC-U1-002-2
+                  sequence_index: 2
+                  location: "Harbor"
+                  participants: [E-U1-HERO-2]
+            - id: ST-U1-003
+              title: "Echoes"
+              arc_id: ARC-U1-002
+              scenes:
+                - id: SC-U1-003-1
+                  sequence_index: 1
+                  location: "Museum"
+                  participants: [E-U1-HERO-1]
+                - id: SC-U1-003-2
+                  sequence_index: 2
+                  location: "Alley"
+                  participants: [E-U1-VILLAIN-2]
+            - id: ST-U1-004
+              title: "Aftermath"
+              arc_id: ARC-U1-002
+              scenes:
+                - id: SC-U1-004-1
+                  sequence_index: 1
+                  location: "Hospital"
+                  participants: [E-U1-HERO-2]
+                - id: SC-U1-004-2
+                  sequence_index: 2
+                  location: "Bridge"
+                  participants: [E-U1-HERO-2, E-U1-VILLAIN-2]
+          facts:
+            - id: F-U1-001
+              description: "Night Hawk rescues a worker during a blackout."
+              occurs_in: SC-U1-001-1
+              participants:
+                - { entity_id: E-U1-HERO-1, role: rescuer }
+                - { entity_id: E-U1-VILLAIN-1, role: antagonist }
+            - id: F-U1-002
+              description: "Silver Lynx intercepts contraband at the Harbor."
+              occurs_in: SC-U1-002-2
+              participants:
+                - { entity_id: E-U1-HERO-2, role: interceptor }
+                - { entity_id: E-U1-VILLAIN-1, role: smuggler }
+          relation_states:
+            - id: RS-U1-H1-ALLY-H2
+              type: ally_of
+              entity_a: E-U1-HERO-1
+              entity_b: E-U1-HERO-2
+              set_in_scene: SC-U1-003-1
+              changed_in_scene: SC-U1-004-1
+              ended_in_scene: SC-U1-004-2
+          entities:
+            - id: E-U1-HERO-1
+              name: "Night Hawk"
+              type: character
+              archetype_id: ARC-HERO
+              attributes: { tags: "brave, agile" }
+              sheets:
+                - id: S-U1-H1-A
+                  name: "Night Hawk Core"
+                  type: PC
+                  system_id: SYS-BASE
+                  attributes: { STR: 2, DEX: 4, WIT: 3 }
+                - id: S-U1-H1-B
+                  name: "Night Hawk Alt"
+                  type: PC
+                  system_id: SYS-BASE
+                  attributes: { STR: 3, DEX: 3, WIT: 3 }
+            - id: E-U1-HERO-2
+              name: "Silver Lynx"
+              type: character
+              archetype_id: ARC-U1-DETECTIVE
+              attributes: { tags: "investigator, stealth" }
+              sheets:
+                - id: S-U1-H2-A
+                  name: "Silver Lynx Core"
+                  type: PC
+                  system_id: SYS-BASE
+                  attributes: { STR: 1, DEX: 5, WIT: 4 }
+                - id: S-U1-H2-B
+                  name: "Silver Lynx Alt"
+                  type: PC
+                  system_id: SYS-BASE
+                  attributes: { STR: 2, DEX: 4, WIT: 4 }
+            - id: E-U1-VILLAIN-1
+              name: "Iron Mask"
+              type: character
+              archetype_id: ARC-VILLAIN
+              attributes: { tags: "cruel, ruthless" }
+              sheets:
+                - id: S-U1-V1-A
+                  name: "Iron Mask A"
+                  type: NPC
+                  system_id: SYS-BASE
+                  attributes: { STR: 4, DEX: 2, WIT: 2 }
+                - id: S-U1-V1-B
+                  name: "Iron Mask B"
+                  type: NPC
+                  system_id: SYS-BASE
+                  attributes: { STR: 5, DEX: 1, WIT: 2 }
+            - id: E-U1-VILLAIN-2
+              name: "Whisper"
+              type: character
+              archetype_id: ARC-U1-CRIMEBOSS
+              attributes: { tags: "leader, criminal" }
+              sheets:
+                - id: S-U1-V2-A
+                  name: "Whisper A"
+                  type: NPC
+                  system_id: SYS-BASE
+                  attributes: { STR: 2, DEX: 3, WIT: 5 }
+                - id: S-U1-V2-B
+                  name: "Whisper B"
+                  type: NPC
+                  system_id: SYS-BASE
+                  attributes: { STR: 2, DEX: 4, WIT: 4 }
+        - id: U-002
+          name: "Earth-Beta"
+          description: "Universe 2"
+          axioms:
+            - id: AX-U2-DUALITY
+              type: universal
+              semantics: constraint
+              description: "Balance between light and shadow must be kept."
+              applies_to: [U-002]
+            - id: AX-U2-THRESHOLD
+              type: conditional
+              semantics: implication
+              description: "When city morale drops, vigilantism rises."
+              applies_to: [U-002]
+          archetypes:
+            - id: ARC-U2-MAGE
+              name: "Mage"
+              constraints:
+                allowed_kinds: ["character"]
+                must_have_tags: ["arcane"]
+            - id: ARC-U2-GOLEM
+              name: "Golem"
+              constraints:
+                allowed_kinds: ["character", "object"]
+                must_have_tags: ["stone"]
+          arcs:
+            - id: ARC-U2-001
+              title: "Veil of Ash"
+              story_ids: [ST-U2-001, ST-U2-002]
+            - id: ARC-U2-002
+              title: "Ritual of Dawn"
+              story_ids: [ST-U2-003, ST-U2-004]
+          stories:
+            - id: ST-U2-001
+              title: "The Omen"
+              arc_id: ARC-U2-001
+              scenes:
+                - id: SC-U2-001-1
+                  sequence_index: 1
+                  location: "Old Library"
+                  participants: [E-U2-MAGE-1, E-U2-GOLEM-1]
+                - id: SC-U2-001-2
+                  sequence_index: 2
+                  location: "Catacombs"
+                  participants: [E-U2-MAGE-1]
+            - id: ST-U2-002
+              title: "Shattered Sigil"
+              arc_id: ARC-U2-001
+              scenes:
+                - id: SC-U2-002-1
+                  sequence_index: 1
+                  location: "Sanctum"
+                  participants: [E-U2-MAGE-2]
+                - id: SC-U2-002-2
+                  sequence_index: 2
+                  location: "Market"
+                  participants: [E-U2-MAGE-2, E-U2-GOLEM-1]
+            - id: ST-U2-003
+              title: "Chains of Light"
+              arc_id: ARC-U2-002
+              scenes:
+                - id: SC-U2-003-1
+                  sequence_index: 1
+                  location: "Citadel"
+                  participants: [E-U2-GOLEM-1]
+                - id: SC-U2-003-2
+                  sequence_index: 2
+                  location: "Spire"
+                  participants: [E-U2-MAGE-2]
+            - id: ST-U2-004
+              title: "The Threshold"
+              arc_id: ARC-U2-002
+              scenes:
+                - id: SC-U2-004-1
+                  sequence_index: 1
+                  location: "Temple"
+                  participants: [E-U2-MAGE-1]
+                - id: SC-U2-004-2
+                  sequence_index: 2
+                  location: "Crossroads"
+                  participants: [E-U2-MAGE-1, E-U2-GOLEM-1]
+          facts:
+            - id: F-U2-001
+              description: "Aria awakens a sentient ward."
+              occurs_in: SC-U2-001-1
+              participants:
+                - { entity_id: E-U2-MAGE-1, role: caster }
+                - { entity_id: E-U2-GOLEM-1, role: witness }
+            - id: F-U2-002
+              description: "Bram restores the broken sigil."
+              occurs_in: SC-U2-002-2
+              participants:
+                - { entity_id: E-U2-MAGE-2, role: restorer }
+                - { entity_id: E-U2-GOLEM-1, role: guardian }
+          relation_states:
+            - id: RS-U2-M2-RIVAL-M1
+              type: rival_of
+              entity_a: E-U2-MAGE-2
+              entity_b: E-U2-MAGE-1
+              set_in_scene: SC-U2-002-1
+              changed_in_scene: SC-U2-003-2
+              ended_in_scene: SC-U2-004-2
+          entities:
+            - id: E-U2-MAGE-1
+              name: "Aria"
+              type: character
+              archetype_id: ARC-U2-MAGE
+              attributes: { tags: "arcane, scholar" }
+              sheets:
+                - id: S-U2-M1-A
+                  name: "Aria Core"
+                  type: PC
+                  system_id: SYS-BASE
+                  attributes: { INT: 5, WILL: 4 }
+                - id: S-U2-M1-B
+                  name: "Aria Alt"
+                  type: PC
+                  system_id: SYS-BASE
+                  attributes: { INT: 4, WILL: 5 }
+            - id: E-U2-MAGE-2
+              name: "Bram"
+              type: character
+              archetype_id: ARC-U2-MAGE
+              attributes: { tags: "arcane, stubborn" }
+              sheets:
+                - id: S-U2-M2-A
+                  name: "Bram Core"
+                  type: PC
+                  system_id: SYS-BASE
+                  attributes: { INT: 4, WILL: 3 }
+                - id: S-U2-M2-B
+                  name: "Bram Alt"
+                  type: PC
+                  system_id: SYS-BASE
+                  attributes: { INT: 3, WILL: 4 }
+            - id: E-U2-GOLEM-1
+              name: "Granite"
+              type: character
+              archetype_id: ARC-U2-GOLEM
+              attributes: { tags: "stone, protector" }
+              sheets:
+                - id: S-U2-G1-A
+                  name: "Granite A"
+                  type: NPC
+                  system_id: SYS-BASE
+                  attributes: { STR: 5, END: 5 }
+                - id: S-U2-G1-B
+                  name: "Granite B"
+                  type: NPC
+                  system_id: SYS-BASE
+                  attributes: { STR: 4, END: 5 }
+systems:
+  - id: SYS-BASE
+    name: "Base Test System"
+    version: "1.0"
+    dice_pool: [ "1d6" ]
+    stats: ["STR", "DEX", "WIT", "INT", "WILL", "END"]
+    resources: ["HP", "MP"]
+    conditions: ["wounded", "fatigued"]
+    actions: ["attack", "defend", "cast"]
+    roll_mechanic: "sum"
+    resolution_rules: [">= target succeeds"]
+    progression: { }
+    character_creation: { }
+    critical_rules: { "crit_on": 6 }
+    metadata: { "genre": "generic" }

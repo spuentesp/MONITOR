@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from core.domain.event import Event
 from core.domain.sheet import Sheet
+from core.domain.scene import Scene
 
 class Story(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
@@ -13,6 +14,7 @@ class Story(BaseModel):
     summary: Optional[str] = None
     events: List[Event] = Field(default_factory=list)
     sheets: List[Sheet] = Field(default_factory=list)
+    scenes: List[Scene] = Field(default_factory=list)
     universe_id: Optional[str] = None
     arc_id: Optional[str] = None
     system_id: Optional[str] = None  # USES_SYSTEM at Story scope overrides Universe

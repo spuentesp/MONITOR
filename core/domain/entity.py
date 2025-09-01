@@ -1,5 +1,6 @@
 from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
+from core.domain.sheet import Sheet
 
 class ArchetypeEntity(BaseModel):
     id: str
@@ -19,3 +20,4 @@ class ConcreteEntity(BaseModel):
     story: List[str] = Field(default_factory=list)  # References to events or observations
     relations: Dict[str, str] = Field(default_factory=dict)  # e.g., {"ally_of": "concrete-103"}
     system_id: Optional[str] = None
+    sheets: List[Sheet] = Field(default_factory=list)

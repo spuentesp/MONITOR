@@ -1,0 +1,91 @@
+{
+  "id": "omniverse-001",
+  "name": "M.O.N.I.T.O.R.",
+  "multiverses": [
+    {
+      "id": "mv-001",
+      "name": "Sample Multiverse",
+      "description": "Demo multiverse",
+      "universes": [
+        {
+          "id": "bf5661df-c5ee-47e4-bf0f-c9cafa01d118",
+          "name": "Earth-Prime",
+          "description": "Primary test universe",
+          "stories": [
+            {
+              "id": "0f68f9e1-d49f-436a-af07-b617bf4a74ea",
+              "title": "A Hero's Start",
+              "summary": "Alex begins their journey.",
+              "events": [
+                {
+                  "id": "3c2996ca-a358-465b-94e9-458ccbdf5a5c",
+                  "title": null,
+                  "description": "Alex helps a civilian in Downtown",
+                  "type": "narrative",
+                  "participants": [
+                    "ent-hero-001"
+                  ],
+                  "consequences": null,
+                  "universe_id": "bf5661df-c5ee-47e4-bf0f-c9cafa01d118",
+                  "story_id": "0f68f9e1-d49f-436a-af07-b617bf4a74ea",
+                  "system_id": null,
+                  "order": 1
+                }
+              ],
+              "sheets": [
+                {
+                  "id": "sheet-hero-001",
+                  "name": "Alex Sheet",
+                  "type": "PC",
+                  "attributes": {},
+                  "local_story": [],
+                  "entity_id": "ent-hero-001",
+                  "story_id": null,
+                  "system_id": null
+                }
+              ],
+              "scenes": [
+                {
+                  "id": "45e472b1-31ef-4b45-86ae-cd3980f03dfd",
+                  "story_id": "0f68f9e1-d49f-436a-af07-b617bf4a74ea",
+                  "sequence_index": 1,
+                  "when": "2025-01-01T10:00:00Z",
+                  "time_span": {
+                    "started_at": "2025-01-01T10:00:00Z",
+                    "ended_at": "2025-01-01T10:20:00Z"
+                  },
+                  "recorded_at": "Session-1",
+                  "location": "Downtown",
+                  "participants": [
+                    "ent-hero-001"
+                  ]
+                },
+                {
+                  "id": "9b566770-d42d-435e-b1f2-1cc0013078c5",
+                  "story_id": "0f68f9e1-d49f-436a-af07-b617bf4a74ea",
+                  "sequence_index": 2,
+                  "when": "2025-01-01T22:00:00Z",
+                  "time_span": {
+                    "started_at": "2025-01-01T22:00:00Z",
+                    "ended_at": "2025-01-01T23:00:00Z"
+                  },
+                  "recorded_at": "Session-1",
+                  "location": "Rooftop",
+                  "participants": [
+                    "ent-hero-001"
+                  ]
+                }
+              ],
+              "universe_id": "bf5661df-c5ee-47e4-bf0f-c9cafa01d118",
+              "arc_id": null,
+              "system_id": null
+            }
+          ],
+          "multiverse_id": null,
+          "system_id": null
+        }
+      ],
+      "omniverse_id": null
+    }
+  ]
+}
