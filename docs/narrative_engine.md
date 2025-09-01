@@ -27,7 +27,7 @@ Purpose
 
 - Current (MVP): in-memory `Session` (single primary agent; conversation history)
 - Planned (Sprint 4): LangChain/LangGraph
-  - Proposed nodes: Director → Librarian → Steward → Narrator → Critic → Archivist → Persist
+  - Proposed nodes: Director → Librarian → Steward → Narrator → Critic → Archivist → Recorder
   - Tools:
     - query_tool: wraps `QueryService` (entities/scenes/facts/relations/axioms/systems)
     - rules_tool: dice/system helpers (from `systems/*.yaml`)
@@ -36,6 +36,126 @@ Purpose
   - Modes:
     - Co‑pilot vs Auto‑pilot (user approval gates persistence in co‑pilot)
   - Guardrails: tone/rating checks; refusal if policy violated
+
+---
+
+## Narrative Engine — Functions (contracts)
+
+1) Rule Interpretation
+- Function: Translate declarative rules (e.g., YAML) into executable operations.
+- Inputs: game system definition, narrative/scene context, requested actions.
+- Outputs: resolutions (success/failure/partial), derived effects, state changes.
+- Constraints: deterministic given same inputs; full traceability (which rule applied and why).
+- Metrics: rule coverage, resolution latency, ambiguity rate.
+
+2) Narrative State Management
+- Function: Maintain the state of story, scene, and active entities.
+- Inputs: resolutions, confirmed events, user/agent decisions.
+- Outputs: updated consistent state (timeline, flags, conditions).
+- Invariants: no loss of causality; no duplicate events; consistency between attributes and conditions.
+- Metrics: number of inconsistencies detected, commit time.
+
+3) Narrative Generation
+- Function: Produce diegetic text (prose, dialogue, descriptions) from state + resolutions.
+- Inputs: current state, scene goals, style/tone.
+- Outputs: narrative passages with continuity markers (which facts it supports).
+- Quality: coherence, tone, pacing, variety; no explicit contradictions.
+- Metrics: clarity/coherence score (Critic), controlled length, revision rate.
+
+4) Continuity & Validation
+- Function: Check temporality, roles, identities, canon.
+- Inputs: new/modified facts; proposed relationships.
+- Outputs: ok / warnings / veto with reasons and correction suggestions.
+- Typical rules: no same entity in two places at the same time; role conflicts; paradox detection.
+- Metrics: false positives/negatives, validation time.
+
+5) Scene Planning
+- Function: Transform high-level goals into beats (micro-narrative objectives).
+- Inputs: high-level goal (e.g., “introduce rival”, “reveal clue”).
+- Outputs: ordered list of beats with completion criteria and risks.
+- Metrics: beat completion rate, deviation from plan.
+
+6) Traceability & Explainability
+- Function: Record why outcomes happened (rule X + evidence Y ⇒ decision Z).
+- Inputs: all actions/checks/selections.
+- Outputs: queryable trace (who decided, based on what).
+- Metrics: trace completeness, auditability.
+
+---
+
+## Agents — Functions
+
+- Director
+  - Goal: Turn a request into a scene/beat plan.
+  - Inputs: user intent, current context.
+  - Outputs: list of beats, dependencies, conditions of success, risks.
+  - Failure: if insufficient data, return alternative plans with clear assumptions.
+
+- Librarian
+  - Goal: Answer “what do we already know” and “what supports X.”
+  - Inputs: query or hypothesis.
+  - Outputs: relevant excerpts/summaries, ranking, justification.
+  - Failure: when no evidence exists, return null with identified gaps.
+
+- Steward (Continuity Guardian)
+  - Goal: Detect and arbitrate contradictions.
+  - Inputs: new/modified facts; proposed relationships.
+  - Outputs: validation, warnings, or veto with fix recommendations.
+  - Failure: if ambiguity, request disambiguation (time, identity, source).
+
+- Narrator
+  - Goal: Write diegetic output consistent with plan + rules + continuity.
+  - Inputs: validated beats, engine resolutions, style/tone.
+  - Outputs: final text, markers of which facts are referenced/changed.
+  - Failure: if constraints can’t be met, return degraded version + notes.
+
+- Character (Personifier)
+  - Goal: Simulate voices/behaviors of entities/characters.
+  - Inputs: characterization (traits, goals, limits), scene context.
+  - Outputs: dialogue/action turns consistent with character sheet/entity.
+  - Failure: if characterization is insufficient, request minimal traits.
+
+- Critic
+  - Goal: Evaluate and suggest improvements.
+  - Inputs: narrator’s draft + quality criteria (coherence, tone, pacing).
+  - Outputs: scores, comments, suggested actions (cut, reorder, rewrite).
+  - Thresholds: if below threshold, return for rewrite with clear directions.
+
+- Recorder
+  - Goal: Formalize and consolidate accepted outcomes.
+  - Inputs: final text, canonical facts, state changes.
+  - Outputs: commit confirmation and reference keys (for future queries).
+  - Failure: if commit violates invariants, reject and return diff/diagnosis.
+
+- Chat Host / Orchestrator
+  - Goal: Manage turns, modes (copilot/autopilot), and agent handoffs.
+  - Inputs: user intent, flow state, guardrail policies.
+  - Outputs: next step, which agent acts, what is needed, when to stop.
+  - Failure: in loops or conflicts, escalate to human review.
+
+---
+
+## Cross‑Cutting Policies (Guardrails)
+
+- Separation of powers: narrator doesn’t persist; recorder doesn’t generate; steward validates before commit.
+- Mandatory explainability: every decision logs “rule + evidence + responsible.”
+- Copilot vs autopilot modes: copilot requires checkpoints; autopilot follows thresholds/policies.
+- Idempotence & retry safety: every step can be retried without duplicating effects.
+- Quality control: critic is mandatory with thresholds; subpar results trigger rewrite loop.
+
+---
+
+## Acceptance Criteria by Function (high‑level)
+
+- Planning: produces actionable beats.
+- Validation (Steward): catches obvious contradictions; FP/FN within tolerance.
+- Narration: respects beats, rules, and style; coherence ≥ threshold.
+- Personification: consistent behavior with declared traits in ≥ X turns.
+- Retrieval (Librarian): clear relevance + justification.
+- Recording: commits consistent, full trace included.
+- Orchestration: flow without deadlocks; recoverable on failure.
+
+> Next step: formalize these into interfaces (inputs, outputs, pre/post‑conditions, error signals) so we can write smoke tests and enforce compliance before diving into implementations.
 
 ---
 
