@@ -253,5 +253,6 @@ See **Design Extensions & Integration Addendum (EN)** for:
 
 * **Ontology**: *Ontology Model — Updated With Facts (v2)*
 * **Design addendum**: *M.O.N.I.T.O.R. — Design Extensions & Integration Addendum (EN)*
+* **Narrative Engine**: `docs/narrative_engine.md` (consolidated design)
 
 > Tip: Start small. Create one Universe, one Story with a few Scenes, edit YAML or ingest two documents, and let the co-pilot draft a scene. Then add a what-if branch and compare diffs.

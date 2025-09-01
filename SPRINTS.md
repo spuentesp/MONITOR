@@ -52,10 +52,9 @@ Update (2025-09-01)
 ## ✍️ Sprint 4 — Multi-Agent Orchestration
 **Goal:** implement co-pilot and auto-pilot workflows.  
 
-- **Deliverables**: LangGraph/CrewAI flows; agent roles (Director, Librarian, Steward, Narrator, Critic, Chat Host); guardrails.  
+**Deliverables**: LangChain (LangGraph) flows — preferred — with optional CrewAI pathways; agent roles (Director, Librarian, Steward, Narrator, Critic, Chat Host); guardrails.  
+See `docs/narrative_engine.md` for the consolidated engine design.
 - **Acceptance**: co-pilot produces outline, evidence, warnings, draft, critique; auto-pilot produces text + 2 options.  
-- **KPIs**: ≥80% narratives with ≥2 citations; Steward warnings ≤0.3 per narrative.  
-
 ---
 
 ## 🌿 Sprint 5 — What-If Branches

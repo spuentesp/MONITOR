@@ -57,3 +57,14 @@ class Neo4jRepo:
         ]
         for c in constraints:
             self.run(c)
+
+    def bootstrap_indexes(self):
+        # Property indexes for frequently-filtered ids and sequence lookups
+        indexes: Iterable[str] = [
+            "CREATE INDEX IF NOT EXISTS FOR (s:Scene) ON (s.sequence_index)",
+            "CREATE INDEX IF NOT EXISTS FOR (st:Story) ON (st.arc_id)",
+            "CREATE INDEX IF NOT EXISTS FOR (sc:Scene) ON (sc.story_id)",
+            "CREATE INDEX IF NOT EXISTS FOR ()-[hs:HAS_SCENE]-() ON (hs.sequence_index)",
+        ]
+        for i in indexes:
+            self.run(i)

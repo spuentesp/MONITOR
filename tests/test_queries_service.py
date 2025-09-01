@@ -76,3 +76,30 @@ def test_queries_shapes():
 
     svc.previous_scene_for_entity_in_story("ST-1", "E-1", 3)
     assert "ORDER BY sequence_index DESC" in repo.last[0]
+
+    # Effective system queries shapes
+    svc.effective_system_for_universe("U-1")
+    assert "MATCH (u:Universe {id:$uid})" in repo.last[0]
+
+    svc.effective_system_for_story("ST-1")
+    assert "MATCH (st:Story {id:$sid})" in repo.last[0]
+
+    svc.effective_system_for_scene("SC-1")
+    assert "MATCH (st:Story)-[:HAS_SCENE]->(sc:Scene {id:$sid})" in repo.last[0]
+
+    svc.effective_system_for_entity("E-1")
+    assert "MATCH (e:Entity {id:$eid})" in repo.last[0]
+
+    svc.effective_system_for_entity_in_story("E-1", "ST-1")
+    txt, params = repo.last
+    assert "MATCH (e:Entity {id:$eid})" in txt and "MATCH (st:Story {id:$sid})" in txt
+    assert params["eid"] == "E-1" and params["sid"] == "ST-1"
+
+    # Relation effective queries shapes
+    svc.relations_effective_in_scene("SC-9")
+    assert "MATCH (st:Story)-[:HAS_SCENE]->(sc:Scene {id:$sid})" in repo.last[0]
+
+    svc.relation_is_active_in_scene("E-1", "E-2", "SC-9")
+    txt, params = repo.last
+    assert "MATCH (st:Story)-[:HAS_SCENE]->(sc:Scene {id:$sid})" in txt
+    assert params["a"] == "E-1" and params["b"] == "E-2" and params["sid"] == "SC-9"

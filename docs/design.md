@@ -253,3 +253,17 @@ workflow:
 * Seeds: 1 `asset`, 1 `annotation`, 1 `agent_run`.
 * Stub endpoints: `GET /search` and `POST /ops/agent-runs` (idempotent).
 * Basic Steward validation: `ContextToken` + `acl` + `schema_version`.
+
+---
+
+## 15) Orchestration Stack (Agents)
+
+**Decision:** Prefer **LangChain/LangGraph** for fine‑grained control over state, tools, and branching. **CrewAI** remains an optional composition layer for quick multi‑agent setups.
+
+**Current status:** The repo includes a lightweight, framework‑agnostic agent layer (Narrador/Archivista/Personificador + Session with a pluggable LLM interface) to unblock narrative tests and local iteration without external services.
+
+**Sprint 4 plan:**
+- Keep agent contracts stable (AgentConfig, act(), Session.history).
+- Replace the in-memory Session with a LangGraph workflow (nodes: Director → Librarian → Steward → Narrator → Critic → Archivist → Persist).
+- Add tool bindings to query the graph (QueryService) and to persist draft outputs as Facts/RelationState deltas.
+- Wrap invocations in `ops/agent_runs.yaml` records for traceability (Langfuse optional).
