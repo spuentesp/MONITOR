@@ -192,6 +192,7 @@ with st.sidebar:
     st.session_state.autocommit_enabled = st.checkbox(
         "Auto-commit significant changes (async)", value=bool(os.getenv("MONITOR_AUTOCOMMIT") in ("1", "true", "True"))
     )
+    st.session_state.force_monitor = st.checkbox("Force monitor intent (send as monitor)", value=False)
 
     cols = st.columns(2)
     if cols[0].button("Reset Session"):
@@ -285,34 +286,31 @@ if user_intent:
     scene_id = st.session_state.scene_id or None
     llm = st.session_state["llm"]
     ctx = st.session_state["ctx"]
-    # Lightweight router: prefix 'monitor' or 'mon' switches to monitor mode for this turn
-    is_monitor = False
+    # Always defer routing to the agentic backend
     try:
-        import re as _re
-
-        is_monitor = bool(_re.match(r"^\s*(hey,?\s*)?(monitor|mon|system|m)\b", user_intent, flags=_re.IGNORECASE))
-    except Exception:
-        is_monitor = False
-
-    try:
-        if is_monitor:
-            # Lazy import to avoid ImportError if orchestrator isn't fully initialized yet
-            try:
-                from core.engine.orchestrator import monitor_reply as _monitor_reply
-
-                out = _monitor_reply(ctx, user_intent, mode=st.session_state.mode, scene_id=scene_id)
-            except Exception as _e:
-                out = {
-                    "draft": "Monitor unavailable. Try again or check backend logs.",
-                    "monitor": True,
-                    "error": str(_e),
-                }
-        else:
-            out = run_once(user_intent, scene_id=scene_id, mode=st.session_state.mode, ctx=ctx, llm=llm)
+        # If forcing monitor, prepend a prefix the agent router will learn to map to monitor
+        msg = user_intent if not st.session_state.get("force_monitor") else f"[monitor] {user_intent}"
+        out = run_once(msg, scene_id=scene_id, mode=st.session_state.mode, ctx=ctx, llm=llm)
     except Exception as e:
         # Display a concise, friendly error and keep the session alive
         st.error(f"LLM error: {e}")
         out = {"draft": "", "error": str(e)}
+
+    # Adopt returned references for continuity
+    try:
+        new_scene = out.get("scene_id") or (out.get("refs") or {}).get("scene_id") or (
+            (out.get("commit") or {}).get("refs") or {}
+        ).get("scene_id")
+        if new_scene and isinstance(new_scene, str):
+            st.session_state.scene_id = new_scene
+    except Exception:
+        pass
+    # Adopt tags if provided by the flow
+    try:
+        if out.get("tags") and isinstance(out.get("tags"), list):
+            st.session_state["tags"] = list(out.get("tags"))
+    except Exception:
+        pass
 
     # Optional lightweight persistence per turn (simple Fact from draft)
     if st.session_state.persist_each:
@@ -321,9 +319,10 @@ if user_intent:
 
             draft = out.get("draft") or user_intent
             fact = {"description": (draft[:180] + ("…" if len(draft) > 180 else ""))}
-            if scene_id:
-                fact["occurs_in"] = scene_id
-            commit = {"facts": [fact], "scene_id": scene_id}
+            occurs_in = st.session_state.scene_id or scene_id
+            if occurs_in:
+                fact["occurs_in"] = occurs_in
+            commit = {"facts": [fact], "scene_id": occurs_in}
             persisted = recorder_tool(ctx, draft=draft, deltas=commit)
             out["persisted"] = persisted
         except Exception as e:  # pragma: no cover

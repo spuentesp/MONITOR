@@ -72,10 +72,14 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
             return []
 
     def intent_router(state: dict[str, Any]) -> dict[str, Any]:
-        # Let LLM route the input; fallback to narrative
+        # Let LLM route the input. In strict mode, avoid assuming narrative.
         intent = state.get("intent", "")
-        routed = _safe_act("intent_router", [{"role": "user", "content": intent}], default="narrative")
-        label = (routed or "narrative").strip().lower()
+        routed = _safe_act("intent_router", [{"role": "user", "content": intent}], default=None)
+        label = (routed or "").strip().lower() if isinstance(routed, str) else ""
+        if not label and _env_flag("MONITOR_AGENTIC_STRICT", "0"):
+            label = "qa"  # minimal safe default
+        if not label:
+            label = "narrative"
         return {**state, "intent_type": label}
 
     def director(state: dict[str, Any]) -> dict[str, Any]:
@@ -134,30 +138,57 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
             return {**state, "validation": {"ok": True, "warnings": [hints]}}
         return {**state, "validation": {"ok": True, "warnings": []}}
 
-    def planner(state: dict[str, Any]) -> dict[str, Any]:
-        """Ask the planner for actions when bootstrap or monitor/audit or action_* intents.
+    def _tool_schema() -> list[dict[str, Any]]:
+        return [
+            {
+                "name": "bootstrap_story",
+                "args": {"title": "str", "protagonist_name": "str?", "time_label": "str?", "tags": "list[str]?", "universe_id": "str?"},
+                "returns": {"refs": {"scene_id": "str", "story_id": "str", "universe_id": "str"}},
+            },
+            {
+                "name": "query",
+                "args": {"method": "str", "scene_id": "str?", "story_id": "str?", "universe_id": "str?"},
+                "returns": "any",
+            },
+            {
+                "name": "recorder",
+                "args": {"facts": "list[Fact]?", "relations": "list[Relation]?", "relation_states": "list[RelationState]?", "scene_id": "str?"},
+                "returns": {"mode": "str", "refs": {"scene_id": "str?", "run_id": "str"}},
+            },
+        ]
 
-        The planner returns a JSON list of actions, else we keep actions empty.
+    def planner(state: dict[str, Any]) -> dict[str, Any]:
+        """Agentic planner: always request a JSON list of actions; empty list means no-ops.
+
+        The planner decides if/what to do given intent and context.
         """
-        intent_type = state.get("intent_type")
-        if intent_type in {"bootstrap", "audit_relations", "action_examine", "action_move"}:
-            plan = _safe_act(
-                "planner",
-                [{"role": "user", "content": f"Intent: {state.get('intent')}\nContext: {str({k:v for k,v in state.items() if k in ['scene_id']})}"}],
-                default="[]",
-            )
-            try:
-                actions = json.loads(plan) if isinstance(plan, str) else plan
-            except Exception:
-                actions = []
-            return {**state, "actions": actions or []}
-        return {**state, "actions": []}
+        # Provide richer but compact context: IDs and librarian/evidence summary if available
+        compact_ctx = {
+            k: state.get(k)
+            for k in ("scene_id", "story_id", "universe_id", "tags")
+            if state.get(k) is not None
+        }
+        if state.get("evidence_summary"):
+            compact_ctx["evidence_summary"] = state.get("evidence_summary")
+        plan = _safe_act(
+            "planner",
+            [{"role": "user", "content": f"Intent: {state.get('intent')}\nContext: {compact_ctx}\nTools: {_tool_schema()}\nReturn JSON array of actions."}],
+            default="[]",
+        )
+        try:
+            actions = json.loads(plan) if isinstance(plan, str) else plan
+        except Exception:
+            actions = []
+        return {**state, "actions": actions or []}
 
     def execute_actions(state: dict[str, Any]) -> dict[str, Any]:
         actions = state.get("actions") or []
         ctx = tools["ctx"]
         results: list[dict[str, Any]] = []
-        new_scene_id = None
+        new_scene_id: str | None = None
+        new_story_id: str | None = None
+        new_universe_id: str | None = None
+        new_tags: list[str] | None = None
         for act in actions:
             try:
                 tool = (act or {}).get("tool")
@@ -170,6 +201,28 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                             or (res.get("result") or {}).get("scene_id")
                             or new_scene_id
                         )
+                        new_story_id = (
+                            (res.get("refs") or {}).get("story_id")
+                            or (res.get("result") or {}).get("story_id")
+                            or new_story_id
+                        )
+                        new_universe_id = (
+                            (res.get("refs") or {}).get("universe_id")
+                            or (res.get("result") or {}).get("universe_id")
+                            or new_universe_id
+                        )
+                    except Exception:
+                        pass
+                    try:
+                        # Capture tags from args to seed continuity across nodes
+                        if isinstance(args.get("tags"), list):
+                            new_tags = list(args.get("tags"))
+                        # Include time_label tag if provided
+                        if args.get("time_label"):
+                            if new_tags is None:
+                                new_tags = []
+                            if args["time_label"] not in new_tags:
+                                new_tags.append(args["time_label"])
                     except Exception:
                         pass
                 elif tool == "recorder":
@@ -180,11 +233,17 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                     res = {"ok": False, "error": f"unknown tool: {tool}"}
             except Exception as e:
                 res = {"ok": False, "error": str(e)}
-            results.append({"tool": act.get("tool"), "result": res})
+            results.append({"tool": act.get("tool") if isinstance(act, dict) else None, "result": res})
         # If we created a scene, persist it in state for continuity
         next_state = {**state, "action_results": results}
         if new_scene_id and not next_state.get("scene_id"):
             next_state["scene_id"] = new_scene_id
+        if new_story_id and not next_state.get("story_id"):
+            next_state["story_id"] = new_story_id
+        if new_universe_id and not next_state.get("universe_id"):
+            next_state["universe_id"] = new_universe_id
+        if new_tags and not next_state.get("tags"):
+            next_state["tags"] = new_tags
         return next_state
 
     def qa_node(state: dict[str, Any]) -> dict[str, Any]:
@@ -197,6 +256,68 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         msgs = [{"role": "user", "content": state.get("intent", "")}]
         draft = _safe_act("narrator", msgs, default="")
         return {**state, "draft": draft}
+
+    def continuity_guard(state: dict[str, Any]) -> dict[str, Any]:
+        """Use the ContinuityModerator agent to judge drift/incorrectness against tags and scene context.
+
+        Persist minimal structured signal for downstream/recording without regex or local heuristics.
+        """
+        draft = state.get("draft") or ""
+        if not draft.strip():
+            return state
+        scene_id = state.get("scene_id")
+        story_id = state.get("story_id")
+        universe_id = state.get("universe_id")
+        # Fetch compact ontology context to ground the judgment
+        ontology_ctx: dict[str, Any] = {}
+        try:
+            if scene_id:
+                ontology_ctx["system"] = tools["query_tool"](tools["ctx"], "effective_system_for_scene", scene_id=scene_id)
+                ontology_ctx["participants"] = tools["query_tool"](tools["ctx"], "participants_by_role_for_scene", scene_id=scene_id)
+                ontology_ctx["relations"] = tools["query_tool"](tools["ctx"], "relations_effective_in_scene", scene_id=scene_id)
+                ontology_ctx["facts"] = tools["query_tool"](tools["ctx"], "facts_for_scene", scene_id=scene_id)[:8]
+            elif story_id:
+                ontology_ctx["system"] = tools["query_tool"](tools["ctx"], "effective_system_for_story", story_id=story_id)
+                ontology_ctx["participants"] = tools["query_tool"](tools["ctx"], "participants_by_role_for_story", story_id=story_id)
+                ontology_ctx["facts"] = tools["query_tool"](tools["ctx"], "facts_for_story", story_id=story_id)[:8]
+            elif universe_id:
+                ontology_ctx["system"] = tools["query_tool"](tools["ctx"], "effective_system_for_universe", universe_id=universe_id)
+        except Exception:
+            pass
+        # Optionally produce an agentic summary of ontology context to reduce payload size
+        try:
+            if ontology_ctx:
+                summary = _safe_act(
+                    "librarian",
+                    [{"role": "user", "content": f"Summarize context in 1-2 lines: {str(ontology_ctx)[:800]}"}],
+                    default=None,
+                )
+            else:
+                summary = None
+        except Exception:
+            summary = None
+        # Provide compact context to the agent
+        content = {
+            "draft": draft,
+            "scene_id": scene_id,
+            "ontology": ontology_ctx,
+            **({"summary": summary} if summary else {}),
+        }
+        msg = {"role": "user", "content": json.dumps(content, ensure_ascii=False)}
+        verdict = _safe_act("continuity", [msg], default=None)
+        if verdict is None:
+            return state
+        # Accept dict or JSON-like string
+        parsed = None
+        if isinstance(verdict, dict):
+            parsed = verdict
+        else:
+            try:
+                parsed = json.loads(verdict)
+            except Exception:
+                parsed = {"note": str(verdict)[:200]}
+        note = parsed.get("note") if isinstance(parsed, dict) else None
+        return {**state, "continuity": parsed, **({"guard_note": note} if note else {})}
 
     def critic(state: dict[str, Any]) -> dict[str, Any]:
         draft = state.get("draft", "")
@@ -214,13 +335,20 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         # Always record a compact Fact per turn to retain memory of choices
         deltas = {"scene_id": state.get("scene_id")}
         draft = state.get("draft", "")
+        continuity = state.get("continuity")
         if draft.strip():
-            deltas["facts"] = [
-                {
-                    "description": (draft[:220]),
-                    "occurs_in": state.get("scene_id"),
+            fact = {
+                "description": (draft[:220]),
+                "occurs_in": state.get("scene_id"),
+            }
+            if isinstance(continuity, dict):
+                # Persist minimal continuity signal
+                fact["continuity"] = {
+                    k: continuity.get(k)
+                    for k in ("drift", "incorrect", "reasons", "constraints", "note")
+                    if continuity.get(k) is not None
                 }
-            ]
+            deltas["facts"] = [fact]
         commit = tools["recorder_tool"](tools["ctx"], draft=draft, deltas=deltas)
         return {**state, "commit": commit}
 
@@ -234,6 +362,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
     workflow.add_node("qa_node", qa_node)
     workflow.add_node("narrator", narrator)
     workflow.add_node("critic", critic)
+    workflow.add_node("continuity_guard", continuity_guard)
     workflow.add_node("archivist", archivist)
     workflow.add_node("recorder", recorder)
 
@@ -259,10 +388,28 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
 
     workflow.add_edge("director", "librarian")
     workflow.add_edge("librarian", "steward")
-    workflow.add_edge("steward", "planner")
+    # Conductor chooses whether to go plan or directly narrate/qa/monitor
+    def _post_steward(state: dict[str, Any]):
+        snap = {k: state.get(k) for k in ("intent_type", "scene_id", "evidence_summary")}
+        choice = _safe_act("conductor", [{"role": "user", "content": f"State: {snap}. Options: [planner, narrator, qa_node]"}], default="planner")
+        ch = (choice or "planner").strip().lower()
+        return "planner" if ch not in ("narrator", "qa_node") else ch
+    workflow.add_conditional_edges("steward", _post_steward, {"planner": "planner", "narrator": "narrator", "qa_node": "qa_node"})
     workflow.add_edge("planner", "execute_actions")
     workflow.add_edge("execute_actions", "narrator")
-    workflow.add_edge("narrator", "critic")
+    # Optionally allow conductor to re-route after narrator (e.g., re-plan if drift detected later)
+    def _post_narrator(state: dict[str, Any]):
+        snap = {k: state.get(k) for k in ("scene_id", "draft")}
+        choice = _safe_act("conductor", [{"role": "user", "content": f"State: {snap}. Options: [continuity_guard, planner]"}], default="continuity_guard")
+        ch = (choice or "continuity_guard").strip().lower()
+        return "continuity_guard" if ch not in ("planner",) else ch
+    workflow.add_conditional_edges("narrator", _post_narrator, {"continuity_guard": "continuity_guard", "planner": "planner"})
+    # In strict mode, ensure continuity exists before critic (redundant call is harmless)
+    def _needs_continuity(state: dict[str, Any]):
+        if _env_flag("MONITOR_AGENTIC_STRICT", "0"):
+            return "continuity_guard" if not state.get("continuity") else "critic"
+        return "critic"
+    workflow.add_conditional_edges("continuity_guard", _needs_continuity, {"continuity_guard": "continuity_guard", "critic": "critic"})
     workflow.add_edge("critic", "archivist")
 
     # Copilot checkpoint: allow pause before Recorder based on config/env flag
@@ -297,7 +444,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                 pass
             # Fallback: sequential execution to produce a final state dict
             state = dict(inputs)
-            for fn in (intent_router, director, librarian, steward, planner, execute_actions, narrator, critic, archivist):
+            for fn in (intent_router, director, librarian, steward, planner, execute_actions, narrator, continuity_guard, critic, archivist):
                 state = fn(state)
             if not should_pause(state):
                 state = recorder(state)

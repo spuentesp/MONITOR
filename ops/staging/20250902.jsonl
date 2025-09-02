@@ -114,3 +114,43 @@
 {"facts": [{"description": "x"}], "scene_id": null}
 {"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
 {"scene_id": null}
+{"scene_id": null}
+{"scene_id": null, "facts": [{"description": "You stand at the edge of the city, the old stone walls a stark reminder of the world beyond the crowded alleys and markets. The sun dips low, casting long shadows across the cobblestones. A chill runs through the air, hi", "occurs_in": null, "continuity": {"drift": true, "incorrect": false, "reasons": ["No clear relation to the provided ontology"], "note": "Please provide the scene_id to align with the ontology."}}]}
+{"scene_id": null}
+{"message": "hi"}
+{"scene_id": null, "facts": [{"description": "The flickering torch on the alleyway wall cast eerie shadows on the damp stone pavement. You stood at the edge of the narrow passageway, the smell of decay and smoke heavy in the air. The city's bustling streets were jus", "occurs_in": null, "continuity": {"drift": true, "incorrect": false, "reasons": ["missing scene_id", "missing ontology"], "note": "Provide scene_id and ontology for scene context."}}]}
+{"scene_id": null}
+{"scene_id": "s1", "facts": [{"description": "You stand at the edge of the city, the last remnants of sunlight dancing across the worn cobblestones. Above, the imposing structure of the city's Spire looms, its facets glinting with an otherworldly light. The air is h", "occurs_in": "s1", "continuity": {"drift": true, "incorrect": false, "reasons": ["missing system", "missing participants", "missing relations", "missing facts"], "note": "Define system, participants, relations, and facts to establish scene context."}}]}
+{"facts": [{"description": "You stand at the edge of the city, the last remnants of sunlight dancing across the worn cobblestones. Above, the imposing structure of the city's Spire looms, its facets glinting …", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": null}
+{"scene_id": "s1", "facts": [{"description": "I don't understand what 'x' means. Are you trying to start a game or scenario? Let's begin. \n\nYou find yourself standing on the edge of a dense forest, a worn dirt path leading into the trees before you. The air is heavy", "occurs_in": "s1", "continuity": {"drift": true, "incorrect": false, "reasons": ["missing ontology context", "no system, participants, relations, or facts defined"], "note": "Define the scene's system, participants, relations, and facts to maintain consistency."}}]}
+{"facts": [{"description": "I don't understand what 'x' means. Are you trying to start a game or scenario? Let's begin. \n\nYou find yourself standing on the edge of a dense forest, a worn dirt path leading int…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null, "facts": [{"description": "You find yourself standing at the edge of a worn, dusty road. The air is heavy with the scent of smoke and grease. To your left, a decrepit gas station looms, its faded sign reading \"Eddies' Fuel\" in crooked letters. The", "occurs_in": null, "continuity": {"drift": false, "incorrect": false, "reasons": ["missing scene_id", "missing ontology"], "note": "Provide scene_id and ontology for context."}}]}
+{"scene_id": null}
+{"scene_id": null, "facts": [{"description": "You stand at the edge of the city, the last remnants of sunlight casting long shadows across the dusty streets. The air is heavy with the smell of smoke and grease from the nearby market. A lone figure, cloaked in a worn", "occurs_in": null, "continuity": {"drift": true, "incorrect": false, "reasons": ["missing scene_id", "missing ontology"], "note": "Provide scene_id and ontology for context."}}]}
+{"scene_id": null}
+{"message": "There is no relevant story context to summarize."}
+{"scene_id": "s1", "facts": [{"description": "The dimly lit tavern was abuzz with the murmur of hushed conversations and the clinking of glasses. You sit at the bar, nursing a mug of lukewarm ale, your eyes fixed on the figure of a hooded stranger in the corner. The", "occurs_in": "s1", "continuity": {"drift": true, "incorrect": false, "reasons": ["Lack of context", "No established scene or system"], "note": "Establish a scene or system before starting the narrative."}}]}
+{"facts": [{"description": "The dimly lit tavern was abuzz with the murmur of hushed conversations and the clinking of glasses. You sit at the bar, nursing a mug of lukewarm ale, your eyes fixed on the figure…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": null}
+{"scene_id": "s1", "facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest. The air is heavy with the scent of damp earth and decaying leaves. The only sound is the soft rustling of leaves in the gentle breeze, punctuated b", "occurs_in": "s1", "continuity": {"drift": true, "incorrect": false, "reasons": ["Lack of ontology context"], "note": "Please populate ontology context for scene."}}]}
+{"facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest. The air is heavy with the scent of damp earth and decaying leaves. The only sound is the soft rustling of l…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null, "facts": [{"description": "You find yourself standing at the edge of a dense forest, the trees towering above you like sentinels. A faint mist clings to the underbrush, shrouding the air in an eerie gloom. A narrow dirt path stretches before you, ", "occurs_in": null, "continuity": {"drift": true, "incorrect": false, "reasons": ["missing scene_id", "missing ontology"], "note": "Provide scene_id and ontology for scene context."}}]}
+{"scene_id": null}
+{"scene_id": null, "facts": [{"description": "You find yourself standing at the edge of a dense forest, the trees towering above you like sentinels. A faint mist clings to the underbrush, shrouding the forest floor in an eerie gloom. A worn dirt path stretches out b", "occurs_in": null, "continuity": {"drift": true, "incorrect": false, "reasons": ["missing scene_id", "missing ontology"], "note": "Provide scene_id and ontology for context."}}]}
+{"scene_id": null}
+{"scene_id": "s1", "facts": [{"description": "The dimly lit alleyway stretched out before you, the only sound the distant hum of the city and the faint rustle of a stray cat searching for scraps. You had been walking for what felt like hours, the winding streets of ", "occurs_in": "s1", "continuity": {"drift": true, "incorrect": false, "reasons": ["Missing ontology context", "Empty ontology"], "note": "Please populate the ontology context with relevant entities, relations, and facts."}}]}
+{"facts": [{"description": "The dimly lit alleyway stretched out before you, the only sound the distant hum of the city and the faint rustle of a stray cat searching for scraps. You had been walking for what …", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": "s1", "facts": [{"description": "You stood at the edge of the abandoned pier, the wooden planks worn smooth by years of saltwater and wind. Gulls wheeled overhead, their cries carried away on the breeze as you gazed out at the darkening sea. \n\nYou'd bee", "occurs_in": "s1", "continuity": {"drift": true, "incorrect": true, "reasons": ["Missing ontology context", "Empty ontology"], "note": "Please populate the ontology context with relevant information."}}]}
+{"facts": [{"description": "You stood at the edge of the abandoned pier, the wooden planks worn smooth by years of saltwater and wind. Gulls wheeled overhead, their cries carried away on the breeze as you gaz…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}

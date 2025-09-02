@@ -13,10 +13,12 @@ from core.engine.cache import ReadThroughCache, StagingStore
 from core.agents.intent_router import intent_router_agent
 from core.agents.planner import planner_agent
 from core.agents.qa import qa_agent
+from core.agents.continuity import continuity_agent
+from core.agents.conductor import conductor_agent
 from core.engine.langgraph_flow import select_engine_backend
 import re
 from queue import Queue
-from core.engine.autocommit import AutoCommitWorker
+from core.engine.autocommit import AutoCommitWorker, DeciderFn, default_decider
 
 # Module-level singletons to avoid spawning a worker per request
 _AUTOCOMMIT_WORKER: AutoCommitWorker | None = None
@@ -143,11 +145,38 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
         global _AUTOCOMMIT_WORKER, _AUTOCOMMIT_QUEUE, _IDEMPOTENCY_SET
         if _AUTOCOMMIT_WORKER is None or _AUTOCOMMIT_QUEUE is None:
             _AUTOCOMMIT_QUEUE = Queue(maxsize=1024)
+            # Build an agentic decider if an LLM is available; else fallback to default
+            decider: DeciderFn = default_decider
+            try:
+                from core.generation.providers import select_llm_from_env
+                llm = select_llm_from_env()
+                def _llm_decider(payload: dict[str, Any]) -> tuple[bool, str]:
+                    prompt = (
+                        "You are AutoCommit. Decide if this change should be committed.\n"
+                        "Return ONLY JSON: {\"commit\": <true|false>, \"reason\": <short>}\n"
+                        f"Payload: {payload}"
+                    )
+                    try:
+                        ans = llm.chat([{ "role": "user", "content": prompt }])
+                        txt = ans or "{}"
+                        import json as _json
+                        obj = _json.loads(txt) if isinstance(txt, str) else {}
+                        return (bool(obj.get("commit")), str(obj.get("reason") or "agentic"))
+                    except Exception:
+                        return default_decider(payload)
+                decider = _llm_decider
+            except Exception:
+                # If strict agentic mode is requested, do not fallback to heuristics
+                if os.getenv("MONITOR_AGENTIC_STRICT", "0") in ("1", "true", "True"):
+                    def _strict_no_llm(payload: dict[str, Any]) -> tuple[bool, str]:
+                        return False, "strict_no_llm"
+                    decider = _strict_no_llm
             _AUTOCOMMIT_WORKER = AutoCommitWorker(
                 queue=_AUTOCOMMIT_QUEUE,
                 recorder=recorder,
                 read_cache=read_cache,
                 idempotency=_IDEMPOTENCY_SET,
+                decider=decider,
             )
             try:
                 _AUTOCOMMIT_WORKER.start()
@@ -231,6 +260,8 @@ def run_once(
                 "intent_router": intent_router_agent(llm),
                 "planner": planner_agent(llm),
                 "qa": qa_agent(llm),
+                "continuity": continuity_agent(llm),
+                "conductor": conductor_agent(llm),
             }
             graph = build_langgraph_flow(tools_pkg)
             out = graph.invoke({"intent": user_intent, "scene_id": scene_id})
