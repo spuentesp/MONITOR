@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
+import hashlib
+import json
 
 try:  # Optional typing only; no runtime import dependency
     from core.ports.cache import CachePort, StagingPort  # type: ignore
@@ -20,13 +22,21 @@ class ToolContext:
     dry_run: if True, Recorder won't persist; returns a plan/diff instead.
     """
 
-    query_service: QueryReadPort | Any
-    recorder: RecorderWritePort | Any | None = None
+    # Use Any for runtime-injected ports to avoid import-time typing issues
+    query_service: Any
+    recorder: Any | None = None
     rules: Any | None = None
     dry_run: bool = True
     # Optional caches (duck-typed interfaces)
-    read_cache: CachePort | Any | None = None
-    staging: StagingPort | Any | None = None
+    read_cache: Any | None = None
+    staging: Any | None = None
+
+    # Optional async auto-commit agent wiring (non-blocking)
+    autocommit_enabled: bool = False
+    autocommit_queue: Any | None = None  # e.g., queue.Queue
+    autocommit_worker: Any | None = None  # background thread/worker handle
+    # Simple in-memory idempotency set shared with the worker
+    idempotency: set[str] | None = None
 
 
 def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
@@ -113,8 +123,49 @@ def notes_tool(_: ToolContext, text: str, scope: dict[str, str] | None = None) -
 def recorder_tool(
     ctx: ToolContext, draft: str, deltas: dict[str, Any] | None = None
 ) -> dict[str, Any]:
-    """Recorder: dry-run by default; if recorder present and not dry_run, persist deltas."""
+    """Recorder: stage always; commit immediately only when not dry_run; otherwise enqueue for async autocommit if enabled.
+
+    Contract (backward compatible):
+    - When ctx.dry_run is False and ctx.recorder is set, write immediately (autopilot semantics).
+    - Regardless of mode, attempt to stage deltas for audit/flush.
+    - If autocommit is enabled, enqueue the payload for an async decision; worker ensures idempotency.
+    """
     deltas = deltas or {}
+
+    # Prepare idempotency key
+    def _delta_key(payload: dict[str, Any]) -> str:
+        try:
+            s = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        except Exception:
+            s = str(payload)
+        return hashlib.sha1(s.encode("utf-8")).hexdigest()
+
+    key = _delta_key(deltas)
+    if ctx.idempotency is None:
+        ctx.idempotency = set()
+
+    # Always try to stage (best-effort)
+    try:
+        if ctx.staging is not None:
+            ctx.staging.stage(deltas)
+    except Exception:
+        pass
+
+    # Optionally enqueue for async auto-commit decision (non-blocking)
+    try:
+        if ctx.autocommit_enabled and ctx.autocommit_queue is not None:
+            ctx.autocommit_queue.put(
+                {
+                    "delta_key": key,
+                    "deltas": deltas,
+                    "draft": draft,
+                    "scene_id": deltas.get("scene_id"),
+                }
+            )
+    except Exception:
+        pass
+
+    # Immediate commit path (autopilot)
     if not ctx.dry_run and ctx.recorder is not None:
         res = ctx.recorder.commit_deltas(
             scene_id=deltas.get("scene_id"),
@@ -129,6 +180,11 @@ def recorder_tool(
             new_scene=deltas.get("new_scene"),
             new_entities=deltas.get("new_entities"),
         )
+        # Mark as committed to prevent worker duplicates
+        try:
+            ctx.idempotency.add(key)
+        except Exception:
+            pass
         # Invalidate read cache after write
         try:
             if ctx.read_cache is not None:
@@ -138,13 +194,11 @@ def recorder_tool(
         return {
             "mode": "commit",
             "result": res,
-            "refs": {"scene_id": deltas.get("scene_id")},
+            "refs": {"scene_id": deltas.get("scene_id"), "run_id": key},
             "trace": ["recorder:persist"],
         }
-    # Dry-run: stage deltas if a staging store exists
+    # Dry-run return; clear cache because world may be updated by the worker soon
     try:
-        if ctx.staging is not None:
-            ctx.staging.stage(deltas)
         if ctx.read_cache is not None:
             ctx.read_cache.clear()
     except Exception:
@@ -153,6 +207,6 @@ def recorder_tool(
         "mode": "dry_run",
         "draft_preview": draft[:180],
         "deltas": deltas,
-        "refs": {"run_id": None, "scene_id": deltas.get("scene_id")},
+        "refs": {"run_id": key, "scene_id": deltas.get("scene_id")},
         "trace": ["recorder:dry_run"],
     }

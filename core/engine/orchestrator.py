@@ -11,6 +11,13 @@ from core.agents.steward import steward_agent as steward_llm_agent
 from core.agents.critic import critic_agent
 from core.engine.cache import ReadThroughCache, StagingStore
 from core.engine.langgraph_flow import select_engine_backend
+from queue import Queue
+from core.engine.autocommit import AutoCommitWorker
+
+# Module-level singletons to avoid spawning a worker per request
+_AUTOCOMMIT_WORKER: AutoCommitWorker | None = None
+_AUTOCOMMIT_QUEUE: Queue | None = None
+_IDEMPOTENCY_SET: set[str] = set()
 from core.engine.tools import ToolContext, query_tool, recorder_tool
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.queries import QueryService
@@ -124,9 +131,49 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
     else:
         read_cache = ReadThroughCache(capacity=512, ttl_seconds=ttl)
         staging = StagingStore()
+    # Optional async autocommit worker
+    autocommit_enabled = os.getenv("MONITOR_AUTOCOMMIT", "0") in ("1", "true", "True")
+    autocommit_q = None
+    worker = None
+    if autocommit_enabled and recorder is not None:
+        global _AUTOCOMMIT_WORKER, _AUTOCOMMIT_QUEUE, _IDEMPOTENCY_SET
+        if _AUTOCOMMIT_WORKER is None or _AUTOCOMMIT_QUEUE is None:
+            _AUTOCOMMIT_QUEUE = Queue(maxsize=1024)
+            _AUTOCOMMIT_WORKER = AutoCommitWorker(
+                queue=_AUTOCOMMIT_QUEUE,
+                recorder=recorder,
+                read_cache=read_cache,
+                idempotency=_IDEMPOTENCY_SET,
+            )
+            try:
+                _AUTOCOMMIT_WORKER.start()
+            except Exception:
+                _AUTOCOMMIT_WORKER = None
+                _AUTOCOMMIT_QUEUE = None
+                autocommit_enabled = False
+        autocommit_q = _AUTOCOMMIT_QUEUE
+        worker = _AUTOCOMMIT_WORKER
     return ToolContext(
-        query_service=qs, recorder=recorder, dry_run=dry_run, read_cache=read_cache, staging=staging
+        query_service=qs,
+        recorder=recorder,
+        dry_run=dry_run,
+        read_cache=read_cache,
+        staging=staging,
+        autocommit_enabled=autocommit_enabled,
+        autocommit_queue=autocommit_q,
+        autocommit_worker=worker,
+    idempotency=_IDEMPOTENCY_SET if autocommit_enabled else None,
     )
+
+
+def autocommit_stats() -> dict[str, Any]:
+    """Return current AutoCommit worker stats if running."""
+    try:
+        if _AUTOCOMMIT_WORKER is not None:
+            return {"enabled": True, **_AUTOCOMMIT_WORKER.get_stats()}
+    except Exception:
+        pass
+    return {"enabled": False}
 
 
 def flush_staging(ctx: ToolContext) -> dict[str, Any]:

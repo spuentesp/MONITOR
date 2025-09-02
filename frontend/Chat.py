@@ -18,6 +18,7 @@ from core.engine.orchestrator import (
     build_live_tools,
     flush_staging,
     run_once,
+    autocommit_stats,
 )
 from core.engine.steward import StewardService
 from core.generation.providers import select_llm_from_env, list_groq_models
@@ -41,6 +42,12 @@ def build_orchestrator(mode: str) -> dict[str, Any]:
         os.environ["MONITOR_GROQ_MODEL"] = st.session_state.get("groq_model")
     elif st.session_state.get("llm_backend") == "groq" and not os.getenv("MONITOR_GROQ_MODEL"):
         os.environ["MONITOR_GROQ_MODEL"] = "llama-3.1-8b-instant"
+
+    # AutoCommit env flag from sidebar
+    if st.session_state.get("autocommit_enabled"):
+        os.environ["MONITOR_AUTOCOMMIT"] = "1"
+    else:
+        os.environ.pop("MONITOR_AUTOCOMMIT", None)
 
     ctx = build_live_tools(dry_run=(mode != "autopilot"))
     llm = select_llm_from_env()
@@ -183,6 +190,9 @@ with st.sidebar:
     st.session_state.persist_each = st.checkbox(
         "Persist a simple Fact per turn", value=st.session_state.persist_each
     )
+    st.session_state.autocommit_enabled = st.checkbox(
+        "Auto-commit significant changes (async)", value=bool(os.getenv("MONITOR_AUTOCOMMIT") in ("1", "true", "True"))
+    )
 
     cols = st.columns(2)
     if cols[0].button("Reset Session"):
@@ -238,6 +248,14 @@ with st.sidebar:
                 st.caption(f"Staging pending: {ctx0.staging.pending()} items")
         except Exception:
             pass
+
+    # AutoCommit status panel
+    with st.expander("Auto-commit status", expanded=False):
+        try:
+            stats = autocommit_stats()
+            st.json(stats)
+        except Exception:
+            st.caption("No autocommit status available.")
 
 
 st.title("MONITOR — Agents Chat")
