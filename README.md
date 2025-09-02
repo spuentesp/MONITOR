@@ -166,6 +166,7 @@ Orchestration stack: **LangGraph** (default). Optional LangChain tools can be en
 3. **Start services**: `docker compose up -d` (Neo4j/Memgraph, Meilisearch, Qdrant/Weaviate, MinIO, Redis, Langfuse).
 4. **Backend**: `uvicorn backend.main:app --reload` (FastAPI).
 5. **Frontend**: `streamlit run frontend/Chat.py` (agents chat UI; copilot/autopilot toggle).
+	- Or use the one-command runner: `./run-dev.sh up` (brings up Neo4j, API, and Streamlit)
 6. **Open**: Streamlit UI → select context → try **co-pilot** narration.
 
 > Ingestion: upload a PDF/MD/HTML **or edit YAML**; the pipeline extracts/loads, chunks, embeds, and indexes to FTS & vectors with proper scoping.
@@ -247,6 +248,12 @@ A lightweight chat UI is available for interactive use:
 
 ```bash
 streamlit run frontend/Chat.py
+```
+
+Or start everything at once (DB + API + UI):
+
+```bash
+./run-dev.sh up
 ```
 
 Then:
