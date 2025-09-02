@@ -66,3 +66,30 @@
 {"scene_id": null}
 {"scene_id": null}
 {"scene_id": null}
+{"scene_id": null}
+{"message": "User greeted"}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "The darkness of the alleyway swallows you whole. The only sound is the distant hum of the city and the soft patter of raindrops on the pavement. A faint smell of damp earth and dec…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest, the air heavy with the scent of damp earth and decaying leaves. A faint, ghostly glow emanates from the tre…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"message": "hello"}
+{"scene_id": null}
+{"scene_id": null}
+{"message": "hi"}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "You stand amidst the eerie silence of the abandoned carnival. The rickety Ferris wheel creaks in the gentle wind, its seats like skeletal hands reaching for the sky. The once-vibra…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "The last wisps of sunlight danced across the abandoned dock, casting long shadows on the worn wooden planks. A lone seagull wheeled overhead, its cries echoing off the water as the…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}

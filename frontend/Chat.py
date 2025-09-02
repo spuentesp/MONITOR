@@ -18,8 +18,6 @@ from core.engine.orchestrator import (
     build_live_tools,
     flush_staging,
     run_once,
-    autocommit_stats,
-    monitor_reply,
 )
 from core.engine.steward import StewardService
 from core.generation.providers import select_llm_from_env, list_groq_models
@@ -253,7 +251,9 @@ with st.sidebar:
     # AutoCommit status panel
     with st.expander("Auto-commit status", expanded=False):
         try:
-            stats = autocommit_stats()
+            from core.engine.orchestrator import autocommit_stats as _ac_stats
+
+            stats = _ac_stats()
             st.json(stats)
         except Exception:
             st.caption("No autocommit status available.")
@@ -296,7 +296,17 @@ if user_intent:
 
     try:
         if is_monitor:
-            out = monitor_reply(ctx, user_intent, mode=st.session_state.mode, scene_id=scene_id)
+            # Lazy import to avoid ImportError if orchestrator isn't fully initialized yet
+            try:
+                from core.engine.orchestrator import monitor_reply as _monitor_reply
+
+                out = _monitor_reply(ctx, user_intent, mode=st.session_state.mode, scene_id=scene_id)
+            except Exception as _e:
+                out = {
+                    "draft": "Monitor unavailable. Try again or check backend logs.",
+                    "monitor": True,
+                    "error": str(_e),
+                }
         else:
             out = run_once(user_intent, scene_id=scene_id, mode=st.session_state.mode, ctx=ctx, llm=llm)
     except Exception as e:
