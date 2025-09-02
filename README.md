@@ -190,6 +190,71 @@ The FastAPI backend exposes a simple router to switch between diegetic narration
 
 See `core/interfaces/langgraph_modes_api.py` and `docs/agents_and_langgraph.md` for details.
 
+### API Quickstart
+
+Use these minimal examples to try the router and a stateful chat quickly.
+
+Prereqs:
+- Backend running (FastAPI). If you use the provided app, it exposes `/api`.
+- Context token header as required by the middleware (replace with your token).
+
+Examples:
+
+1) Get router help (monitor commands)
+
+```bash
+curl -s \
+	-H "X-Context-Token: <your-context-token>" \
+	http://localhost:8000/api/langgraph/modes/help | jq
+```
+
+2) Chat (router will decide narration vs monitor)
+
+```bash
+curl -s -X POST \
+	-H "Content-Type: application/json" \
+	-H "X-Context-Token: <your-context-token>" \
+	-d '{
+				"turns": [{"content": "Introduce a rival in the alley", "scene_id": "scene:1"}],
+				"mode": "copilot",
+				"persist_each": false
+			}' \
+	http://localhost:8000/chat | jq
+```
+
+3) Single step (LangGraph single-turn flow)
+
+```bash
+curl -s -X POST \
+	-H "Content-Type: application/json" \
+	-H "X-Context-Token: <your-context-token>" \
+	-d '{
+				"intent": "Introduce a rival in the alley",
+				"scene_id": "scene:1",
+				"mode": "copilot",
+				"record_fact": false
+			}' \
+	http://localhost:8000/step | jq
+```
+
+Tips:
+- Set `mode` to `autopilot` to commit immediately (writes bypass staging).
+- In copilot, use `/api/langgraph/modes/chat` with a monitor command like "end scene" to flush staged writes.
+
+### Web UI (Streamlit)
+
+A lightweight chat UI is available for interactive use:
+
+```bash
+streamlit run frontend/Chat.py
+```
+
+Then:
+- Pick LLM backend (mock/OpenAI/Groq) and model (optional).
+- Toggle `copilot` vs `autopilot` in the sidebar.
+- Set a `scene_id` (optional) and type your intent; the app calls `run_once` behind the scenes.
+- Use the persist checkbox to stage/commit Facts from drafts.
+
 ### Agents overview
 
 Core LLM-backed agents used by the LangGraph flow:
