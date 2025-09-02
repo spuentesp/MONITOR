@@ -8,21 +8,20 @@ Purpose
 
 ## System overview (how it works today)
 
-This section reflects the current, working implementation in the repo (as of 2025‑09‑01).
+This section reflects the current, working implementation in the repo (as of 2025-09-01).
 
 - Core layers
   - QueryService (read): high‑level graph queries, used by tools and agents.
   - RecorderService (write): persists deltas for Multiverse/Universe/Arc/Story/Scene/Entity, Facts, RelationStates, and simple Relations.
   - Tools facade: query_tool, recorder_tool, notes_tool (stub), rules_tool (stub) exposed via a lightweight ToolContext.
-  - Orchestrator: builds a ToolContext with optional caching and staging backends; can flush staged writes.
+  - Tooling helpers: `core/engine/orchestrator.py` exposes `build_live_tools`, `flush_staging`, and `run_once` to drive the LangGraph flow.
 
 - Caching and staging
   - ReadThroughCache: in‑memory LRU with TTL per key. Optional Redis implementation for durability.
   - StagingStore: append‑only JSONL queue for deltas in dry‑run mode. Optional Redis list implementation. Flush applies all deltas through RecorderService atomically and clears cache.
 
 - Agents and generation
-  - Narrator/Archivist/Character exist with a MockLLM for tests; a minimal session orchestrator stitches simple flows.
-  - Optional LangGraph flow mirrors the orchestrator and is auto‑skipped in tests when not installed.
+  - Narrator/Archivist/Character exist with a MockLLM for tests; multi-agent LangGraph flow composes Director → Librarian → Steward → Narrator → Critic → Archivist → Recorder.
 
 - Persistence targets
   - Neo4j 5 used for live query/integration tests via env configuration. Constraints/indexes are bootstrapped in Docker.
@@ -51,20 +50,12 @@ Note: We now provide a working RecorderService that writes the full ontology (+ 
 
 ## Orchestration
 
-- Current (MVP): in-memory `Session` (single primary agent; conversation history)
-- Planned (Sprint 4): LangChain/LangGraph
-  - Proposed nodes: Director → Librarian → Steward → Narrator → Critic → Archivist → Recorder
-  - Tools:
-    - query_tool: wraps `QueryService` (entities/scenes/facts/relations/axioms/systems)
-    - rules_tool: dice/system helpers (from `systems/*.yaml`)
-    - persist_tool: write Facts and RelationState changes (guarded by Steward)
-    - notes_tool: write annotations/non-canonical notes
-  - Modes:
-    - Co‑pilot vs Auto‑pilot (user approval gates persistence in co‑pilot)
-  - Guardrails: tone/rating checks; refusal if policy violated
-  - Integration: a minimal LangGraph flow (`core/engine/langgraph_flow.py`) mirrors the orchestrator; install `langgraph` to enable. Tests will skip if not installed.
+- Default: LangGraph (`core/engine/langgraph_flow.py`) with nodes Director → Librarian → Steward → Narrator → Critic → Archivist → Recorder.
+- `run_once(intent, scene_id?, mode?, ctx?, llm?)` builds tools and agents, invokes the flow, and returns the state.
+- Modes: co‑pilot (staging) vs auto‑pilot (commit). `MONITOR_COPILOT_PAUSE=1` pauses before Recorder even in co‑pilot.
+- Router: Narration vs Monitor router is exposed under the API via `core/interfaces/langgraph_modes_api.py`.
 
-Today’s orchestrator (`core/engine/orchestrator.py`) builds a ToolContext with:
+ToolContext (`core/engine/orchestrator.py`) builds a ToolContext with:
 - query_service: the read interface
 - read_cache: optional ReadThroughCache or RedisReadThroughCache
 - staging: optional StagingStore or RedisStagingStore
@@ -163,7 +154,7 @@ Helpers:
   - Outputs: commit confirmation and reference keys (for future queries).
   - Failure: if commit violates invariants, reject and return diff/diagnosis.
 
-- Chat Host / Orchestrator
+- Chat Host
   - Goal: Manage turns, modes (copilot/autopilot), and agent handoffs.
   - Inputs: user intent, flow state, guardrail policies.
   - Outputs: next step, which agent acts, what is needed, when to stop.
@@ -268,9 +259,9 @@ flush_staging(ctx):
 
 ## End‑to‑end flow (today’s happy path)
 
-1) Build tools via orchestrator → returns `ToolContext` with cache/staging per env.
+1) Build tools via `build_live_tools` → returns `ToolContext` with cache/staging per env.
 2) Use `query_tool` to fetch context (entities, scenes, relations effective in scene, etc.).
-3) Draft narrative with agents (Narrator/Character using MockLLM) — optional today.
+3) Draft narrative with agents (Narrator/Director/Steward/Archivist/Critic use MockLLM in tests).
 4) Propose deltas (Facts, RelationState changes, new entities/scenes/stories). In copilot mode, keep `dry_run=True`.
 5) Stage deltas via `recorder_tool` (dry‑run) and review.
 6) Commit via `flush_staging(ctx)` or run with `dry_run=False` to write immediately.

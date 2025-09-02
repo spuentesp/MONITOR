@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import os
 from typing import Any
 
 from core.agents.archivist import archivist_agent
-from core.agents.base import Agent, Session
 from core.agents.narrator import narrator_agent
 from core.agents.director import director_agent
 from core.agents.librarian import librarian_agent as librarian_llm_agent
@@ -13,8 +11,6 @@ from core.agents.steward import steward_agent as steward_llm_agent
 from core.agents.critic import critic_agent
 from core.engine.cache import ReadThroughCache, StagingStore
 from core.engine.langgraph_flow import select_engine_backend
-from core.engine.librarian import LibrarianService
-from core.engine.steward import StewardService
 from core.engine.tools import ToolContext, query_tool, recorder_tool
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.queries import QueryService
@@ -26,86 +22,6 @@ except Exception:  # pragma: no cover
     RedisReadThroughCache = None  # type: ignore
     RedisStagingStore = None  # type: ignore
 
-
-@dataclass
-class OrchestratorConfig:
-    mode: str = "copilot"  # or "autopilot"
-    style: str | None = None
-
-
-class Orchestrator:
-    """Minimal framework-neutral orchestrator.
-
-    This is a thin placeholder until LangGraph wiring; it demonstrates tool usage.
-    """
-
-    def __init__(self, llm: Any, tools: ToolContext, config: OrchestratorConfig | None = None):
-        self.tools = tools
-        self.config = config or OrchestratorConfig()
-        self.narrator: Agent = narrator_agent(llm)
-        self.archivist: Agent = archivist_agent(llm)
-        self.session = Session(primary=self.narrator)
-        self.librarian_svc = LibrarianService(self.tools.query_service)
-        self.steward_svc = StewardService(self.tools.query_service)
-
-    def _build_context(self, scene_id: str | None) -> str:
-        if not scene_id:
-            return ""
-        return self.librarian_svc.scene_brief(scene_id)
-
-    def step(self, user_intent: str, scene_id: str | None = None) -> dict[str, Any]:
-        # Director (stub): interpret intent as goals
-        plan = {"beats": [user_intent], "risks": [], "assumptions": []}
-
-        # Librarian: retrieve context (stub via QueryService where possible)
-        evidence = []
-        if scene_id:
-            try:
-                effective = query_tool(
-                    self.tools, "relations_effective_in_scene", scene_id=scene_id
-                )
-                evidence.append({"relations": effective})
-            except Exception:
-                pass
-
-        # Steward: validate (stub)
-        validation = {"ok": True, "warnings": []}
-
-        # Narrator: draft (RAG-style context injection as ephemeral system message)
-        context_msg = self._build_context(scene_id)
-        messages = list(self.session.history)
-        if context_msg:
-            messages.append({"role": "system", "content": context_msg})
-        messages.append({"role": "user", "content": user_intent})
-        draft = self.narrator.act(messages)
-        # Update session history without persisting the ephemeral system context
-        self.session.user(user_intent)
-        self.session.history.append({"role": "assistant", "content": draft})
-
-        # Critic: score (stub)
-        critique = {"coherence": 0.9, "length": len(draft)}
-
-        # Archivist: summarize
-        summary = self.archivist.act([{"role": "user", "content": draft}])
-
-        # Steward: pre-commit validation; commit only if no errors
-        proposed = {"scene_id": scene_id}
-        ok, warns, errs = self.steward_svc.validate(proposed)
-        validation = {"ok": ok, "warnings": warns, "errors": errs}
-        if ok:
-            commit = recorder_tool(self.tools, draft=draft, deltas=proposed)
-        else:
-            commit = {"mode": "blocked", "reason": "steward_errors", "errors": errs}
-
-        return {
-            "plan": plan,
-            "evidence": evidence,
-            "validation": validation,
-            "draft": draft,
-            "critique": critique,
-            "summary": summary,
-            "commit": commit,
-        }
 
 
 def build_live_tools(dry_run: bool = True) -> ToolContext:
@@ -227,30 +143,32 @@ def flush_staging(ctx: ToolContext) -> dict[str, Any]:
 
 
 def run_once(
-    user_intent: str, scene_id: str | None = None, mode: str = "copilot"
+    user_intent: str,
+    scene_id: str | None = None,
+    mode: str = "copilot",
+    *,
+    ctx: ToolContext | None = None,
+    llm: Any | None = None,
 ) -> dict[str, Any]:
     """Convenience function to run a single step against the live graph.
 
-    Chooses backend by env MONITOR_ENGINE_BACKEND=(inmemory|langgraph); defaults to inmemory.
-    In copilot, Recorder is skipped (pause) if MONITOR_COPILOT_PAUSE is truthy.
+    Chooses backend by env MONITOR_ENGINE_BACKEND=(inmemory|langgraph); defaults to langgraph.
+    In copilot, Recorder can pause if MONITOR_COPILOT_PAUSE is truthy.
     """
-    tools = build_live_tools(dry_run=(mode != "autopilot"))
-    backend = select_engine_backend()
+    tools = ctx or build_live_tools(dry_run=(mode != "autopilot"))
     from core.generation.providers import select_llm_from_env
 
-    llm = select_llm_from_env()
-    if backend == "langgraph":
-        try:
+    llm = llm or select_llm_from_env()
+    backend = select_engine_backend()
+    try:
+        if backend == "langgraph":
             from core.engine.langgraph_flow import build_langgraph_flow
-        except Exception:
-            backend = "inmemory"
-    if backend == "langgraph":
-        # Build agents/tools package for langgraph_flow
-        tools_pkg = {
-            "ctx": tools,
-            "query_tool": query_tool,
-            "recorder_tool": recorder_tool,
-            "llm": llm,
+            # Build agents/tools package for langgraph_flow
+            tools_pkg = {
+                "ctx": tools,
+                "query_tool": query_tool,
+                "recorder_tool": recorder_tool,
+                "llm": llm,
                 "narrator": narrator_agent(llm),
                 "archivist": archivist_agent(llm),
                 # Additional LLM agents for flow
@@ -258,10 +176,15 @@ def run_once(
                 "librarian": librarian_llm_agent(llm),
                 "steward": steward_llm_agent(llm),
                 "critic": critic_agent(llm),
-        }
-        graph = build_langgraph_flow(tools_pkg)
-        out = graph.invoke({"intent": user_intent, "scene_id": scene_id})
-        return out
-    # fallback to in-memory orchestrator
-    orch = Orchestrator(llm=llm, tools=tools, config=OrchestratorConfig(mode=mode))
-    return orch.step(user_intent=user_intent, scene_id=scene_id)
+            }
+            graph = build_langgraph_flow(tools_pkg)
+            out = graph.invoke({"intent": user_intent, "scene_id": scene_id})
+            return out
+    except Exception:
+        # Fall through to minimal path if langgraph is unavailable
+        pass
+    # Minimal fallback: narrator -> archivist -> recorder
+    draft = narrator_agent(llm).act([{ "role": "user", "content": user_intent }])
+    summary = archivist_agent(llm).act([{ "role": "user", "content": draft }])
+    commit = recorder_tool(tools, draft=draft, deltas={"scene_id": scene_id})
+    return {"draft": draft, "summary": summary, "commit": commit}

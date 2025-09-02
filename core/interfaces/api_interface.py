@@ -6,8 +6,6 @@ from pydantic import BaseModel
 
 from core.engine.context import ContextToken
 from core.engine.orchestrator import (
-    Orchestrator,
-    OrchestratorConfig,
     build_live_tools,
     flush_staging,
     run_once,
@@ -78,10 +76,9 @@ class StepRequest(BaseModel):
 def chat(req: ChatRequest):
     llm = select_llm_from_env()
     ctx = build_live_tools(dry_run=(req.mode != "autopilot"))
-    orch = Orchestrator(llm=llm, tools=ctx, config=OrchestratorConfig(mode=req.mode))
     outs: list[dict[str, Any]] = []
     for t in req.turns:
-        out = orch.step(t.content, scene_id=t.scene_id)
+        out = run_once(t.content, scene_id=t.scene_id, mode=req.mode, ctx=ctx, llm=llm)
         outs.append(out)
         if req.persist_each:
             try:

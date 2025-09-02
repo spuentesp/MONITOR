@@ -15,10 +15,9 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from core.engine.orchestrator import (
-    Orchestrator,
-    OrchestratorConfig,
     build_live_tools,
     flush_staging,
+    run_once,
 )
 from core.engine.steward import StewardService
 from core.generation.providers import select_llm_from_env, list_groq_models
@@ -45,8 +44,8 @@ def build_orchestrator(mode: str) -> dict[str, Any]:
 
     ctx = build_live_tools(dry_run=(mode != "autopilot"))
     llm = select_llm_from_env()
-    orch = Orchestrator(llm=llm, tools=ctx, config=OrchestratorConfig(mode=mode))
-    return {"orch": orch, "ctx": ctx}
+    # Return runtime pieces directly (no Orchestrator wrapper)
+    return {"llm": llm, "ctx": ctx}
 
 
 def ensure_session_objects():
@@ -60,7 +59,7 @@ def ensure_session_objects():
         "persist_each": False,
         "history": [],
         "config_key": None,
-        "orch": None,
+    "llm": None,
         "ctx": None,
     }
     for k, v in defaults.items():
@@ -90,7 +89,7 @@ def current_config_key() -> str:
 
 def reset_session():
     st.session_state["history"] = []
-    st.session_state["orch"] = None
+    st.session_state["llm"] = None
     st.session_state["ctx"] = None
     st.session_state["config_key"] = None
 
@@ -174,8 +173,9 @@ with st.sidebar:
         current = st.session_state.get("groq_model") or os.getenv("MONITOR_GROQ_MODEL") or default_groq_model
         idx = groq_models.index(current) if current in groq_models else groq_models.index(default_groq_model)
         sel = st.selectbox("Groq Model", options=groq_models, index=idx)
-    st.session_state.openai_model = sel
-    st.session_state["groq_model"] = sel
+    # For Groq backend, propagate the selected model into session state
+    if st.session_state.llm_backend == "groq":
+        st.session_state["groq_model"] = sel
     st.session_state.mode = st.radio("Mode", ["copilot", "autopilot"], horizontal=True)
     st.session_state.scene_id = st.text_input(
         "Scene ID (optional)", value=st.session_state.scene_id
@@ -244,9 +244,9 @@ st.title("MONITOR — Agents Chat")
 st.caption("Narrator + Archivist, with copilot/autopilot and optional persistence")
 
 cfg_key = current_config_key()
-if st.session_state["config_key"] != cfg_key or st.session_state.get("orch") is None:
+if st.session_state["config_key"] != cfg_key or st.session_state.get("llm") is None:
     built = build_orchestrator(st.session_state.mode)
-    st.session_state["orch"] = built["orch"]
+    st.session_state["llm"] = built["llm"]
     st.session_state["ctx"] = built["ctx"]
     st.session_state["config_key"] = cfg_key
 
@@ -264,10 +264,10 @@ for turn in st.session_state["history"]:
 user_intent = st.chat_input("Write your next beat…")
 if user_intent:
     scene_id = st.session_state.scene_id or None
-    orch: Orchestrator = st.session_state["orch"]
+    llm = st.session_state["llm"]
     ctx = st.session_state["ctx"]
     try:
-        out = orch.step(user_intent, scene_id=scene_id)
+        out = run_once(user_intent, scene_id=scene_id, mode=st.session_state.mode, ctx=ctx, llm=llm)
     except Exception as e:
         # Display a concise, friendly error and keep the session alive
         st.error(f"LLM error: {e}")

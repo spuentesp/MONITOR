@@ -1,0 +1,13 @@
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "You find yourself standing at the edge of the Whispering Dunes, a seemingly endless expanse of golden sand that stretches out before you like an ocean. The sun beats down relentles…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "You stand at the edge of a dimly lit tavern, the sign creaking in the wind reading \"The Golden Stag.\" The air is thick with the smell of smoke and ale as you push open the door, a …", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}

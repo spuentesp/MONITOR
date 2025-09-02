@@ -6,14 +6,13 @@ from core.engine.langgraph_flow import select_engine_backend
 from core.engine.orchestrator import run_once
 
 
-def test_select_engine_backend_defaults_to_inmemory(monkeypatch):
+def test_select_engine_backend_defaults_to_langgraph(monkeypatch):
     monkeypatch.delenv("MONITOR_ENGINE_BACKEND", raising=False)
-    assert select_engine_backend() == "inmemory"
+    assert select_engine_backend() == "langgraph"
 
 
-def test_run_once_langgraph_env_but_missing_module_falls_back(monkeypatch):
-    # Force env to request langgraph, but fail import of langgraph_flow to exercise fallback
-    monkeypatch.setenv("MONITOR_ENGINE_BACKEND", "langgraph")
+def test_run_once_langgraph_missing_module_falls_back(monkeypatch):
+    # Ensure default requests langgraph, but fail import of langgraph_flow to exercise fallback
     real_import = builtins.__import__
 
     def fake_import(name, *a, **k):

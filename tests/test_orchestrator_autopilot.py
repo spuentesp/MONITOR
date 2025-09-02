@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from core.engine.orchestrator import Orchestrator, OrchestratorConfig
+from core.engine.orchestrator import run_once
 from core.engine.tools import ToolContext
 
 
@@ -30,7 +30,6 @@ class RecImpl:
 def test_orchestrator_autopilot_commits():
     rec = RecImpl()
     tools = ToolContext(query_service=QImpl(), recorder=rec, dry_run=False)
-    orch = Orchestrator(llm=DummyLLM(), tools=tools, config=OrchestratorConfig(mode="autopilot"))
-    out = orch.step("go", scene_id="s1")
+    out = run_once("go", scene_id="s1", mode="autopilot", ctx=tools, llm=DummyLLM())
     assert out["commit"]["mode"] == "commit"
     assert rec.calls and rec.calls[-1].get("scene_id") == "s1"

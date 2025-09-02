@@ -17,8 +17,9 @@ This project follows a layered architecture to keep responsibilities clear and e
   - `core/generation/*`, `core/loaders/agent_prompts.py`
 - agents: Behavior policies (Narrator, Archivist, Character).
   - `core/agents/*`
-- orchestration: Flows and tool wiring.
-  - `core/engine/orchestrator.py`, `core/engine/langgraph_flow.py`, `core/engine/tools.py`, `core/engine/lc_tools.py`
+- orchestration: Flows and tool wiring (LangGraph default).
+  - `core/engine/langgraph_flow.py` (single-turn nodes), `core/engine/langgraph_modes.py` (narration vs monitor router),
+    `core/engine/orchestrator.py` (run_once, ToolContext helpers), `core/engine/tools.py`, `core/engine/lc_tools.py`
 - interfaces (edges): API, CLI, UI.
   - `core/interfaces/*`, `frontend/*`
 
@@ -36,8 +37,13 @@ Allowed dependencies (top → bottom):
 Current status
 
 - Ports added and used for ToolContext and service facades.
-- Orchestrator uses facades for Query/Recorder; infra remains in persistence.
+- LangGraph is the default orchestration. `run_once` composes agents and tools and invokes the flow.
 - Librarian/Steward depend on QueryReadPort.
+
+Interfaces exposure
+
+- API exposes the LangGraph Modes Router under `/api/langgraph/modes/*`.
+  - File: `core/interfaces/langgraph_modes_api.py` (chat/help endpoints). Builds a stateful session and injects `ToolContext` per request mode (copilot/autopilot).
 
 Next steps
 

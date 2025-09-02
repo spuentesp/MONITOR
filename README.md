@@ -6,7 +6,7 @@ M.O.N.I.T.O.R. is a personal system for **worldbuilding and assisted narration**
 
 > Goal: make it easy to create and explore canon and “what-if” branches, while keeping timelines, relations, and evidence consistent.
 
-M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assisted narration across multiple universes. It uses a harmonized graph-based ontology (Omniverse → Multiverse → Universe → Story → Scene) to model narrative continuity, facts, entities, and relations. The system supports hybrid search (full-text + vector), document ingestion, and branching for "what-if" scenarios. Agents (Orchestrator, Director, Librarian, Steward, Narrator, Critic, Character, Chat Host) orchestrate planning, evidence retrieval, validation, drafting, and critique. All canonical data is authored in YAML, with polyglot projections to databases for optimized querying and retrieval. The architecture is modular, with FastAPI backend, Streamlit frontend, and Dockerized services (Neo4j/Memgraph, Meilisearch, Qdrant/Weaviate, MinIO, Redis, Langfuse, ClickHouse).
+M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assisted narration across multiple universes. It uses a harmonized graph-based ontology (Omniverse → Multiverse → Universe → Story → Scene) to model narrative continuity, facts, entities, and relations. The system supports hybrid search (full-text + vector), document ingestion, and branching for "what-if" scenarios. Agents (Director, Librarian, Steward, Narrator, Critic, Character, Chat Host) orchestrate planning, evidence retrieval, validation, drafting, and critique. All canonical data is authored in YAML, with polyglot projections to databases for optimized querying and retrieval. The architecture is modular, with FastAPI backend, Streamlit frontend, and Dockerized services (Neo4j/Memgraph, Meilisearch, Qdrant/Weaviate, MinIO, Redis, Langfuse, ClickHouse).
 
 ---
 
@@ -24,22 +24,10 @@ M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assist
 
 ## 🧱 Core Concepts (Ontology)
 
-* **Omniverse**: the app platform (agents, narrative engine, data, UI).
-* **Multiverse**: a family of universes sharing a canonical axiom set and (optionally) a default rule system.
-* **Universe**: concrete worldline; holds Entities, Relations, Stories, Scenes, Facts; inherits/overrides axioms.
-* **Story**: narrative thread within a Universe; orders **Scenes** (narrative vs chronological).
-* **Scene**: atomic unit with world time (and optional session time), participants, and location.
-* **Axiom**: rule/tendency governing universes (e.g., “there exists at least one Spider-Totem bearer”).
-* **Archetype**: reusable blueprint for entities (constraints on kind/tags/traits).
-* **Entity**: character/place/object/org/concept in a Universe; may instantiate an Archetype.
-* **Fact**: first-class, time-stamped event/assertion with participants and **provenance** (occurs-in Scene).
-* **Relations**: inter-entity links (timeless, interval, or versioned with per-scene change logs).
-* **ContextToken**: selects omniverse/multiverse/universe and time-ref; scopes reads/writes and agent runs.
-
-* **Omniverse**: The entire application platform (agents, engine, data, UI).
+* **Omniverse**: The application platform (agents, engine, data, UI).
 * **Multiverse**: A family of universes sharing canonical axioms and (optionally) a default rule system.
-* **Universe**: A concrete worldline; holds Entities, Relations, Stories, Scenes, Facts; inherits/overrides axioms.
-* **Story**: A narrative thread within a Universe; orders Scenes (narrative/chronological/mixed).
+* **Universe**: Concrete worldline; holds Entities, Relations, Stories, Scenes, Facts; inherits/overrides axioms.
+* **Story**: Narrative thread within a Universe; orders Scenes (narrative/chronological/mixed).
 * **Scene**: Atomic narrative unit with world time and optional session time, participants, and location.
 * **Axiom**: Declarative rule/tendency governing universes; inherited/overridden.
 * **Archetype**: Reusable blueprint for entities; constrains kind/tags/traits.
@@ -82,25 +70,15 @@ M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assist
 
 ## 🧠 Agent Roles
 
-* **Orchestrator**: coordinates the end-to-end flow (planning → retrieval → validation → drafting → critique → persistence).
-* **Director**: plans narrative beats given constraints (tone, tags, rating).
-* **Librarian**: hybrid retrieval across Meilisearch (FTS) + Qdrant/Weaviate (vectors) and returns **citations**.
-* **Steward**: validates continuity (axioms, archetype coverage, temporal overlaps, relation lifecycles).
-* **Narrator**: drafts narrative text (co-pilot and auto-pilot modes).
-* **Critic**: scores clarity, tone, coherence; suggests revisions.
-* **Character** (optional): chats as NPCs; scene-level roleplay.
-* **Chat Host**: user interface guardrails, ContextToken enforcement.
+Orchestration stack: **LangGraph** (default). Optional LangChain tools can be enabled.
 
-* **Orchestrator**: Coordinates the end-to-end flow (planning → retrieval → validation → drafting → critique → persistence).
 * **Director**: Plans narrative beats given constraints (tone, tags, rating).
 * **Librarian**: Hybrid retrieval across Meilisearch (FTS) + Qdrant/Weaviate (vectors); returns citations.
 * **Steward**: Validates continuity (axioms, archetype coverage, temporal overlaps, relation lifecycles).
 * **Narrator**: Drafts narrative text (co-pilot and auto-pilot modes).
 * **Critic**: Scores clarity, tone, coherence; suggests revisions.
-* **Character**: Chats as NPCs; scene-level roleplay.
-* **Chat Host**: User interface guardrails, ContextToken enforcement.
-
-Orchestration stack: **LangGraph** or **CrewAI** (pluggable).
+* **Character** (optional): Chats as NPCs; scene-level roleplay.
+* **Chat Host**: UI guardrails, ContextToken enforcement.
 
 ---
 
@@ -203,6 +181,25 @@ Orchestration stack: **LangGraph** or **CrewAI** (pluggable).
 
 ---
 
+## API: Modes Router (narration vs monitor)
+
+The FastAPI backend exposes a simple router to switch between diegetic narration and operational monitor actions:
+
+- POST `/api/langgraph/modes/chat` — stateful chat with router; supports `mode` (copilot/autopilot) and ContextToken.
+- GET `/api/langgraph/modes/help` — brief help with available monitor commands (lists, show transcript, end scene, etc.).
+
+See `core/interfaces/langgraph_modes_api.py` and `docs/agents_and_langgraph.md` for details.
+
+### Agents overview
+
+Core LLM-backed agents used by the LangGraph flow:
+
+- Director → Librarian → Steward → Narrator → Critic → Archivist → Recorder
+
+See `docs/agents_and_langgraph.md` for prompts, flow diagrams, and policies.
+
+---
+
 ## 🔒 Governance & Ops (lightweight, opt-in)
 
 See **Design Extensions & Integration Addendum (EN)** for:
@@ -213,15 +210,6 @@ See **Design Extensions & Integration Addendum (EN)** for:
 * **Search map** contract (FTS/vector),
 * **Schema/taxonomy versioning** and migrations,
 * **Workflow states**: draft/review/approved/locked.
-
-See **Design Extensions & Integration Addendum (EN)** for:
-
-* **ACL**: Universe-level access control (owner, readers, writers, visibility).
-* **Annotations**: Non-canonical comments, TODOs, critiques, questions.
-* **Agent run** logs (framework-agnostic).
-* **Search map** contract (FTS/vector).
-* **Schema/Taxonomy Versioning**: Managed via schema_version and migrations.
-* **Workflow States**: draft, review, approved, locked.
 
 ---
 
@@ -267,3 +255,5 @@ See **Design Extensions & Integration Addendum (EN)** for:
 See the “System overview (how it works today)” section in `docs/narrative_engine.md` for the current implementation status, including RecorderService, ToolContext, caching/staging (in-memory and Redis), and the end-to-end flow.
 
 > Tip: Start small. Create one Universe, one Story with a few Scenes, edit YAML or ingest two documents, and let the co-pilot draft a scene. Then add a what-if branch and compare diffs.
+
+For a detailed explanation of agents, prompts, LangGraph/LangChain orchestration, and policies, see `docs/agents_and_langgraph.md`.

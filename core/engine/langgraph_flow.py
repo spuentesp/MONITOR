@@ -37,7 +37,16 @@ def build_langgraph_flow(tools: Any):
                 reply = tools["director"].act([
                     {"role": "user", "content": f"Intent: {intent}. Return a tiny plan."}
                 ])
-                return {**state, "plan": reply}
+                # Ensure a structured plan for callers/tests even if LLM returns free text
+                structured = {"beats": [intent] if intent else [], "assumptions": []}
+                if isinstance(reply, str) and reply.strip():
+                    structured["notes"] = reply.strip()
+                elif isinstance(reply, dict):
+                    # Merge any dict reply but keep required keys
+                    structured.update(reply)
+                    structured.setdefault("beats", [intent] if intent else [])
+                    structured.setdefault("assumptions", [])
+                return {**state, "plan": structured}
         except Exception:
             pass
         return {**state, "plan": {"beats": [intent], "assumptions": []}}
@@ -160,6 +169,6 @@ def build_langgraph_flow(tools: Any):
 
 
 def select_engine_backend() -> str:
-    """Return 'langgraph' or 'inmemory' based on env (default: inmemory)."""
-    val = os.getenv("MONITOR_ENGINE_BACKEND", "inmemory").lower()
+    """Return 'langgraph' by default; allow explicit override via env."""
+    val = os.getenv("MONITOR_ENGINE_BACKEND", "langgraph").lower()
     return "langgraph" if val in ("langgraph", "lg") else "inmemory"

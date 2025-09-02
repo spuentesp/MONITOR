@@ -5,8 +5,6 @@ from dotenv import load_dotenv
 import typer
 
 from core.engine.orchestrator import (
-    Orchestrator,
-    OrchestratorConfig,
     build_live_tools,
     flush_staging,
     run_once,
@@ -86,7 +84,7 @@ def orchestrate_step(
         False, "--record-fact", help="Also record a simple Fact from the draft"
     ),
 ):
-    """Run a single orchestrator step and print the result as JSON."""
+    """Run a single LangGraph step and print the result as JSON."""
     out = run_once(intent, scene_id=scene_id, mode=mode)
     # Optional: persist a simple Fact (draft summary) to demonstrate Recorder
     if record_fact:
@@ -118,7 +116,6 @@ def agents_chat(
 ):
     """Interactive REPL to chat with agents and see plan/draft/commit outputs."""
     ctx = build_live_tools(dry_run=(mode != "autopilot"))
-    orch = Orchestrator(llm=MockLLM(), tools=ctx, config=OrchestratorConfig(mode=mode))
     typer.echo("Agents chat. Type :q to quit.")
     while True:
         try:
@@ -127,7 +124,7 @@ def agents_chat(
             break
         if not intent or intent in (":q", "quit", "exit"):
             break
-        out = orch.step(intent, scene_id=scene_id)
+        out = run_once(intent, scene_id=scene_id, mode=mode, ctx=ctx, llm=MockLLM())
         # Optional: persist a simple Fact (draft summary) each turn
         if persist:
             draft = out.get("draft") or intent
@@ -208,11 +205,10 @@ def weave_story(
 ):
     """Run a multi-step session in one run to demonstrate agents weaving a story."""
     ctx = build_live_tools(dry_run=(mode != "autopilot"))
-    orch = Orchestrator(llm=MockLLM(), tools=ctx, config=OrchestratorConfig(mode=mode))
     steps = []
     full_text = []
     for _idx, b in enumerate(beat, start=1):
-        out = orch.step(b, scene_id=scene_id)
+        out = run_once(b, scene_id=scene_id, mode=mode, ctx=ctx, llm=MockLLM())
         draft = out.get("draft") or b
         full_text.append(draft)
         if persist:

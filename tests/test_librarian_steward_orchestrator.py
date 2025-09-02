@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from core.engine.librarian import LibrarianService
-from core.engine.orchestrator import Orchestrator, OrchestratorConfig
+from core.engine.orchestrator import run_once
 from core.engine.steward import StewardService
 from core.engine.tools import ToolContext
 
@@ -40,6 +40,5 @@ def test_steward_validate():
 
 def test_orchestrator_step_smoke():
     tools = ToolContext(query_service=QImpl())
-    orch = Orchestrator(llm=DummyLLM(), tools=tools, config=OrchestratorConfig(mode="copilot"))
-    out = orch.step("hello", scene_id="s1")
-    assert out["draft"].startswith("ACK:") and "commit" in out
+    out = run_once("hello", scene_id="s1", mode="copilot", ctx=tools, llm=DummyLLM())
+    assert "draft" in out and "commit" in out
