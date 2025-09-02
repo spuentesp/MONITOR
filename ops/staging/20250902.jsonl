@@ -93,3 +93,24 @@
 {"facts": [{"description": "x"}], "scene_id": null}
 {"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
 {"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"scene_id": null}
+{"message": "hello"}
+{"scene_id": null, "facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest. The air is heavy with the scent of damp earth and decaying leaves. A faint, flickering light can be seen in the distance, casting an eerie glow thr", "occurs_in": null}]}
+{"scene_id": null}
+{"message": "hi"}
+{"scene_id": null, "facts": [{"description": "The moon casts an eerie glow over the crumbling mansion's facade. Weeds push through the broken pavement, as if trying to reclaim the property. A chill runs down your spine as you approach the creaking front door.\n\nYou p", "occurs_in": null}]}
+{"scene_id": null}
+{"scene_id": "s1", "facts": [{"description": "The air is heavy with fog, obscuring the worn cobblestone streets of Ravenshire. You've been walking for hours, but the mist wraps around you like a damp shroud, making it impossible to gauge your progress. The flickerin", "occurs_in": "s1"}]}
+{"facts": [{"description": "The air is heavy with fog, obscuring the worn cobblestone streets of Ravenshire. You've been walking for hours, but the mist wraps around you like a damp shroud, making it impossib…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"scene_id": null}
+{"scene_id": "s1", "facts": [{"description": "A lone figure stands atop the crumbling windmill, the wind whipping hair into a frenzy as they gaze out over the desolate, ash-strewn landscape. The silence is oppressive, broken only by the creaking of wooden beams and ", "occurs_in": "s1"}]}
+{"facts": [{"description": "A lone figure stands atop the crumbling windmill, the wind whipping hair into a frenzy as they gaze out over the desolate, ash-strewn landscape. The silence is oppressive, broken o…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}

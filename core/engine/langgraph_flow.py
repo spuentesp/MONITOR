@@ -157,12 +157,21 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         actions = state.get("actions") or []
         ctx = tools["ctx"]
         results: list[dict[str, Any]] = []
+        new_scene_id = None
         for act in actions:
             try:
                 tool = (act or {}).get("tool")
                 args = (act or {}).get("args") or {}
                 if tool == "bootstrap_story":
                     res = tools["bootstrap_story_tool"](ctx, **args)
+                    try:
+                        new_scene_id = (
+                            (res.get("refs") or {}).get("scene_id")
+                            or (res.get("result") or {}).get("scene_id")
+                            or new_scene_id
+                        )
+                    except Exception:
+                        pass
                 elif tool == "recorder":
                     res = tools["recorder_tool"](ctx, draft="", deltas=args)
                 elif tool == "query":
@@ -172,7 +181,11 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
             except Exception as e:
                 res = {"ok": False, "error": str(e)}
             results.append({"tool": act.get("tool"), "result": res})
-        return {**state, "action_results": results}
+        # If we created a scene, persist it in state for continuity
+        next_state = {**state, "action_results": results}
+        if new_scene_id and not next_state.get("scene_id"):
+            next_state["scene_id"] = new_scene_id
+        return next_state
 
     def qa_node(state: dict[str, Any]) -> dict[str, Any]:
         """Answer classification questions tersely via QA agent and finish."""
@@ -198,9 +211,17 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         return {**state, "summary": summary}
 
     def recorder(state: dict[str, Any]) -> dict[str, Any]:
-        commit = tools["recorder_tool"](
-            tools["ctx"], draft=state.get("draft", ""), deltas={"scene_id": state.get("scene_id")}
-        )
+        # Always record a compact Fact per turn to retain memory of choices
+        deltas = {"scene_id": state.get("scene_id")}
+        draft = state.get("draft", "")
+        if draft.strip():
+            deltas["facts"] = [
+                {
+                    "description": (draft[:220]),
+                    "occurs_in": state.get("scene_id"),
+                }
+            ]
+        commit = tools["recorder_tool"](tools["ctx"], draft=draft, deltas=deltas)
         return {**state, "commit": commit}
 
     workflow = StateGraph(State)
