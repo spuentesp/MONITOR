@@ -210,3 +210,34 @@ def recorder_tool(
         "refs": {"run_id": key, "scene_id": deltas.get("scene_id")},
         "trace": ["recorder:dry_run"],
     }
+
+
+def bootstrap_story_tool(
+    ctx: ToolContext,
+    *,
+    title: str,
+    protagonist_name: str | None = None,
+    time_label: str | None = None,
+    tags: list[str] | None = None,
+    universe_id: str | None = None,
+) -> dict[str, Any]:
+    """Create a new story and initial scene (and optionally universe), then persist via recorder_tool.
+
+    Returns the recorder_tool result and references.
+    """
+    # Build deltas payload
+    new_universe = None if universe_id else {"id": None, "name": "Omniverse"}
+    new_story = {"title": title, "tags": tags or ([] if time_label is None else [time_label] + (tags or []))}
+    new_scene = {"title": "Opening Scene"}
+    new_entities = None
+    if protagonist_name:
+        new_entities = [{"name": protagonist_name, "role": "protagonist"}]
+    deltas = {
+        "new_universe": new_universe,
+        "universe_id": universe_id,
+        "new_story": new_story,
+        "new_scene": new_scene,
+        "new_entities": new_entities,
+    }
+    draft = f"Bootstrap: story '{title}' created."  # non-diegetic
+    return recorder_tool(ctx, draft=draft, deltas=deltas)

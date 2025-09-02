@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from typing import Any
+import json
 
 
 def _env_flag(name: str, default: str = "0") -> bool:
@@ -70,6 +71,13 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         except Exception:
             return []
 
+    def intent_router(state: dict[str, Any]) -> dict[str, Any]:
+        # Let LLM route the input; fallback to narrative
+        intent = state.get("intent", "")
+        routed = _safe_act("intent_router", [{"role": "user", "content": intent}], default="narrative")
+        label = (routed or "narrative").strip().lower()
+        return {**state, "intent_type": label}
+
     def director(state: dict[str, Any]) -> dict[str, Any]:
         # Use LLM-backed Director if provided; fallback to trivial plan
         intent = state.get("intent", "")
@@ -126,6 +134,52 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
             return {**state, "validation": {"ok": True, "warnings": [hints]}}
         return {**state, "validation": {"ok": True, "warnings": []}}
 
+    def planner(state: dict[str, Any]) -> dict[str, Any]:
+        """Ask the planner for actions when bootstrap or monitor/audit or action_* intents.
+
+        The planner returns a JSON list of actions, else we keep actions empty.
+        """
+        intent_type = state.get("intent_type")
+        if intent_type in {"bootstrap", "audit_relations", "action_examine", "action_move"}:
+            plan = _safe_act(
+                "planner",
+                [{"role": "user", "content": f"Intent: {state.get('intent')}\nContext: {str({k:v for k,v in state.items() if k in ['scene_id']})}"}],
+                default="[]",
+            )
+            try:
+                actions = json.loads(plan) if isinstance(plan, str) else plan
+            except Exception:
+                actions = []
+            return {**state, "actions": actions or []}
+        return {**state, "actions": []}
+
+    def execute_actions(state: dict[str, Any]) -> dict[str, Any]:
+        actions = state.get("actions") or []
+        ctx = tools["ctx"]
+        results: list[dict[str, Any]] = []
+        for act in actions:
+            try:
+                tool = (act or {}).get("tool")
+                args = (act or {}).get("args") or {}
+                if tool == "bootstrap_story":
+                    res = tools["bootstrap_story_tool"](ctx, **args)
+                elif tool == "recorder":
+                    res = tools["recorder_tool"](ctx, draft="", deltas=args)
+                elif tool == "query":
+                    res = tools["query_tool"](ctx, **args)
+                else:
+                    res = {"ok": False, "error": f"unknown tool: {tool}"}
+            except Exception as e:
+                res = {"ok": False, "error": str(e)}
+            results.append({"tool": act.get("tool"), "result": res})
+        return {**state, "action_results": results}
+
+    def qa_node(state: dict[str, Any]) -> dict[str, Any]:
+        """Answer classification questions tersely via QA agent and finish."""
+        msgs = [{"role": "user", "content": state.get("intent", "")}]
+        answer = _safe_act("qa", msgs, default="Unsure — insufficient evidence.")
+        return {**state, "qa": answer, "draft": answer}
+
     def narrator(state: dict[str, Any]) -> dict[str, Any]:
         msgs = [{"role": "user", "content": state.get("intent", "")}]
         draft = _safe_act("narrator", msgs, default="")
@@ -150,18 +204,43 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         return {**state, "commit": commit}
 
     workflow = StateGraph(State)
+    workflow.add_node("intent_router", intent_router)
     workflow.add_node("director", director)
     workflow.add_node("librarian", librarian)
     workflow.add_node("steward", steward)
+    workflow.add_node("planner", planner)
+    workflow.add_node("execute_actions", execute_actions)
+    workflow.add_node("qa_node", qa_node)
     workflow.add_node("narrator", narrator)
     workflow.add_node("critic", critic)
     workflow.add_node("archivist", archivist)
     workflow.add_node("recorder", recorder)
 
-    workflow.set_entry_point("director")
+    workflow.set_entry_point("intent_router")
+    # Branch on intent_type: monitor/qa short-circuit vs narrative path
+    def _route(state: dict[str, Any]):
+        it = (state.get("intent_type") or "").lower()
+        if it in ("monitor", "audit_relations"):
+            return "execute_actions"  # actions will call queries/recorder as needed
+        if it == "qa":
+            return "qa_node"
+        return "director"
+
+    workflow.add_conditional_edges(
+        "intent_router",
+        _route,
+        {
+            "execute_actions": "execute_actions",
+            "qa_node": "qa_node",
+            "director": "director",
+        },
+    )
+
     workflow.add_edge("director", "librarian")
     workflow.add_edge("librarian", "steward")
-    workflow.add_edge("steward", "narrator")
+    workflow.add_edge("steward", "planner")
+    workflow.add_edge("planner", "execute_actions")
+    workflow.add_edge("execute_actions", "narrator")
     workflow.add_edge("narrator", "critic")
     workflow.add_edge("critic", "archivist")
 
@@ -180,6 +259,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         {True: END, False: "recorder"},
     )
     workflow.add_edge("recorder", END)
+    workflow.add_edge("qa_node", END)
 
     compiled = workflow.compile()
 
@@ -196,7 +276,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                 pass
             # Fallback: sequential execution to produce a final state dict
             state = dict(inputs)
-            for fn in (director, librarian, steward, narrator, critic, archivist):
+            for fn in (intent_router, director, librarian, steward, planner, execute_actions, narrator, critic, archivist):
                 state = fn(state)
             if not should_pause(state):
                 state = recorder(state)

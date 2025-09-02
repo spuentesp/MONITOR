@@ -10,7 +10,11 @@ from core.agents.librarian import librarian_agent as librarian_llm_agent
 from core.agents.steward import steward_agent as steward_llm_agent
 from core.agents.critic import critic_agent
 from core.engine.cache import ReadThroughCache, StagingStore
+from core.agents.intent_router import intent_router_agent
+from core.agents.planner import planner_agent
+from core.agents.qa import qa_agent
 from core.engine.langgraph_flow import select_engine_backend
+import re
 from queue import Queue
 from core.engine.autocommit import AutoCommitWorker
 
@@ -18,7 +22,7 @@ from core.engine.autocommit import AutoCommitWorker
 _AUTOCOMMIT_WORKER: AutoCommitWorker | None = None
 _AUTOCOMMIT_QUEUE: Queue | None = None
 _IDEMPOTENCY_SET: set[str] = set()
-from core.engine.tools import ToolContext, query_tool, recorder_tool
+from core.engine.tools import ToolContext, query_tool, recorder_tool, bootstrap_story_tool
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.queries import QueryService
 from core.persistence.recorder import RecorderService
@@ -215,6 +219,7 @@ def run_once(
                 "ctx": tools,
                 "query_tool": query_tool,
                 "recorder_tool": recorder_tool,
+                "bootstrap_story_tool": bootstrap_story_tool,
                 "llm": llm,
                 "narrator": narrator_agent(llm),
                 "archivist": archivist_agent(llm),
@@ -223,6 +228,9 @@ def run_once(
                 "librarian": librarian_llm_agent(llm),
                 "steward": steward_llm_agent(llm),
                 "critic": critic_agent(llm),
+                "intent_router": intent_router_agent(llm),
+                "planner": planner_agent(llm),
+                "qa": qa_agent(llm),
             }
             graph = build_langgraph_flow(tools_pkg)
             out = graph.invoke({"intent": user_intent, "scene_id": scene_id})
@@ -235,3 +243,73 @@ def run_once(
     summary = archivist_agent(llm).act([{ "role": "user", "content": draft }])
     commit = recorder_tool(tools, draft=draft, deltas={"scene_id": scene_id})
     return {"draft": draft, "summary": summary, "commit": commit}
+
+
+def monitor_reply(
+    ctx: ToolContext,
+    text: str,
+    *,
+    mode: str | None = None,
+    scene_id: str | None = None,
+) -> dict[str, Any]:
+    """Terse, non-diegetic replies for monitor-prefixed commands.
+
+    Supported intents (minimal PR1 scope):
+    - ping: "are you there" → status line(s)
+    - audit/inconsistencies/relations → stub audit banner and next steps
+    """
+    t = (text or "").lower()
+    # Status snapshot
+    pend = None
+    try:
+        if getattr(ctx, "staging", None) is not None:
+            pend = ctx.staging.pending()
+    except Exception:
+        pend = None
+    try:
+        from core.engine.orchestrator import autocommit_stats
+
+        ac = autocommit_stats()
+    except Exception:
+        ac = {"enabled": False}
+    online = True
+    status = {
+        "online": online,
+        "mode": mode or ("autopilot" if not getattr(ctx, "dry_run", True) else "copilot"),
+        "staging_pending": pend,
+        "autocommit": ac,
+        "scene_id": scene_id,
+    }
+
+    # Ping
+    if re.search(r"are you there|status|online", t):
+        lines = [
+            "System online.",
+            f"Mode: {status['mode']}",
+            f"Staging pending: {status['staging_pending']}",
+            f"Auto-commit: {'on' if status['autocommit'].get('enabled') else 'off'}",
+        ]
+        return {"draft": "\n".join(lines), "monitor": True, "details": status}
+
+    # Relations audit (stub)
+    if re.search(r"audit|inconsisten|relation", t):
+        advice = []
+        if not scene_id:
+            advice.append("Provide a scene_id to scope the audit (optional but recommended).")
+        advice.extend([
+            "Check: participants_by_role_for_scene, relations_effective_in_scene.",
+            "Flag: mutually exclusive kinship (father vs brother), asymmetric edges, cycles.",
+            "Next: propose END/CHANGE relation in current or next scene.",
+        ])
+        return {
+            "draft": "Audit stub: relation checks queued. Provide entity names/ids or a scene_id.",
+            "monitor": True,
+            "details": {**status, "advice": advice},
+        }
+
+    # Fallback: minimal help
+    return {
+        "draft": "Monitor ready. Say: 'monitor are you there', 'monitor audit relations', 'monitor last story'.",
+        "monitor": True,
+        "details": status,
+    }

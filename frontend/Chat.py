@@ -19,6 +19,7 @@ from core.engine.orchestrator import (
     flush_staging,
     run_once,
     autocommit_stats,
+    monitor_reply,
 )
 from core.engine.steward import StewardService
 from core.generation.providers import select_llm_from_env, list_groq_models
@@ -284,8 +285,20 @@ if user_intent:
     scene_id = st.session_state.scene_id or None
     llm = st.session_state["llm"]
     ctx = st.session_state["ctx"]
+    # Lightweight router: prefix 'monitor' or 'mon' switches to monitor mode for this turn
+    is_monitor = False
     try:
-        out = run_once(user_intent, scene_id=scene_id, mode=st.session_state.mode, ctx=ctx, llm=llm)
+        import re as _re
+
+        is_monitor = bool(_re.match(r"^\s*(hey,?\s*)?(monitor|mon|system|m)\b", user_intent, flags=_re.IGNORECASE))
+    except Exception:
+        is_monitor = False
+
+    try:
+        if is_monitor:
+            out = monitor_reply(ctx, user_intent, mode=st.session_state.mode, scene_id=scene_id)
+        else:
+            out = run_once(user_intent, scene_id=scene_id, mode=st.session_state.mode, ctx=ctx, llm=llm)
     except Exception as e:
         # Display a concise, friendly error and keep the session alive
         st.error(f"LLM error: {e}")
@@ -306,10 +319,5 @@ if user_intent:
         except Exception as e:  # pragma: no cover
             out["persist_error"] = str(e)
 
-    st.session_state["history"].append(
-        {
-            "intent": user_intent,
-            **out,
-        }
-    )
+    st.session_state["history"].append({"intent": user_intent, **out})
     st.rerun()
