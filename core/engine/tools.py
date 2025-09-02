@@ -39,6 +39,12 @@ class ToolContext:
     # Simple in-memory idempotency set shared with the worker
     idempotency: set[str] | None = None
 
+    # Optional satellite stores (constructed lazily; connect() when used)
+    mongo: Any | None = None          # MongoStore
+    qdrant: Any | None = None         # QdrantIndex
+    opensearch: Any | None = None     # SearchIndex
+    minio: Any | None = None          # ObjectStore
+
 
 def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
     """Generic, whitelisted proxy to QueryService.

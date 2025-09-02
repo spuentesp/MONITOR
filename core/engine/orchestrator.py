@@ -137,6 +137,17 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
     else:
         read_cache = ReadThroughCache(capacity=512, ttl_seconds=ttl)
         staging = StagingStore()
+    # Satellite stores (always present as handles; connect lazily when used)
+    from core.persistence.mongo_store import MongoStore
+    from core.persistence.qdrant_index import QdrantIndex
+    from core.persistence.search_index import SearchIndex
+    from core.persistence.object_store import ObjectStore
+
+    mongo = MongoStore()
+    qdrant = QdrantIndex()
+    opensearch = SearchIndex()
+    minio = ObjectStore()
+
     # Optional async autocommit worker
     autocommit_enabled = os.getenv("MONITOR_AUTOCOMMIT", "0") in ("1", "true", "True")
     autocommit_q = None
@@ -191,6 +202,10 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
         dry_run=dry_run,
         read_cache=read_cache,
         staging=staging,
+    mongo=mongo,
+    qdrant=qdrant,
+    opensearch=opensearch,
+    minio=minio,
         autocommit_enabled=autocommit_enabled,
         autocommit_queue=autocommit_q,
         autocommit_worker=worker,

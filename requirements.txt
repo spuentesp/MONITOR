@@ -19,3 +19,10 @@ ruff
 mypy
 import-linter
 types-PyYAML
+
+# Data sources
+# Data sources (hard requirements)
+pymongo>=4.7
+qdrant-client>=1.8
+opensearch-py>=2.5
+minio>=7.2
