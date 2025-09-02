@@ -145,8 +145,8 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
         global _AUTOCOMMIT_WORKER, _AUTOCOMMIT_QUEUE, _IDEMPOTENCY_SET
         if _AUTOCOMMIT_WORKER is None or _AUTOCOMMIT_QUEUE is None:
             _AUTOCOMMIT_QUEUE = Queue(maxsize=1024)
-            # Build an agentic decider if an LLM is available; else fallback to default
-            decider: DeciderFn = default_decider
+            # Build an agentic decider; no heuristic fallback
+            decider: DeciderFn
             try:
                 from core.generation.providers import select_llm_from_env
                 llm = select_llm_from_env()
@@ -163,14 +163,13 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
                         obj = _json.loads(txt) if isinstance(txt, str) else {}
                         return (bool(obj.get("commit")), str(obj.get("reason") or "agentic"))
                     except Exception:
-                        return default_decider(payload)
+                        return False, "decider_llm_error"
                 decider = _llm_decider
             except Exception:
-                # If strict agentic mode is requested, do not fallback to heuristics
-                if os.getenv("MONITOR_AGENTIC_STRICT", "0") in ("1", "true", "True"):
-                    def _strict_no_llm(payload: dict[str, Any]) -> tuple[bool, str]:
-                        return False, "strict_no_llm"
-                    decider = _strict_no_llm
+                # Always require agentic decider
+                def _no_llm(payload: dict[str, Any]) -> tuple[bool, str]:
+                    return False, "no_llm_decider"
+                decider = _no_llm
             _AUTOCOMMIT_WORKER = AutoCommitWorker(
                 queue=_AUTOCOMMIT_QUEUE,
                 recorder=recorder,
@@ -240,40 +239,36 @@ def run_once(
 
     llm = llm or select_llm_from_env()
     backend = select_engine_backend()
-    try:
-        if backend == "langgraph":
+    if backend == "langgraph":
+        try:
             from core.engine.langgraph_flow import build_langgraph_flow
-            # Build agents/tools package for langgraph_flow
-            tools_pkg = {
-                "ctx": tools,
-                "query_tool": query_tool,
-                "recorder_tool": recorder_tool,
-                "bootstrap_story_tool": bootstrap_story_tool,
-                "llm": llm,
-                "narrator": narrator_agent(llm),
-                "archivist": archivist_agent(llm),
-                # Additional LLM agents for flow
-                "director": director_agent(llm),
-                "librarian": librarian_llm_agent(llm),
-                "steward": steward_llm_agent(llm),
-                "critic": critic_agent(llm),
-                "intent_router": intent_router_agent(llm),
-                "planner": planner_agent(llm),
-                "qa": qa_agent(llm),
-                "continuity": continuity_agent(llm),
-                "conductor": conductor_agent(llm),
-            }
-            graph = build_langgraph_flow(tools_pkg)
-            out = graph.invoke({"intent": user_intent, "scene_id": scene_id})
-            return out
-    except Exception:
-        # Fall through to minimal path if langgraph is unavailable
-        pass
-    # Minimal fallback: narrator -> archivist -> recorder
-    draft = narrator_agent(llm).act([{ "role": "user", "content": user_intent }])
-    summary = archivist_agent(llm).act([{ "role": "user", "content": draft }])
-    commit = recorder_tool(tools, draft=draft, deltas={"scene_id": scene_id})
-    return {"draft": draft, "summary": summary, "commit": commit}
+        except Exception as e:
+            # Treat missing/failed LangGraph as app down
+            raise RuntimeError("Engine backend unavailable (LangGraph required). App is down.") from e
+        tools_pkg = {
+            "ctx": tools,
+            "query_tool": query_tool,
+            "recorder_tool": recorder_tool,
+            "bootstrap_story_tool": bootstrap_story_tool,
+            "llm": llm,
+            "narrator": narrator_agent(llm),
+            "archivist": archivist_agent(llm),
+            # Additional LLM agents for flow
+            "director": director_agent(llm),
+            "librarian": librarian_llm_agent(llm),
+            "steward": steward_llm_agent(llm),
+            "critic": critic_agent(llm),
+            "intent_router": intent_router_agent(llm),
+            "planner": planner_agent(llm),
+            "qa": qa_agent(llm),
+            "continuity": continuity_agent(llm),
+            "conductor": conductor_agent(llm),
+        }
+        graph = build_langgraph_flow(tools_pkg)
+        out = graph.invoke({"intent": user_intent, "scene_id": scene_id})
+        return out
+    # If we are not using LangGraph, treat the app as down (no fallback)
+    raise RuntimeError("Engine backend unavailable (LangGraph required). App is down.")
 
 
 def monitor_reply(

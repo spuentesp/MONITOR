@@ -220,14 +220,32 @@ with st.sidebar:
                 fixes = None
             if deltas is not None:
                 merged = _deep_merge(deltas, fixes or {})
-                will_commit = bool(commit_if_ok and st.session_state.mode == "autopilot")
-                ctx_res = build_live_tools(dry_run=(not will_commit))
+                # Validate first
+                ctx_res = build_live_tools(dry_run=True)
                 svc = StewardService(ctx_res.query_service)
                 ok, warns, errs = svc.validate(merged)
+                # Ask Resolve agent
+                from core.engine.resolve_tool import resolve_commit_tool
+                from core.generation.providers import select_llm_from_env
+
+                decision = resolve_commit_tool(
+                    {
+                        "llm": select_llm_from_env(),
+                        "deltas": merged,
+                        "validations": {"ok": ok, "warnings": warns, "errors": errs},
+                        "mode": st.session_state.mode,
+                        "hints": {"user_commit": commit_if_ok},
+                    }
+                )
+                agent_commit = bool(decision.get("commit"))
+                will_commit = bool(
+                    st.session_state.mode == "autopilot" and agent_commit and ok
+                )
                 from core.engine.tools import recorder_tool
 
-                if ok:
-                    commit_out = recorder_tool(ctx_res, draft="", deltas=merged)
+                if will_commit:
+                    commit_ctx = build_live_tools(dry_run=False)
+                    commit_out = recorder_tool(commit_ctx, draft="", deltas=merged)
                 else:
                     # stage in dry-run for traceability
                     staged_ctx = build_live_tools(dry_run=True)
@@ -238,6 +256,7 @@ with st.sidebar:
                         "warnings": warns,
                         "errors": errs,
                         "deltas": merged,
+                        "decision": decision,
                         "commit": commit_out,
                     }
                 )

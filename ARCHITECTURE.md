@@ -40,6 +40,10 @@ Current status
 - LangGraph is the default orchestration. `run_once` composes agents and tools and invokes the flow.
 - Librarian/Steward depend on QueryReadPort.
 
+Data model reference
+
+- See docs/data_spine_and_satellites.md for the authoritative “Graph spine + satellites” persistence contract (Neo4j spine, Mongo satellites, Qdrant/OpenSearch indexes, MinIO binaries), including write/read flows and guardrails.
+
 Interfaces exposure
 
 - API exposes the LangGraph Modes Router under `/api/langgraph/modes/*`.

@@ -11,6 +11,7 @@ from core.engine.orchestrator import (
     run_once,
 )
 from core.engine.steward import StewardService
+from core.engine.resolve_tool import resolve_commit_tool
 from core.generation.providers import select_llm_from_env
 from core.loaders.agent_prompts import load_agent_prompts
 from core.interfaces.langgraph_modes_api import router as langgraph_modes_router
@@ -150,25 +151,51 @@ class ResolveRequest(BaseModel):
 
 @app.post("/resolve")
 def resolve(req: ResolveRequest):
-    # Apply fixes (if any), validate, and optionally commit or stage
+    # Apply fixes (if any)
     merged = _deep_merge(req.deltas, req.fixes or {})
-    will_commit = bool(req.commit and req.mode == "autopilot")
-    ctx = build_live_tools(dry_run=(not will_commit))
+    # Always validate before asking the agent
+    dry_by_mode = not (req.mode == "autopilot")
+    ctx = build_live_tools(dry_run=dry_by_mode)
     svc = StewardService(ctx.query_service)
     ok, warns, errs = svc.validate(merged)
-    result: dict[str, Any] = {"ok": ok, "warnings": warns, "errors": errs, "deltas": merged}
-    # In copilot or when commit=False, stage via recorder_tool to keep a unified path
+    # Ask Resolve agent to decide commit vs stage; default is stage
+    try:
+        from core.generation.providers import select_llm_from_env
+
+        llm = select_llm_from_env()
+    except Exception:
+        llm = None
+    decision = resolve_commit_tool(
+        {
+            "llm": llm,
+            "deltas": merged,
+            "validations": {"ok": ok, "warnings": warns, "errors": errs},
+            "mode": req.mode,
+            "hints": {"user_commit": req.commit},
+        }
+    )
+    agent_commit = bool(decision.get("commit"))
+    # Only allow commit when autopilot AND agent approves AND validations ok
+    will_commit = bool((req.mode == "autopilot") and agent_commit and ok)
+
     from core.engine.tools import recorder_tool
 
-    if ok:
-        commit_out = recorder_tool(ctx, draft="", deltas=merged)
-        result["commit"] = commit_out
+    if ok and will_commit:
+        # Persist immediately in autopilot per agent decision
+        commit_ctx = build_live_tools(dry_run=False)
+        commit_out = recorder_tool(commit_ctx, draft="", deltas=merged)
     else:
-        # Still stage in dry-run for traceability
+        # Stage in dry-run for traceability
         stage_ctx = build_live_tools(dry_run=True)
-        staged = recorder_tool(stage_ctx, draft="", deltas=merged)
-        result["commit"] = staged
-    return result
+        commit_out = recorder_tool(stage_ctx, draft="", deltas=merged)
+    return {
+        "ok": ok,
+        "warnings": warns,
+        "errors": errs,
+        "deltas": merged,
+        "decision": decision,
+        "commit": commit_out,
+    }
 
 
 @app.post("/staging/flush")

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any
 import json
+from core.engine.resolve_tool import resolve_commit_tool
 
 
 def _env_flag(name: str, default: str = "0") -> bool:
@@ -331,6 +332,43 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         summary = _safe_act("archivist", [{"role": "user", "content": draft}], default="")
         return {**state, "summary": summary}
 
+    def resolve_decider(state: dict[str, Any]) -> dict[str, Any]:
+        """Ask Resolve agent whether to commit or stage this turn's deltas.
+
+        Builds a minimal deltas preview (like recorder will) and includes steward validations.
+        """
+        # Build a preview of what we'd record
+        preview: dict[str, Any] = {"scene_id": state.get("scene_id")}
+        draft = state.get("draft") or ""
+        continuity = state.get("continuity")
+        if draft.strip():
+            fact = {
+                "description": draft[:220],
+                "occurs_in": state.get("scene_id"),
+            }
+            if isinstance(continuity, dict):
+                fact["continuity"] = {
+                    k: continuity.get(k)
+                    for k in ("drift", "incorrect", "reasons", "constraints", "note")
+                    if continuity.get(k) is not None
+                }
+            preview["facts"] = [fact]
+        validations = state.get("validation") or {}
+        val = {
+            "ok": bool(validations.get("ok", True)),
+            "warnings": validations.get("warnings") or [],
+            "errors": validations.get("errors") or [],
+        }
+        mode = "copilot" if getattr(tools.get("ctx"), "dry_run", True) else "autopilot"
+        decision = resolve_commit_tool({
+            "llm": tools.get("llm"),
+            "deltas": preview,
+            "validations": val,
+            "mode": mode,
+            "hints": {"source": "langgraph"},
+        })
+        return {**state, "resolve_decision": decision}
+
     def recorder(state: dict[str, Any]) -> dict[str, Any]:
         # Always record a compact Fact per turn to retain memory of choices
         deltas = {"scene_id": state.get("scene_id")}
@@ -349,7 +387,28 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                     if continuity.get(k) is not None
                 }
             deltas["facts"] = [fact]
-        commit = tools["recorder_tool"](tools["ctx"], draft=draft, deltas=deltas)
+        # Respect resolve decision: if agent advises against commit or validations not ok, stage only (dry-run semantics)
+        decision = state.get("resolve_decision") or {}
+        agent_commit = bool(decision.get("commit")) if isinstance(decision, dict) else False
+        validations = state.get("validation") or {}
+        validations_ok = bool(validations.get("ok", True))
+        # If autopilot, only allow direct commit when agent approves and validations are ok; otherwise force dry-run context
+        ctx = tools["ctx"]
+        allow_commit = (not getattr(ctx, "dry_run", True)) and agent_commit and validations_ok
+        if allow_commit:
+            commit = tools["recorder_tool"](ctx, draft=draft, deltas=deltas)
+        else:
+            # Build a temporary dry-run ctx for staging
+            from dataclasses import replace as _replace
+            try:
+                stage_ctx = _replace(ctx, dry_run=True)
+            except Exception:
+                stage_ctx = ctx
+                try:
+                    setattr(stage_ctx, "dry_run", True)
+                except Exception:
+                    pass
+            commit = tools["recorder_tool"](stage_ctx, draft=draft, deltas=deltas)
         return {**state, "commit": commit}
 
     workflow = StateGraph(State)
@@ -364,6 +423,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
     workflow.add_node("critic", critic)
     workflow.add_node("continuity_guard", continuity_guard)
     workflow.add_node("archivist", archivist)
+    workflow.add_node("resolve_decider", resolve_decider)
     workflow.add_node("recorder", recorder)
 
     workflow.set_entry_point("intent_router")
@@ -421,8 +481,9 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         # Default: do NOT pause in copilot, so tests reach the recorder node unless explicitly paused
         return pause_before_recorder
 
+    workflow.add_edge("archivist", "resolve_decider")
     workflow.add_conditional_edges(
-        "archivist",
+        "resolve_decider",
         should_pause,
         {True: END, False: "recorder"},
     )
@@ -444,7 +505,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                 pass
             # Fallback: sequential execution to produce a final state dict
             state = dict(inputs)
-            for fn in (intent_router, director, librarian, steward, planner, execute_actions, narrator, continuity_guard, critic, archivist):
+            for fn in (intent_router, director, librarian, steward, planner, execute_actions, narrator, continuity_guard, critic, archivist, resolve_decider):
                 state = fn(state)
             if not should_pause(state):
                 state = recorder(state)
