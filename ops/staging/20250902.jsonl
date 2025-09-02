@@ -19,3 +19,8 @@
 {"scene_id": "s1"}
 {"facts": [{"description": "The dim, flickering flame of a lantern casts eerie shadows on the worn stone walls of the abandoned tavern. You stand at the bar, the wooden surface scarred and weathered, as if th…", "occurs_in": "s1"}], "scene_id": "s1"}
 {"scene_id": null}
+{"scene_id": "s1"}
+{"facts": [{"description": "The city of Ashenhold lies shrouded in a perpetual twilight, its once-majestic spires now worn and crumbling. The air reeks of smoke and ash, a constant reminder of the catastrophi…", "occurs_in": "s1"}], "scene_id": "s1"}
+{"facts": [{"description": "x"}], "scene_id": null}
+{"relation_states": [{"entity_a": null, "entity_b": null}], "scene_id": null}
+{"scene_id": null}
