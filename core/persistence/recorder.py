@@ -18,7 +18,7 @@ class RecorderService:
     Note: Canonical policy remains YAML-first; use this for dev or controlled autopilot flows.
     """
 
-    def __init__(self, repo: RepoPort | Neo4jRepo):
+    def __init__(self, repo: Any):
         self.repo = repo
 
     @staticmethod
@@ -301,6 +301,7 @@ class RecorderService:
 
         if facts:
             rows = []
+            ev_rows: list[dict[str, Any]] = []
             for f in facts:
                 fid = self._ensure_id("fact", f.get("id"))
                 props = {
@@ -320,6 +321,30 @@ class RecorderService:
                         "participants": participants,
                     }
                 )
+                # Optional evidence promotion to :Source
+                evidence = f.get("evidence") or []
+                if evidence:
+                    sources: list[dict[str, Any]] = []
+                    for e in evidence:
+                        if isinstance(e, str):
+                            doc_id = e
+                            sid = f"source:{doc_id}"
+                            sources.append({"id": sid, "doc_id": doc_id})
+                        elif isinstance(e, dict):
+                            doc_id = e.get("doc_id")
+                            sid = e.get("id") or (f"source:{doc_id}" if doc_id else f"source:{uuid4()}")
+                            sources.append(
+                                {
+                                    "id": sid,
+                                    "doc_id": doc_id,
+                                    "title": e.get("title"),
+                                    "kind": e.get("kind"),
+                                    "minio_key": e.get("minio_key"),
+                                    "metadata": self._sanitize(e.get("metadata")),
+                                }
+                            )
+                    if sources:
+                        ev_rows.append({"fact_id": fid, "sources": sources})
             self.repo.run(
                 """
                 UNWIND $rows AS row
@@ -341,6 +366,22 @@ class RecorderService:
                 """,
                 rows=rows,
             )
+            if ev_rows:
+                self.repo.run(
+                    """
+                    UNWIND $rows AS row
+                    MATCH (f:Fact {id: row.fact_id})
+                    UNWIND row.sources AS src
+                    MERGE (s:Source {id: src.id})
+                    SET s.doc_id = coalesce(src.doc_id, s.doc_id),
+                        s.title = coalesce(src.title, s.title),
+                        s.kind = coalesce(src.kind, s.kind),
+                        s.minio_key = coalesce(src.minio_key, s.minio_key),
+                        s.metadata = coalesce(src.metadata, s.metadata)
+                    MERGE (f)-[:SUPPORTED_BY]->(s)
+                    """,
+                    rows=ev_rows,
+                )
             written["facts"] = len(rows)
 
         if relation_states:

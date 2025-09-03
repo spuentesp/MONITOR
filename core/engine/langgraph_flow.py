@@ -156,6 +156,16 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                 "args": {"facts": "list[Fact]?", "relations": "list[Relation]?", "relation_states": "list[RelationState]?", "scene_id": "str?"},
                 "returns": {"mode": "str", "refs": {"scene_id": "str?", "run_id": "str"}},
             },
+            {
+                "name": "narrative",
+                "args": {"op": "str", "payload": "dict"},
+                "returns": {"ok": "bool", "mode": "str"},
+            },
+            {
+                "name": "object_upload",
+                "args": {"bucket": "str", "key": "str", "data_b64": "str", "filename": "str", "content_type": "str?", "universe_id": "str", "story_id": "str?", "scene_id": "str?"},
+                "returns": {"ok": "bool", "mode": "str"},
+            },
         ]
 
     def planner(state: dict[str, Any]) -> dict[str, Any]:
@@ -230,6 +240,11 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                     res = tools["recorder_tool"](ctx, draft="", deltas=args)
                 elif tool == "query":
                     res = tools["query_tool"](ctx, **args)
+                elif tool == "narrative":
+                    payload = args.get("payload") or {}
+                    res = tools["narrative_tool"](ctx, args.get("op"), llm=tools.get("llm"), **payload)
+                elif tool == "object_upload":
+                    res = tools["object_upload_tool"](ctx, llm=tools.get("llm"), **args)
                 else:
                     res = {"ok": False, "error": f"unknown tool: {tool}"}
             except Exception as e:
@@ -413,6 +428,31 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
 
     workflow = StateGraph(State)
     workflow.add_node("intent_router", intent_router)
+    # Health gate: optional pre-flight check via Conductor; if any satellite/graph is down, abort early when strict
+    def health_gate(state: dict[str, Any]) -> dict[str, Any]:
+        strict = _env_flag("MONITOR_AGENTIC_STRICT", "0")
+        if not strict:
+            return state
+        # Run lightweight pings; failures mark engine_down
+        ok = True
+        try:
+            ctx = tools["ctx"]
+            # Avoid raising on missing clients; only if present and ping fails we abort
+            if getattr(ctx, "query_service", None) is None:
+                ok = False
+            if hasattr(ctx, "mongo") and ctx.mongo is not None:
+                ok = ok and bool(ctx.mongo.ping())
+            if hasattr(ctx, "qdrant") and ctx.qdrant is not None:
+                ok = ok and bool(ctx.qdrant.ping())
+            if hasattr(ctx, "opensearch") and ctx.opensearch is not None:
+                ok = ok and bool(ctx.opensearch.ping())
+            if hasattr(ctx, "minio") and ctx.minio is not None:
+                ok = ok and bool(ctx.minio.ping())
+        except Exception:
+            ok = False
+        return {**state, "engine_ok": ok}
+
+    workflow.add_node("health_gate", health_gate)
     workflow.add_node("director", director)
     workflow.add_node("librarian", librarian)
     workflow.add_node("steward", steward)
@@ -434,7 +474,8 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
             return "execute_actions"  # actions will call queries/recorder as needed
         if it == "qa":
             return "qa_node"
-        return "director"
+        # In strict mode, run health gate first
+        return "health_gate" if _env_flag("MONITOR_AGENTIC_STRICT", "0") else "director"
 
     workflow.add_conditional_edges(
         "intent_router",
@@ -442,9 +483,18 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         {
             "execute_actions": "execute_actions",
             "qa_node": "qa_node",
+            "health_gate": "health_gate",
             "director": "director",
         },
     )
+
+    # After health gate, allow Conductor to abort or continue
+    def _post_health(state: dict[str, Any]):
+        ok = bool(state.get("engine_ok", True))
+        if not ok:
+            return "qa_node"  # short-circuit with terse status
+        return "director"
+    workflow.add_conditional_edges("health_gate", _post_health, {"qa_node": "qa_node", "director": "director"})
 
     workflow.add_edge("director", "librarian")
     workflow.add_edge("librarian", "steward")

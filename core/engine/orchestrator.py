@@ -24,7 +24,7 @@ from core.engine.autocommit import AutoCommitWorker, DeciderFn, default_decider
 _AUTOCOMMIT_WORKER: AutoCommitWorker | None = None
 _AUTOCOMMIT_QUEUE: Queue | None = None
 _IDEMPOTENCY_SET: set[str] = set()
-from core.engine.tools import ToolContext, query_tool, recorder_tool, bootstrap_story_tool
+from core.engine.tools import ToolContext, query_tool, recorder_tool, bootstrap_story_tool, narrative_tool, object_upload_tool
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.queries import QueryService
 from core.persistence.recorder import RecorderService
@@ -196,20 +196,38 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
                 autocommit_enabled = False
         autocommit_q = _AUTOCOMMIT_QUEUE
         worker = _AUTOCOMMIT_WORKER
+    # Optional embedder for retrieval/indexing. Prefer env-provided LLM embeddings if available,
+    # fall back to a trivial bag-of-words hash embedder to keep tests local.
+    def _fallback_embedder(text: str) -> list[float]:
+        import hashlib
+        h = hashlib.sha256(text.encode("utf-8")).digest()
+        # 32 bytes -> 32 dims float in [0,1)
+        return [b / 255.0 for b in h]
+
+    embedder = _fallback_embedder
+    try:
+        from core.generation.providers import select_embeddings_from_env  # type: ignore
+        emb = select_embeddings_from_env()
+        if emb is not None:
+            embedder = emb.embed
+    except Exception:
+        pass
+
     return ToolContext(
         query_service=qs,
         recorder=recorder,
         dry_run=dry_run,
         read_cache=read_cache,
         staging=staging,
-    mongo=mongo,
-    qdrant=qdrant,
-    opensearch=opensearch,
-    minio=minio,
+        mongo=mongo,
+        qdrant=qdrant,
+        opensearch=opensearch,
+        minio=minio,
+        embedder=embedder,
         autocommit_enabled=autocommit_enabled,
         autocommit_queue=autocommit_q,
         autocommit_worker=worker,
-    idempotency=_IDEMPOTENCY_SET if autocommit_enabled else None,
+        idempotency=_IDEMPOTENCY_SET if autocommit_enabled else None,
     )
 
 
@@ -265,6 +283,8 @@ def run_once(
             "query_tool": query_tool,
             "recorder_tool": recorder_tool,
             "bootstrap_story_tool": bootstrap_story_tool,
+            "narrative_tool": narrative_tool,
+            "object_upload_tool": object_upload_tool,
             "llm": llm,
             "narrator": narrator_agent(llm),
             "archivist": archivist_agent(llm),

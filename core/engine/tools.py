@@ -6,6 +6,7 @@ from typing import Any
 import hashlib
 import json
 from uuid import uuid4
+import base64
 
 try:  # Optional typing only; no runtime import dependency
     from core.ports.cache import CachePort, StagingPort  # type: ignore
@@ -44,6 +45,15 @@ class ToolContext:
     qdrant: Any | None = None         # QdrantIndex
     opensearch: Any | None = None     # SearchIndex
     minio: Any | None = None          # ObjectStore
+    embedder: Any | None = None       # Callable[[str], list[float]]
+
+
+# --- Satellite services exposed as tools (Resolve-gated) ---
+from core.engine.resolve_tool import resolve_commit_tool
+from core.persistence.mongo_repos import NarrativeService, Turn, Note, Memory, DocMeta
+from core.services.object_service import ObjectService
+from core.services.indexing_service import IndexingService
+from core.services.retrieval_service import RetrievalService
 
 
 def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
@@ -267,3 +277,237 @@ def bootstrap_story_tool(
         refs["entity_ids"] = ent_ids
     res["refs"] = refs
     return res
+
+
+def narrative_tool(
+    ctx: ToolContext,
+    op: str,
+    *,
+    llm: Any | None = None,
+    **kwargs,
+) -> dict[str, Any]:
+    """Resolve-gated NarrativeService operations backed by Mongo.
+
+    Supported ops:
+      - insert_turn(text, role, universe_id, story_id?, scene_id?, entity_ids?, fact_id?, meta?)
+      - insert_note(text, tags?, universe_id, story_id?, scene_id?, entity_ids?, fact_id?, meta?)
+      - insert_memory(text, subject?, confidence?, universe_id, story_id?, scene_id?, entity_ids?, fact_id?, meta?)
+      - insert_docmeta(filename, content_type?, size?, minio_key?, universe_id, story_id?, scene_id?, entity_ids?, fact_id?, meta?)
+      - list_turns_for_scene(scene_id, limit?)  # read-only
+    """
+    # Ensure store available
+    if ctx.mongo is None:
+        raise RuntimeError("Mongo store not configured")
+    service = NarrativeService(ctx.mongo)
+
+    # Reads are not gated
+    if op == "list_turns_for_scene":
+        scene_id = kwargs.get("scene_id")
+        limit = int(kwargs.get("limit", 50))
+        return {"ok": True, "result": service.list_turns_for_scene(scene_id, limit=limit)}
+
+    # Build a compact preview for Resolve
+    preview = {"op": op, "args": {k: ("<bytes>" if k == "data" else v) for k, v in kwargs.items()}}
+    mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
+    decision = resolve_commit_tool({
+        "llm": llm,
+        "deltas": preview,
+        "validations": {"ok": True},
+        "mode": mode,
+        "hints": {"source": "narrative_tool"},
+    })
+    commit = bool(decision.get("commit")) and (mode == "autopilot")
+
+    if not commit:
+        return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}
+
+    # Perform mutation
+    try:
+        if op == "insert_turn":
+            doc = Turn(
+                universe_id=kwargs["universe_id"],
+                story_id=kwargs.get("story_id"),
+                scene_id=kwargs.get("scene_id"),
+                entity_ids=kwargs.get("entity_ids"),
+                fact_id=kwargs.get("fact_id"),
+                role=kwargs.get("role", "narrator"),
+                text=kwargs["text"],
+                meta=kwargs.get("meta"),
+            )
+            ins = service.insert_turn(doc)
+        elif op == "insert_note":
+            doc = Note(
+                universe_id=kwargs["universe_id"],
+                story_id=kwargs.get("story_id"),
+                scene_id=kwargs.get("scene_id"),
+                entity_ids=kwargs.get("entity_ids"),
+                fact_id=kwargs.get("fact_id"),
+                text=kwargs["text"],
+                tags=kwargs.get("tags"),
+                meta=kwargs.get("meta"),
+            )
+            ins = service.insert_note(doc)
+        elif op == "insert_memory":
+            doc = Memory(
+                universe_id=kwargs["universe_id"],
+                story_id=kwargs.get("story_id"),
+                scene_id=kwargs.get("scene_id"),
+                entity_ids=kwargs.get("entity_ids"),
+                fact_id=kwargs.get("fact_id"),
+                subject=kwargs.get("subject"),
+                text=kwargs["text"],
+                confidence=kwargs.get("confidence"),
+                meta=kwargs.get("meta"),
+            )
+            ins = service.insert_memory(doc)
+        elif op == "insert_docmeta":
+            doc = DocMeta(
+                universe_id=kwargs["universe_id"],
+                story_id=kwargs.get("story_id"),
+                scene_id=kwargs.get("scene_id"),
+                entity_ids=kwargs.get("entity_ids"),
+                fact_id=kwargs.get("fact_id"),
+                filename=kwargs["filename"],
+                content_type=kwargs.get("content_type"),
+                size=kwargs.get("size"),
+                minio_key=kwargs.get("minio_key"),
+                meta=kwargs.get("meta"),
+            )
+            ins = service.insert_docmeta(doc)
+        else:
+            return {"ok": False, "error": f"unknown op: {op}"}
+        return {"ok": True, "mode": "commit", "inserted_id": getattr(ins, "inserted_id", None), "decision": decision}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "mode": "commit_attempt"}
+
+
+def object_upload_tool(
+    ctx: ToolContext,
+    *,
+    llm: Any | None = None,
+    bucket: str,
+    key: str,
+    data_b64: str,
+    filename: str,
+    content_type: str | None,
+    universe_id: str,
+    story_id: str | None = None,
+    scene_id: str | None = None,
+    entity_ids: list[str] | None = None,
+    fact_id: str | None = None,
+    meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Resolve-gated object upload to MinIO + DocMeta registration in Mongo.
+
+    Data must be base64-encoded to keep the tool JSON-friendly.
+    """
+    if ctx.minio is None or ctx.mongo is None:
+        raise RuntimeError("Object/Mongo stores not configured")
+
+    # Compact preview and resolve
+    preview = {
+        "op": "object_upload",
+        "args": {"bucket": bucket, "key": key, "filename": filename, "content_type": content_type, "universe_id": universe_id},
+    }
+    mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
+    decision = resolve_commit_tool({
+        "llm": llm,
+        "deltas": preview,
+        "validations": {"ok": True},
+        "mode": mode,
+        "hints": {"source": "object_upload_tool"},
+    })
+    commit = bool(decision.get("commit")) and (mode == "autopilot")
+    if not commit:
+        return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}
+
+    # Decode and upload
+    try:
+        data = base64.b64decode(data_b64)
+        svc = ObjectService(objects=ctx.minio, mongo=ctx.mongo)
+        res = svc.upload_and_register(
+            bucket=bucket,
+            key=key,
+            data=data,
+            filename=filename,
+            content_type=content_type,
+            universe_id=universe_id,
+            story_id=story_id,
+            scene_id=scene_id,
+            entity_ids=entity_ids,
+            fact_id=fact_id,
+            meta=meta,
+        )
+        return {"ok": True, "mode": "commit", "result": res, "decision": decision}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "mode": "commit_attempt"}
+
+
+def indexing_tool(
+    ctx: ToolContext,
+    *,
+    llm: Any | None = None,
+    vector_collection: str,
+    text_index: str,
+    docs: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Resolve-gated hybrid indexing (Qdrant + OpenSearch).
+
+    Each doc requires: {doc_id, text|body, title?, metadata?}
+    """
+    if ctx.qdrant is None or ctx.opensearch is None:
+        raise RuntimeError("Qdrant/OpenSearch not configured")
+    if ctx.embedder is None:
+        raise RuntimeError("No embedder configured in ToolContext")
+    svc = IndexingService(qdrant=ctx.qdrant, opensearch=ctx.opensearch, embedder=ctx.embedder)
+
+    # Ensure targets exist (idempotent)
+    sample_text = None
+    for d in docs:
+        t = d.get("text") or d.get("body")
+        if t:
+            sample_text = t
+            break
+    if not sample_text:
+        return {"ok": False, "error": "no text provided in docs"}
+    v = ctx.embedder(sample_text)
+    svc.ensure_targets(vector_collection=vector_collection, vector_size=len(v), text_index=text_index)
+
+    # Resolve gate
+    preview = {"op": "index_docs", "args": {"count": len(docs), "vector_collection": vector_collection, "text_index": text_index}}
+    mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
+    decision = resolve_commit_tool({
+        "llm": llm,
+        "deltas": preview,
+        "validations": {"ok": True},
+        "mode": mode,
+        "hints": {"source": "indexing_tool"},
+    })
+    commit = bool(decision.get("commit")) and (mode == "autopilot")
+    if not commit:
+        return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}
+
+    try:
+        res = svc.index_documents(docs, vector_collection=vector_collection, text_index=text_index)
+        return {"ok": True, "mode": "commit", "result": res, "decision": decision}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "mode": "commit_attempt"}
+
+
+def retrieval_tool(
+    ctx: ToolContext,
+    *,
+    query: str,
+    vector_collection: str,
+    text_index: str,
+    k: int = 8,
+    filter_terms: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Read-only hybrid retrieval (no Resolve gate)."""
+    if ctx.qdrant is None or ctx.opensearch is None:
+        raise RuntimeError("Qdrant/OpenSearch not configured")
+    if ctx.embedder is None:
+        raise RuntimeError("No embedder configured in ToolContext")
+    svc = RetrievalService(qdrant=ctx.qdrant, opensearch=ctx.opensearch, embedder=ctx.embedder)
+    res = svc.search(query=query, vector_collection=vector_collection, text_index=text_index, k=k, filter_terms=filter_terms)
+    return {"ok": True, "results": res}
