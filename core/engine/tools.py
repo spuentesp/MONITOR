@@ -9,6 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 from core.engine.resolve_tool import resolve_commit_tool
+from core.domain.deltas import DeltaBatch
 from core.persistence.mongo_repos import DocMeta, Memory, NarrativeService, Note, Turn
 from core.services.indexing_service import IndexingService
 from core.services.object_service import ObjectService
@@ -149,6 +150,13 @@ def recorder_tool(
     - If autocommit is enabled, enqueue the payload for an async decision; worker ensures idempotency.
     """
     deltas = deltas or {}
+    # Validate and normalize via Pydantic DTOs (Pydantic-first policy)
+    try:
+        batch = DeltaBatch.model_validate(deltas)
+        # Convert back to plain dict with aliases resolved
+        deltas = batch.model_dump(exclude_none=True)
+    except Exception as e:
+        return {"mode": "error", "error": f"invalid deltas: {e}"}
 
     # Prepare idempotency key
     def _delta_key(payload: dict[str, Any]) -> str:

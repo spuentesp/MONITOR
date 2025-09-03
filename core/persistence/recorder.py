@@ -14,7 +14,7 @@ except Exception:  # pragma: no cover
 class RecorderService:
     """Persist Facts and RelationState deltas to the graph.
 
-    Note: Canonical policy remains YAML-first; use this for dev or controlled autopilot flows.
+    Policy: Pydantic-first. Upstream callers should validate with DTOs before invoking.
     """
 
     def __init__(self, repo: Any):

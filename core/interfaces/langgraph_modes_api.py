@@ -52,6 +52,9 @@ def chat(req: ChatReq, request: Request) -> ChatRes:
             import json as _json
 
             tok = _json.loads(token_raw)
+            # Enforce write permission for autopilot requests
+            if str(req.mode).lower() == "autopilot" and tok.get("mode") != "write":
+                raise HTTPException(status_code=403, detail="Autopilot writes require ContextToken.mode=write")
             for k in ("omniverse_id", "multiverse_id", "universe_id"):
                 if tok.get(k):
                     state[k] = tok[k]

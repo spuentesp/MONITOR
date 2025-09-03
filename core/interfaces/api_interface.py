@@ -28,9 +28,21 @@ async def validate_context_token(request: Request, call_next):
     if not token:
         return JSONResponse(status_code=400, content={"error": "Missing X-Context-Token header"})
     try:
-        ContextToken.model_validate_json(token)
+        tok = ContextToken.model_validate_json(token)
     except Exception as e:
         return JSONResponse(status_code=422, content={"error": f"Invalid ContextToken: {str(e)}"})
+    # Enforce write mode for endpoints that can commit when mode=autopilot
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        # If the request body indicates autopilot, require tok.mode == 'write'
+        try:
+            if request.headers.get("content-type", "").startswith("application/json"):
+                body = await request.json()
+                req_mode = str((body or {}).get("mode") or "").lower()
+                if req_mode == "autopilot" and tok.mode != "write":
+                    return JSONResponse(status_code=403, content={"error": "Autopilot writes require ContextToken.mode=write"})
+        except Exception:
+            # If we can't parse body, fail closed only for explicit autopilot endpoints; otherwise continue
+            pass
     return await call_next(request)
 
 
