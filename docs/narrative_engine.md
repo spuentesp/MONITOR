@@ -25,7 +25,7 @@ This section reflects the current, working implementation in the repo (as of 202
 
 - Persistence targets
   - Neo4j 5 used for live query/integration tests via env configuration. Constraints/indexes are bootstrapped in Docker.
-  - In prod, YAML remains the canonical source; DBs are projections. Current write path targets Neo4j for dev/testing.
+  - Production policy is Pydantic-first. LangGraph nodes extract structured outputs into Pydantic models and persist via Recorder/Projector. YAML is reserved for light configuration/prompts and developer fixtures; it is not the runtime write path.
 
 ---
 
@@ -42,9 +42,9 @@ This section reflects the current, working implementation in the repo (as of 202
 - Engine facade
   - `core/engine/__init__.py` → `default_narrative_session(llm)`
 - Graph access (read): `core/persistence/queries.py` (QueryService)
-- Persistence (write): YAML-first via projector; Facts + RelationState deltas (planned tools)
+- Persistence (write): Pydantic-first via Recorder/Projector; Facts + RelationState deltas via tools
 
-Note: We now provide a working RecorderService that writes the full ontology (+ facts and relation deltas) to Neo4j in dev/test paths. YAML‑first policy remains for production workflows.
+Note: RecorderService writes the full ontology (+ facts and relation deltas) to Neo4j. The production policy is Pydantic‑first; YAML is optional for exports/fixtures.
 
 ---
 
@@ -316,9 +316,9 @@ Delta schema (recorder_tool → commit_deltas):
 
 ## Persistence Policy
 
-- Canonical writes go to YAML (validated by Steward)
-- DBs are projections; avoid direct writes to Neo4j in prod paths
-- Dev mode may write to DB for smoke tests; mark as non‑canonical
+- Canonical writes go through Pydantic models (validated via Pydantic + Steward checks).
+- Databases (Neo4j spine + satellites) are authoritative projections of validated Pydantic models.
+- YAML may be used for configuration/fixtures and human‑readable exports but is not authoritative for runtime writes.
 
 ---
 

@@ -85,6 +85,7 @@ flowchart TD
 Notes:
 - Copilot (default) stages deltas; `end scene` flushes staging and auto-creates the next scene, then hands off to Narrator.
 - Autopilot commits directly.
+- Persistence policy: Pydantic-first. LangGraph nodes extract structured outputs into Pydantic models and write via Recorder. YAML is for prompts/config/fixtures only.
 
 ### LangGraph single-turn workflow
 

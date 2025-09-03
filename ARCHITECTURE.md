@@ -40,6 +40,10 @@ Current status
 - LangGraph is the default orchestration. `run_once` composes agents and tools and invokes the flow.
 - Librarian/Steward depend on QueryReadPort.
 
+Persistence policy
+
+- Pydantic-first: domain models are the source of truth. LangGraph nodes extract → validate (Pydantic + Steward) → persist via Recorder/Projector. YAML is used for prompts/config and developer fixtures only.
+
 Data model reference
 
 - See docs/data_spine_and_satellites.md for the authoritative “Graph spine + satellites” persistence contract (Neo4j spine, Mongo satellites, Qdrant/OpenSearch indexes, MinIO binaries), including write/read flows and guardrails.

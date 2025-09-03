@@ -6,7 +6,7 @@ M.O.N.I.T.O.R. is a personal system for **worldbuilding and assisted narration**
 
 > Goal: make it easy to create and explore canon and “what-if” branches, while keeping timelines, relations, and evidence consistent.
 
-M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assisted narration across multiple universes. It uses a harmonized graph-based ontology (Omniverse → Multiverse → Universe → Story → Scene) to model narrative continuity, facts, entities, and relations. The system supports hybrid search (full-text + vector), document ingestion, and branching for "what-if" scenarios. Agents (Director, Librarian, Steward, Narrator, Critic, Character, Chat Host) orchestrate planning, evidence retrieval, validation, drafting, and critique. All canonical data is authored in YAML, with polyglot projections to databases for optimized querying and retrieval. The architecture is modular, with FastAPI backend, Streamlit frontend, and Dockerized services (Neo4j/Memgraph, Meilisearch, Qdrant/Weaviate, MinIO, Redis, Langfuse, ClickHouse).
+M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assisted narration across multiple universes. It uses a harmonized graph-based ontology (Omniverse → Multiverse → Universe → Story → Scene) to model narrative continuity, facts, entities, and relations. The system supports hybrid search (full-text + vector), document ingestion, and branching for "what-if" scenarios. Agents (Director, Librarian, Steward, Narrator, Critic, Character, Chat Host) orchestrate planning, evidence retrieval, validation, drafting, and critique. Canonical data is modeled with Pydantic (Pydantic-first). LangGraph nodes extract structured outputs into Pydantic models and persist via Recorder/Projector to the graph. YAML is used only for light configuration, prompts, and developer fixtures. The architecture is modular, with FastAPI backend, Streamlit frontend, and Dockerized services (Neo4j/Memgraph, Meilisearch, Qdrant/Weaviate, MinIO, Redis, Langfuse, ClickHouse).
 
 ---
 
@@ -17,6 +17,8 @@ M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assist
 3. **Ensure continuity**: temporal graph + validations (axioms, archetype coverage, relation lifecycles).
 4. **Enable “what-if” safely**: branch from scenes, isolate changes, promote back to canon with diffs.
 5. **Run locally**: lightweight Streamlit UI, Dockerized services, minimal ops burden.
+
+See also: `docs/development_plan.md` for the current phased roadmap.
 
 ---
 
@@ -40,17 +42,15 @@ M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assist
 
 ---
 
-## 🗃️ Storage Mode: YAML‑first → Polyglot projections
+## 🗃️ Storage Mode: Pydantic‑first → Polyglot projections
 
-**Authoring is YAML-first.** Databases are **derived projections** (indexes/caches) built from YAML. You **edit YAML**; background ingesters/syncers materialize projections in the polyglot backends.
+**Canonical models are Pydantic.** LangGraph nodes extract structured outputs into Pydantic DTOs and persist via Recorder/Projector to the graph spine (Neo4j) and satellites. YAML is used for prompts/configuration and developer fixtures; exports to YAML are optional for human review.
 
-**YAML source of truth (on disk):**
+**Where YAML is used (non‑canonical):**
 
-* `multiverse/axioms.yaml`, `multiverse/archetypes.yaml`
-* `universes/<u>/meta.yaml`, `universes/<u>/entities.yaml`, `universes/<u>/facts.yaml`
-* `universes/<u>/stories/<story>.yaml`
-* `universes/<u>/relations.yaml`
-* `annotations/*.yaml`, `assets/index.yaml`
+* `config/agents.yaml` prompts and small settings
+* Test/seed fixtures under `scaffolds/` or `stories/`
+* Optional human‑readable exports (snapshotting)
 
 **Projection services (read‑optimized):**
 
@@ -63,8 +63,9 @@ M.O.N.I.T.O.R. is a local-first, multi-agent system for worldbuilding and assist
 
 **Write policy**
 
-* **Do not write directly** to DBs. Canonical writes go to YAML via API/CLI → **Steward** validates → ingesters update projections.
-* Projections are **rebuildable** from YAML; DBs act as disposable caches/indexes.
+* Runtime writes: extract → validate (Pydantic + Steward) → persist via Recorder/Projector.
+* Copilot stages deltas; Autopilot commits. Flush at scene boundaries or via resolve gate.
+* YAML stays out of the hot path; keep it for config/fixtures/exports.
 
 ---
 

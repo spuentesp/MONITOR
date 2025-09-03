@@ -13,6 +13,9 @@ Update (2025-09-01)
 - Configuration: no hardcoded creds/paths; .env-based settings; sample scaffolds in YAML; CLI commands for bootstrap/projection and scaffolded init.
 - Projector: property sanitization for Neo4j primitives; Cypher fixes; appears_in edges from scene participants.
 
+Policy update (2025-09-03)
+- Pivot from YAML-first authoring to Pydantic-first models for canonical writes. LangGraph extracts structured outputs into Pydantic and persists via Recorder/Projector. YAML remains for prompts/configuration and developer fixtures.
+
 ## 🏁 Sprint 1 — Foundations & Persistence (✅ Completed)
 **Goal:** establish domain, YAML flow, and graph persistence.  
 

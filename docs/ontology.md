@@ -175,6 +175,8 @@ Below are the **first‑class relations** (edges) we use in the graph, with doma
 
 ## 6) Authoring (YAML snippets)
 
+Pydantic-first is the canonical model. The following YAML snippets are illustrative fixtures/config forms; at runtime the API accepts/returns JSON (Pydantic DTOs). YAML is optional for seeds and human-readable exports.
+
 ### 6.3a Arcs
 
 ```yaml

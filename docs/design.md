@@ -1,6 +1,6 @@
 # M.O.N.I.T.O.R. — Design Extensions & Integration Addendum (v2, EN)
 
-> **Scope:** This document is **not** part of the ontology. It defines **design extension points** (interfaces, contracts, states) so the MVP is not blocked, without implementing them yet: **ACL, Media/Assets, Agent Integration, Annotations, Search/Discovery, Metadata Evolution, Workflow States, Templates**. It includes minimal YAML/JSON contracts and validation rules.
+> **Scope:** This document is **not** part of the ontology. It defines **design extension points** (interfaces, contracts, states) so the MVP is not blocked, without implementing them yet: **ACL, Media/Assets, Agent Integration, Annotations, Search/Discovery, Metadata Evolution, Workflow States, Templates**. It includes minimal YAML/JSON contracts and validation rules for configuration/ops artifacts (not the canonical runtime write path).
 
 ---
 
