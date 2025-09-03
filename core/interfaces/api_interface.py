@@ -10,11 +10,11 @@ from core.engine.orchestrator import (
     flush_staging,
     run_once,
 )
-from core.engine.steward import StewardService
 from core.engine.resolve_tool import resolve_commit_tool
+from core.engine.steward import StewardService
 from core.generation.providers import select_llm_from_env
-from core.loaders.agent_prompts import load_agent_prompts
 from core.interfaces.langgraph_modes_api import router as langgraph_modes_router
+from core.loaders.agent_prompts import load_agent_prompts
 
 app = FastAPI(title="M.O.N.I.T.O.R. API")
 
@@ -47,6 +47,7 @@ def get_agent_prompts():
 @app.get("/health")
 def health():
     return {"ok": True}
+
 
 # LangGraph Modes (Narrator vs Monitor)
 app.include_router(langgraph_modes_router, prefix="/api")

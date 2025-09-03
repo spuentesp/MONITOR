@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+import builtins
 import types
 from typing import Any
-
-import builtins
 
 
 def make_fake_pymongo(doc_store: dict[str, list[dict[str, Any]]]):
@@ -41,9 +40,11 @@ def make_fake_pymongo(doc_store: dict[str, list[dict[str, Any]]]):
         def find(self, query: dict[str, Any]):
             docs = doc_store.get(self.name, [])
             filtered = [d for d in docs if all(d.get(k) == v for k, v in query.items())]
+
             class _Cursor(list):
                 def limit(self, n: int):
                     return _Cursor(self[:n])
+
             return _Cursor(filtered)
 
         def find_one(self, key: dict[str, Any]):
@@ -85,7 +86,9 @@ def test_mongo_store_connect_and_ops(monkeypatch):
 
     docs: dict[str, list[dict[str, Any]]] = {}
     fake_mod = make_fake_pymongo(docs)
-    monkeypatch.setitem(builtins.__dict__["__import__"]("sys").modules, "pymongo", fake_mod)  # inject
+    monkeypatch.setitem(
+        builtins.__dict__["__import__"]("sys").modules, "pymongo", fake_mod
+    )  # inject
 
     store = ms.MongoStore(url="mongodb://x:27017", database="testdb").connect()
     assert store.ping() is True

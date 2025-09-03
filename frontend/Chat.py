@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from datetime import datetime
 import json
 import os
-import sys
 from pathlib import Path
+import sys
 from typing import Any
-from datetime import datetime
 
 import streamlit as st
 
@@ -14,13 +14,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from core.engine.orchestrator import (
-    build_live_tools,
-    flush_staging,
-    run_once,
-)
-from core.engine.steward import StewardService
-from core.generation.providers import select_llm_from_env, list_groq_models
+# Avoid module-level imports from project after sys.path mutation; import locally where used.
 
 st.set_page_config(page_title="MONITOR — Agents Chat", layout="wide")
 
@@ -48,6 +42,9 @@ def build_orchestrator(mode: str) -> dict[str, Any]:
     else:
         os.environ.pop("MONITOR_AUTOCOMMIT", None)
 
+    from core.engine.orchestrator import build_live_tools
+    from core.generation.providers import select_llm_from_env
+
     ctx = build_live_tools(dry_run=(mode != "autopilot"))
     llm = select_llm_from_env()
     # Return runtime pieces directly (no Orchestrator wrapper)
@@ -65,7 +62,7 @@ def ensure_session_objects():
         "persist_each": False,
         "history": [],
         "config_key": None,
-    "llm": None,
+        "llm": None,
         "ctx": None,
     }
     for k, v in defaults.items():
@@ -112,28 +109,35 @@ with st.sidebar:
             "Base URL (optional)", value=st.session_state.openai_base_url
         )
     elif st.session_state.llm_backend == "groq":
-        st.session_state.openai_api_key = st.text_input("Groq API Key", type="password", key="groq_api_key")
+        st.session_state.openai_api_key = st.text_input(
+            "Groq API Key", type="password", key="groq_api_key"
+        )
         # Controls to refresh the models list on demand
         rcols = st.columns([1, 1])
         if rcols[0].button("Refresh models", use_container_width=True, key="refresh_groq_models"):
             st.session_state.pop("_groq_models", None)
             st.session_state.pop("_groq_models_fetched_at", None)
         if st.session_state.get("_groq_models_fetched_at"):
-            rcols[1].caption(
-                f"Last updated: {st.session_state['_groq_models_fetched_at']}"
-            )
+            rcols[1].caption(f"Last updated: {st.session_state['_groq_models_fetched_at']}")
         # Try to fetch models dynamically (cache across reruns for this session)
         default_groq_model = "llama-3.1-8b-instant"
         groq_models = []
         fetch_warn = None
-        api_key = st.session_state.get("groq_api_key") or os.getenv("MONITOR_GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+        api_key = (
+            st.session_state.get("groq_api_key")
+            or os.getenv("MONITOR_GROQ_API_KEY")
+            or os.getenv("GROQ_API_KEY")
+        )
         if api_key:
             try:
+                from core.generation.providers import list_groq_models
                 if "_groq_models" not in st.session_state:
                     st.session_state["_groq_models"] = list_groq_models(api_key)
                     # Record timestamp when fetched successfully
                     if st.session_state["_groq_models"]:
-                        st.session_state["_groq_models_fetched_at"] = datetime.now().strftime("%H:%M:%S")
+                        st.session_state["_groq_models_fetched_at"] = datetime.now().strftime(
+                            "%H:%M:%S"
+                        )
                 groq_models = st.session_state.get("_groq_models") or []
             except Exception as e:  # pragma: no cover
                 fetch_warn = f"Could not fetch models dynamically: {e}"
@@ -176,8 +180,16 @@ with st.sidebar:
         else:
             st.caption("Using fallback model list.")
         # Default selection: prefer the env/session value if it's in the list, else default
-        current = st.session_state.get("groq_model") or os.getenv("MONITOR_GROQ_MODEL") or default_groq_model
-        idx = groq_models.index(current) if current in groq_models else groq_models.index(default_groq_model)
+        current = (
+            st.session_state.get("groq_model")
+            or os.getenv("MONITOR_GROQ_MODEL")
+            or default_groq_model
+        )
+        idx = (
+            groq_models.index(current)
+            if current in groq_models
+            else groq_models.index(default_groq_model)
+        )
         sel = st.selectbox("Groq Model", options=groq_models, index=idx)
     # For Groq backend, propagate the selected model into session state
     if st.session_state.llm_backend == "groq":
@@ -190,15 +202,19 @@ with st.sidebar:
         "Persist a simple Fact per turn", value=st.session_state.persist_each
     )
     st.session_state.autocommit_enabled = st.checkbox(
-        "Auto-commit significant changes (async)", value=bool(os.getenv("MONITOR_AUTOCOMMIT") in ("1", "true", "True"))
+        "Auto-commit significant changes (async)",
+        value=bool(os.getenv("MONITOR_AUTOCOMMIT") in ("1", "true", "True")),
     )
-    st.session_state.force_monitor = st.checkbox("Force monitor intent (send as monitor)", value=False)
+    st.session_state.force_monitor = st.checkbox(
+        "Force monitor intent (send as monitor)", value=False
+    )
 
     cols = st.columns(2)
     if cols[0].button("Reset Session"):
         reset_session()
     if cols[1].button("Flush Staging"):
         if st.session_state.get("ctx") is not None:
+            from core.engine.orchestrator import flush_staging
             out = flush_staging(st.session_state["ctx"])  # type: ignore
             st.toast(f"Flush: {out}")
 
@@ -221,6 +237,8 @@ with st.sidebar:
             if deltas is not None:
                 merged = _deep_merge(deltas, fixes or {})
                 # Validate first
+                from core.engine.orchestrator import build_live_tools
+                from core.engine.steward import StewardService
                 ctx_res = build_live_tools(dry_run=True)
                 svc = StewardService(ctx_res.query_service)
                 ok, warns, errs = svc.validate(merged)
@@ -238,16 +256,16 @@ with st.sidebar:
                     }
                 )
                 agent_commit = bool(decision.get("commit"))
-                will_commit = bool(
-                    st.session_state.mode == "autopilot" and agent_commit and ok
-                )
+                will_commit = bool(st.session_state.mode == "autopilot" and agent_commit and ok)
                 from core.engine.tools import recorder_tool
 
                 if will_commit:
+                    from core.engine.orchestrator import build_live_tools
                     commit_ctx = build_live_tools(dry_run=False)
                     commit_out = recorder_tool(commit_ctx, draft="", deltas=merged)
                 else:
                     # stage in dry-run for traceability
+                    from core.engine.orchestrator import build_live_tools
                     staged_ctx = build_live_tools(dry_run=True)
                     commit_out = recorder_tool(staged_ctx, draft="", deltas=merged)
                 st.json(
@@ -308,7 +326,12 @@ if user_intent:
     # Always defer routing to the agentic backend
     try:
         # If forcing monitor, prepend a prefix the agent router will learn to map to monitor
-        msg = user_intent if not st.session_state.get("force_monitor") else f"[monitor] {user_intent}"
+        msg = (
+            user_intent
+            if not st.session_state.get("force_monitor")
+            else f"[monitor] {user_intent}"
+        )
+        from core.engine.orchestrator import run_once
         out = run_once(msg, scene_id=scene_id, mode=st.session_state.mode, ctx=ctx, llm=llm)
     except Exception as e:
         # Display a concise, friendly error and keep the session alive
@@ -317,9 +340,11 @@ if user_intent:
 
     # Adopt returned references for continuity
     try:
-        new_scene = out.get("scene_id") or (out.get("refs") or {}).get("scene_id") or (
-            (out.get("commit") or {}).get("refs") or {}
-        ).get("scene_id")
+        new_scene = (
+            out.get("scene_id")
+            or (out.get("refs") or {}).get("scene_id")
+            or ((out.get("commit") or {}).get("refs") or {}).get("scene_id")
+        )
         if new_scene and isinstance(new_scene, str):
             st.session_state.scene_id = new_scene
     except Exception:

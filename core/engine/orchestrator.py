@@ -1,40 +1,46 @@
 from __future__ import annotations
 
 import os
+from queue import Queue
+import re
 from typing import Any
 
 from core.agents.archivist import archivist_agent
-from core.agents.narrator import narrator_agent
-from core.agents.director import director_agent
-from core.agents.librarian import librarian_agent as librarian_llm_agent
-from core.agents.steward import steward_agent as steward_llm_agent
+from core.agents.conductor import conductor_agent
+from core.agents.continuity import continuity_agent
 from core.agents.critic import critic_agent
-from core.engine.cache import ReadThroughCache, StagingStore
+from core.agents.director import director_agent
 from core.agents.intent_router import intent_router_agent
+from core.agents.librarian import librarian_agent as librarian_llm_agent
+from core.agents.narrator import narrator_agent
 from core.agents.planner import planner_agent
 from core.agents.qa import qa_agent
-from core.agents.continuity import continuity_agent
-from core.agents.conductor import conductor_agent
+from core.agents.steward import steward_agent as steward_llm_agent
+from core.engine.autocommit import AutoCommitWorker, DeciderFn
+from core.engine.cache import ReadThroughCache, StagingStore
 from core.engine.langgraph_flow import select_engine_backend
-import re
-from queue import Queue
-from core.engine.autocommit import AutoCommitWorker, DeciderFn, default_decider
+from core.engine.tools import (
+    ToolContext,
+    bootstrap_story_tool,
+    narrative_tool,
+    object_upload_tool,
+    query_tool,
+    recorder_tool,
+)
+from core.persistence.neo4j_repo import Neo4jRepo
+from core.persistence.queries import QueryService
+from core.persistence.recorder import RecorderService
 
 # Module-level singletons to avoid spawning a worker per request
 _AUTOCOMMIT_WORKER: AutoCommitWorker | None = None
 _AUTOCOMMIT_QUEUE: Queue | None = None
 _IDEMPOTENCY_SET: set[str] = set()
-from core.engine.tools import ToolContext, query_tool, recorder_tool, bootstrap_story_tool, narrative_tool, object_upload_tool
-from core.persistence.neo4j_repo import Neo4jRepo
-from core.persistence.queries import QueryService
-from core.persistence.recorder import RecorderService
 
 try:
     from core.engine.cache_redis import RedisReadThroughCache, RedisStagingStore  # type: ignore
 except Exception:  # pragma: no cover
     RedisReadThroughCache = None  # type: ignore
     RedisStagingStore = None  # type: ignore
-
 
 
 def build_live_tools(dry_run: bool = True) -> ToolContext:
@@ -139,9 +145,9 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
         staging = StagingStore()
     # Satellite stores (always present as handles; connect lazily when used)
     from core.persistence.mongo_store import MongoStore
+    from core.persistence.object_store import ObjectStore
     from core.persistence.qdrant_index import QdrantIndex
     from core.persistence.search_index import SearchIndex
-    from core.persistence.object_store import ObjectStore
 
     mongo = MongoStore()
     qdrant = QdrantIndex()
@@ -160,26 +166,31 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
             decider: DeciderFn
             try:
                 from core.generation.providers import select_llm_from_env
+
                 llm = select_llm_from_env()
+
                 def _llm_decider(payload: dict[str, Any]) -> tuple[bool, str]:
                     prompt = (
                         "You are AutoCommit. Decide if this change should be committed.\n"
-                        "Return ONLY JSON: {\"commit\": <true|false>, \"reason\": <short>}\n"
+                        'Return ONLY JSON: {"commit": <true|false>, "reason": <short>}\n'
                         f"Payload: {payload}"
                     )
                     try:
-                        ans = llm.chat([{ "role": "user", "content": prompt }])
+                        ans = llm.chat([{"role": "user", "content": prompt}])
                         txt = ans or "{}"
                         import json as _json
+
                         obj = _json.loads(txt) if isinstance(txt, str) else {}
                         return (bool(obj.get("commit")), str(obj.get("reason") or "agentic"))
                     except Exception:
                         return False, "decider_llm_error"
+
                 decider = _llm_decider
             except Exception:
                 # Always require agentic decider
                 def _no_llm(payload: dict[str, Any]) -> tuple[bool, str]:
                     return False, "no_llm_decider"
+
                 decider = _no_llm
             _AUTOCOMMIT_WORKER = AutoCommitWorker(
                 queue=_AUTOCOMMIT_QUEUE,
@@ -196,10 +207,12 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
                 autocommit_enabled = False
         autocommit_q = _AUTOCOMMIT_QUEUE
         worker = _AUTOCOMMIT_WORKER
+
     # Optional embedder for retrieval/indexing. Prefer env-provided LLM embeddings if available,
     # fall back to a trivial bag-of-words hash embedder to keep tests local.
     def _fallback_embedder(text: str) -> list[float]:
         import hashlib
+
         h = hashlib.sha256(text.encode("utf-8")).digest()
         # 32 bytes -> 32 dims float in [0,1)
         return [b / 255.0 for b in h]
@@ -207,6 +220,7 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
     embedder = _fallback_embedder
     try:
         from core.generation.providers import select_embeddings_from_env  # type: ignore
+
         emb = select_embeddings_from_env()
         if emb is not None:
             embedder = emb.embed
@@ -277,7 +291,9 @@ def run_once(
             from core.engine.langgraph_flow import build_langgraph_flow
         except Exception as e:
             # Treat missing/failed LangGraph as app down
-            raise RuntimeError("Engine backend unavailable (LangGraph required). App is down.") from e
+            raise RuntimeError(
+                "Engine backend unavailable (LangGraph required). App is down."
+            ) from e
         tools_pkg = {
             "ctx": tools,
             "query_tool": query_tool,
@@ -357,11 +373,13 @@ def monitor_reply(
         advice = []
         if not scene_id:
             advice.append("Provide a scene_id to scope the audit (optional but recommended).")
-        advice.extend([
-            "Check: participants_by_role_for_scene, relations_effective_in_scene.",
-            "Flag: mutually exclusive kinship (father vs brother), asymmetric edges, cycles.",
-            "Next: propose END/CHANGE relation in current or next scene.",
-        ])
+        advice.extend(
+            [
+                "Check: participants_by_role_for_scene, relations_effective_in_scene.",
+                "Flag: mutually exclusive kinship (father vs brother), asymmetric edges, cycles.",
+                "Next: propose END/CHANGE relation in current or next scene.",
+            ]
+        )
         return {
             "draft": "Audit stub: relation checks queued. Provide entity names/ids or a scene_id.",
             "monitor": True,

@@ -57,9 +57,7 @@ def test_cli_orchestrate_step_with_record_fact(monkeypatch):
 
     monkeypatch.setattr(cli, "build_live_tools", fake_build_live_tools)
     monkeypatch.setattr(cli, "run_once", lambda *a, **k: {"draft": "x"})
-    r = runner.invoke(
-        cli.app, ["orchestrate-step", "hi", "--scene-id", "s1", "--record-fact"]
-    )
+    r = runner.invoke(cli.app, ["orchestrate-step", "hi", "--scene-id", "s1", "--record-fact"])
     assert r.exit_code == 0
 
 
@@ -73,7 +71,9 @@ def test_cli_flush_staging(monkeypatch):
             return {"ok": True}
 
     def fake_build_live_tools(dry_run: bool = False):
-        return ToolContext(query_service=object(), recorder=Rec(), dry_run=dry_run, staging=Staging())
+        return ToolContext(
+            query_service=object(), recorder=Rec(), dry_run=dry_run, staging=Staging()
+        )
 
     monkeypatch.setattr(cli, "build_live_tools", fake_build_live_tools)
     r = runner.invoke(cli.app, ["flush-staging"])

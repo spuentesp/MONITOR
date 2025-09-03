@@ -76,7 +76,9 @@ def test_recorder_tool_dry_run_stages_and_clears_cache():
 def test_recorder_tool_commit_clears_cache():
     rec = RecorderServiceFacade(RecImpl())
     cache = FakeCache()
-    ctx = ToolContext(query_service=QueryServiceFacade(QImpl()), recorder=rec, read_cache=cache, dry_run=False)
+    ctx = ToolContext(
+        query_service=QueryServiceFacade(QImpl()), recorder=rec, read_cache=cache, dry_run=False
+    )
     out = recorder_tool(ctx, draft="x", deltas={"facts": [{"description": "d"}]})
     assert out["mode"] == "commit" and cache.cleared == 1
 

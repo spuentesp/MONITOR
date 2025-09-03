@@ -47,6 +47,8 @@ def test_recorder_tool_dry_run_stages_when_no_recorder():
 
 def test_recorder_tool_commit_when_recorder_present():
     rec = RecorderServiceFacade(FakeRecorderImpl())
-    ctx = ToolContext(query_service=QueryServiceFacade(FakeQueryImpl()), recorder=rec, dry_run=False)
+    ctx = ToolContext(
+        query_service=QueryServiceFacade(FakeQueryImpl()), recorder=rec, dry_run=False
+    )
     out = recorder_tool(ctx, draft="x", deltas={"facts": [{"description": "d"}]})
     assert out["mode"] == "commit" and out["result"]["ok"]

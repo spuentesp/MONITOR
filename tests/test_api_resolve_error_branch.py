@@ -16,7 +16,11 @@ def _ctx_header():
 
 def test_resolve_endpoint_error_branch_stages_anyway():
     # Missing entity ids in relation_states should produce errors (ok=False)
-    payload = {"deltas": {"relation_states": [{"entity_a": None, "entity_b": None}], "scene_id": None}, "mode": "copilot", "commit": False}
+    payload = {
+        "deltas": {"relation_states": [{"entity_a": None, "entity_b": None}], "scene_id": None},
+        "mode": "copilot",
+        "commit": False,
+    }
     r = client.post("/resolve", json=payload, headers=_ctx_header())
     assert r.status_code == 200
     body = r.json()

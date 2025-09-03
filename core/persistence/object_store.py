@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 import os
+from typing import Any
 
 
 @dataclass
@@ -18,13 +18,17 @@ class ObjectStore:
     secure: bool | None = None
     client: Any | None = None
 
-    def connect(self) -> "ObjectStore":
+    def connect(self) -> ObjectStore:
         if self.client is not None:
             return self
         ep = self.endpoint or os.getenv("MINIO_ENDPOINT") or "localhost:9000"
         ak = self.access_key or os.getenv("MINIO_ACCESS_KEY") or "minioadmin"
         sk = self.secret_key or os.getenv("MINIO_SECRET_KEY") or "minioadmin"
-        secure = self.secure if self.secure is not None else os.getenv("MINIO_SECURE", "0") in ("1", "true", "True")
+        secure = (
+            self.secure
+            if self.secure is not None
+            else os.getenv("MINIO_SECURE", "0") in ("1", "true", "True")
+        )
         try:
             from minio import Minio  # type: ignore
         except Exception as e:  # pragma: no cover - optional dependency
@@ -48,10 +52,13 @@ class ObjectStore:
         if not self.client.bucket_exists(bucket):
             self.client.make_bucket(bucket)
 
-    def put_bytes(self, bucket: str, key: str, data: bytes, *, content_type: str | None = None) -> None:
+    def put_bytes(
+        self, bucket: str, key: str, data: bytes, *, content_type: str | None = None
+    ) -> None:
         self.ensure_bucket(bucket)
         assert self.client is not None
         from io import BytesIO
+
         stream = BytesIO(data)
         self.client.put_object(bucket, key, stream, length=len(data), content_type=content_type)
 

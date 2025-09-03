@@ -9,7 +9,6 @@ try:
 except Exception:  # pragma: no cover
     RepoPort = Any  # type: ignore
 
-from core.persistence.neo4j_repo import Neo4jRepo
 
 
 class RecorderService:
@@ -332,7 +331,9 @@ class RecorderService:
                             sources.append({"id": sid, "doc_id": doc_id})
                         elif isinstance(e, dict):
                             doc_id = e.get("doc_id")
-                            sid = e.get("id") or (f"source:{doc_id}" if doc_id else f"source:{uuid4()}")
+                            sid = e.get("id") or (
+                                f"source:{doc_id}" if doc_id else f"source:{uuid4()}"
+                            )
                             sources.append(
                                 {
                                     "id": sid,

@@ -9,12 +9,12 @@ except Exception:  # pragma: no cover
 
 from core.persistence.queries_lib.axioms import AxiomsQueries
 from core.persistence.queries_lib.base import BaseQueries
+from core.persistence.queries_lib.catalog import CatalogQueries
 from core.persistence.queries_lib.entities import EntitiesQueries
 from core.persistence.queries_lib.facts import FactsQueries
 from core.persistence.queries_lib.relations import RelationsQueries
 from core.persistence.queries_lib.scenes import ScenesQueries
 from core.persistence.queries_lib.systems import SystemsQueries
-from core.persistence.queries_lib.catalog import CatalogQueries
 
 
 class QueryService(

@@ -1,5 +1,5 @@
-from core.engine.monitor_parser import parse_monitor_intent
 from core.engine.langgraph_modes import monitor_node
+from core.engine.monitor_parser import parse_monitor_intent
 from core.engine.tools import ToolContext
 
 
@@ -36,7 +36,9 @@ def test_parse_seed_pcs():
 def test_monitor_create_entity_adds_appears_in(monkeypatch):
     # Prepare state and monkeypatch recorder_tool inside monitor module by injecting ctx
     staging = _Staging()
-    tools = ToolContext(query_service=object(), recorder=None, dry_run=True, read_cache=None, staging=staging)
+    tools = ToolContext(
+        query_service=object(), recorder=None, dry_run=True, read_cache=None, staging=staging
+    )
     state = {
         "input": "create character 'Logan' as npc type 'mutant' scene sc:intro with 'Traits: brave'",
         "universe_id": "u:demo",

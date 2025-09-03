@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable
-
+from typing import Any
 
 Embedder = Callable[[str], list[float]]
 
@@ -14,7 +14,7 @@ class IndexingService:
     - qdrant: QdrantIndex wrapper (required for vector indexing)
     - opensearch: SearchIndex wrapper (required for BM25 indexing)
     - embedder: function(text) -> vector used to embed text
-    
+
     Methods avoid importing client SDKs at import-time; adapters handle that.
     """
 
@@ -66,13 +66,15 @@ class IndexingService:
             pid = d.get("id") or f"vec:{doc_id}"
             payload = {"doc_id": doc_id, "title": title, "metadata": meta}
             q_points.append((pid, vec, payload))
-            os_docs.append({
-                "id": doc_id,
-                "doc_id": doc_id,
-                "title": title,
-                "body": body,
-                "metadata": meta,
-            })
+            os_docs.append(
+                {
+                    "id": doc_id,
+                    "doc_id": doc_id,
+                    "title": title,
+                    "body": body,
+                    "metadata": meta,
+                }
+            )
             n += 1
         if q_points:
             self.qdrant.upsert_points(q_points, collection=vector_collection)

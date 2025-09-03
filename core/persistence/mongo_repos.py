@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable
-from pydantic import BaseModel, Field
+from typing import Any
+
+from pydantic import BaseModel
 
 from .mongo_store import MongoStore
 

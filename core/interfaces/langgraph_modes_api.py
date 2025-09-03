@@ -1,25 +1,27 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from core.engine.langgraph_modes import build_langgraph_modes, GraphState
+from core.engine.langgraph_modes import GraphState, build_langgraph_modes
 from core.engine.orchestrator import build_live_tools
 
 router = APIRouter(tags=["langgraph-modes"])
 
 _graph = build_langgraph_modes()
-_SESSIONS: Dict[str, GraphState] = {}
+_SESSIONS: dict[str, GraphState] = {}
 
 
 class ChatReq(BaseModel):
     session_id: str = Field(..., description="ID de sesión del usuario")
     message: str = Field(..., description="Mensaje del usuario")
-    universe_id: Optional[str] = Field(None, description="Universo activo")
-    override: Optional[str] = Field(None, description="Forzar 'narration' o 'monitor'")
-    mode: str = Field("copilot", description="'copilot' (dry-run/staging) o 'autopilot' (persistir)")
+    universe_id: str | None = Field(None, description="Universo activo")
+    override: str | None = Field(None, description="Forzar 'narration' o 'monitor'")
+    mode: str = Field(
+        "copilot", description="'copilot' (dry-run/staging) o 'autopilot' (persistir)"
+    )
 
 
 class ChatRes(BaseModel):
@@ -70,7 +72,9 @@ def chat(req: ChatReq, request: Request) -> ChatRes:
         raise HTTPException(status_code=500, detail="No reply generated")
 
     # Persiste sesión (limpiando input y override efímeros)
-    cleaned: Dict[str, Any] = {k: v for k, v in out.items() if k not in ("input", "override_mode", "tools")}
+    cleaned: dict[str, Any] = {
+        k: v for k, v in out.items() if k not in ("input", "override_mode", "tools")
+    }
     _SESSIONS[req.session_id] = cleaned
     return ChatRes(mode=out.get("mode", "narration"), reply=reply, meta=out.get("meta", {}))
 

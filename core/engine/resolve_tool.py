@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict
-
 import json
+from typing import Any
+
 from core.agents.resolve import resolve_agent
 
 
-def resolve_commit_tool(context: Dict[str, Any]) -> Dict[str, Any]:
+def resolve_commit_tool(context: dict[str, Any]) -> dict[str, Any]:
     """
     Tool: Ask Resolve agent whether to commit now.
 
@@ -26,12 +26,14 @@ def resolve_commit_tool(context: Dict[str, Any]) -> Dict[str, Any]:
     }
     agent = resolve_agent(llm)
     try:
-        reply_text = agent.act([{"role": "user", "content": json.dumps(payload, ensure_ascii=False)}])
+        reply_text = agent.act(
+            [{"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
+        )
     except Exception as e:
         return {"commit": False, "reason": f"resolve_agent_error: {e}"}
 
     # Normalize defensively
-    decision: Dict[str, Any] = {"commit": False, "reason": "undecided"}
+    decision: dict[str, Any] = {"commit": False, "reason": "undecided"}
     try:
         obj = json.loads(reply_text) if isinstance(reply_text, str) else {}
         if isinstance(obj, dict):

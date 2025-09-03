@@ -17,7 +17,13 @@ class DummyQueryService:
 
 def test_orchestrator_stub_runs():
     ctx = ToolContext(query_service=DummyQueryService())
-    out = run_once("Introduce a rival in the alley.", scene_id="scene:1", mode="copilot", ctx=ctx, llm=MockLLM())
+    out = run_once(
+        "Introduce a rival in the alley.",
+        scene_id="scene:1",
+        mode="copilot",
+        ctx=ctx,
+        llm=MockLLM(),
+    )
     assert out["plan"]["beats"]
     assert isinstance(out["draft"], str) and len(out["draft"]) > 0
     assert out["commit"]["mode"] == "dry_run"

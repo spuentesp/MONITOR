@@ -9,4 +9,8 @@ def intent_router_agent(llm) -> Agent:
         "narrative, monitor, qa, bootstrap, action_examine, action_move, audit_relations. "
         "Return only the label, nothing else."
     )
-    return Agent(AgentConfig(name="IntentRouter", system_prompt=system, llm=llm, temperature=0.0, max_tokens=8))
+    return Agent(
+        AgentConfig(
+            name="IntentRouter", system_prompt=system, llm=llm, temperature=0.0, max_tokens=8
+        )
+    )

@@ -14,7 +14,15 @@ class QImpl:
 
 
 class DummyLLM:
-    def complete(self, *, system_prompt: str, messages: list[dict[str, str]], temperature: float = 0.7, max_tokens: int = 400, extra: dict[str, Any] | None = None) -> str:  # noqa: D401
+    def complete(
+        self,
+        *,
+        system_prompt: str,
+        messages: list[dict[str, str]],
+        temperature: float = 0.7,
+        max_tokens: int = 400,
+        extra: dict[str, Any] | None = None,
+    ) -> str:  # noqa: D401
         return "ok"
 
 

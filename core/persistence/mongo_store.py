@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 import os
+from typing import Any
 
 
 @dataclass
@@ -17,7 +17,7 @@ class MongoStore:
     client: Any | None = None
     db: Any | None = None
 
-    def connect(self) -> "MongoStore":
+    def connect(self) -> MongoStore:
         """Connect lazily using env vars if not provided.
 
         Env: MONGO_URL, MONGO_DB
@@ -68,7 +68,9 @@ class MongoStore:
         res = col.update_one(key, {"$set": doc}, upsert=True)
         return getattr(res, "upserted_id", None)
 
-    def find(self, collection: str, query: dict[str, Any], *, limit: int = 20) -> list[dict[str, Any]]:
+    def find(
+        self, collection: str, query: dict[str, Any], *, limit: int = 20
+    ) -> list[dict[str, Any]]:
         col = self.collection(collection)
         cur = col.find(query).limit(limit)
         return [x for x in cur]

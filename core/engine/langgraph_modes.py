@@ -6,12 +6,11 @@ from typing import Any, Literal, NotRequired, TypedDict
 import uuid
 
 from core.agents.narrator import narrator_agent
-from core.engine.tools import ToolContext, query_tool, recorder_tool
+from core.engine.attribute_extractor import distill_entity_attributes
 from core.engine.monitor_parser import parse_monitor_intent
+from core.engine.tools import ToolContext, query_tool, recorder_tool
 from core.generation.interfaces.llm import Message
 from core.generation.providers import select_llm_from_env
-from core.engine.attribute_extractor import distill_entity_attributes
-
 
 Mode = Literal["narration", "monitor"]
 
@@ -56,11 +55,11 @@ def get_help_text() -> str:
         "- /help: muestra este mensaje de ayuda.\n"
         "- /monitor <pedido>: fuerza modo Monitor para administración (crear/actualizar/consultar).\n"
         "- /narrar <mensaje>: fuerza modo Narración para continuar la historia.\n"
-    "- /monitor iniciar universo [<id>] [nombre \"...\"] [multiverso <id>]: asistente para crear un universo listo para narrar.\n"
-    "Consultas útiles (EN): list multiverses | list universes [multiverse <id>] | list stories [universe <id>] | show 'Tony Stark' in universe <id> | enemies of 'Rogue' in universe <id> | last time they saw 'Deadpool' in universe <id>.\n"
-    "GM onboarding: start a new story [topics \"urban fantasy, heists\"] [story \"Night Shift\"] | save conversation | end scene.\n"
-    "Consejo: si mezclas narrativa y administración, el enrutador intentará decidir, pero puedes forzar el modo con los comandos.\n"
-    "Persistencia: este endpoint opera en 'copilot' (dry-run/staging) por defecto. 'end scene' intenta persistir automáticamente los cambios en staging; envía mode='autopilot' para persistir siempre."
+        '- /monitor iniciar universo [<id>] [nombre "..."] [multiverso <id>]: asistente para crear un universo listo para narrar.\n'
+        "Consultas útiles (EN): list multiverses | list universes [multiverse <id>] | list stories [universe <id>] | show 'Tony Stark' in universe <id> | enemies of 'Rogue' in universe <id> | last time they saw 'Deadpool' in universe <id>.\n"
+        'GM onboarding: start a new story [topics "urban fantasy, heists"] [story "Night Shift"] | save conversation | end scene.\n'
+        "Consejo: si mezclas narrativa y administración, el enrutador intentará decidir, pero puedes forzar el modo con los comandos.\n"
+        "Persistencia: este endpoint opera en 'copilot' (dry-run/staging) por defecto. 'end scene' intenta persistir automáticamente los cambios en staging; envía mode='autopilot' para persistir siempre."
     )
 
 
@@ -80,7 +79,9 @@ def classify_intent(state: GraphState) -> GraphState:
     if override in ("narration", "monitor"):
         state["mode"] = override  # decide ya
         meta = state.get("meta") or {}
-        meta.update({"router": {"confidence": 1.0, "reason": f"override:{override}", "decided": override}})
+        meta.update(
+            {"router": {"confidence": 1.0, "reason": f"override:{override}", "decided": override}}
+        )
         state["meta"] = meta
         return state
 
@@ -94,15 +95,41 @@ def classify_intent(state: GraphState) -> GraphState:
         mode, reason, confidence = "monitor", "command_prefix", 0.95
     elif _CMD_NARRATE.match(t):
         mode, reason, confidence = "narration", "command_prefix", 0.95
-    elif any(k in t.lower() for k in [
-        "monitor:", "administra", "configura", "crea", "actualiza", "consulta", "borra",
-        "persistir", "guardar", "dataset", "índice", "indice", "vector", "embedding",
-    ]):
+    elif any(
+        k in t.lower()
+        for k in [
+            "monitor:",
+            "administra",
+            "configura",
+            "crea",
+            "actualiza",
+            "consulta",
+            "borra",
+            "persistir",
+            "guardar",
+            "dataset",
+            "índice",
+            "indice",
+            "vector",
+            "embedding",
+        ]
+    ):
         mode, reason, confidence = "monitor", "keywords", 0.75
-    elif any(k in t.lower() for k in [
-        "cuenta", "narra", "qué pasó", "que paso", "continúa", "continua", "siguiente capítulo",
-        "siguiente capitulo", "rol", "personaje",
-    ]):
+    elif any(
+        k in t.lower()
+        for k in [
+            "cuenta",
+            "narra",
+            "qué pasó",
+            "que paso",
+            "continúa",
+            "continua",
+            "siguiente capítulo",
+            "siguiente capitulo",
+            "rol",
+            "personaje",
+        ]
+    ):
         mode, reason, confidence = "narration", "keywords", 0.7
 
     # Clasificador LLM (refina decisión) – robusto a backend mock
@@ -111,15 +138,22 @@ def classify_intent(state: GraphState) -> GraphState:
         sys = (
             "Clasifica el mensaje como 'narration' (historia diegética) o 'monitor' "
             "(operaciones del sistema: crear/actualizar/consultar, admin, ERPs, APIs). "
-            "Responde SOLO JSON: {\"intent\":\"narration|monitor\",\"confidence\":0.0-1.0,\"reason\":\"...\"}."
+            'Responde SOLO JSON: {"intent":"narration|monitor","confidence":0.0-1.0,"reason":"..."}.'
         )
         user = f"Mensaje: {text}\nÚltimo modo: {last_mode}"
-        out = llm.complete(system_prompt=sys, messages=[{"role": "user", "content": user}], temperature=0.0, max_tokens=120)
+        out = llm.complete(
+            system_prompt=sys,
+            messages=[{"role": "user", "content": user}],
+            temperature=0.0,
+            max_tokens=120,
+        )
         data = json.loads(out) if isinstance(out, str) else {}
         lm_intent = str(data.get("intent", "")).lower()
         lm_conf = float(data.get("confidence", 0.0))
         lm_reason = str(data.get("reason", ""))
-        if lm_intent in ("narration", "monitor") and (lm_conf >= confidence or reason == "fallback"):
+        if lm_intent in ("narration", "monitor") and (
+            lm_conf >= confidence or reason == "fallback"
+        ):
             mode, confidence, reason = lm_intent, lm_conf, f"llm:{lm_reason}"
     except Exception:
         pass
@@ -169,7 +203,9 @@ def monitor_node(state: GraphState) -> GraphState:
         if not ctx:
             return {"mode": "noop", "reason": "no_tool_context"}
         draft = deltas.get("_draft", "")
-        return recorder_tool(ctx, draft=draft, deltas={k: v for k, v in deltas.items() if k != "_draft"})
+        return recorder_tool(
+            ctx, draft=draft, deltas={k: v for k, v in deltas.items() if k != "_draft"}
+        )
 
     def _auto_flush_if_needed(reason: str) -> dict | None:
         """If running in copilot (dry_run), flush staged changes at safe boundaries.
@@ -215,7 +251,11 @@ def monitor_node(state: GraphState) -> GraphState:
             if not w.get("story_title"):
                 missing.append('story title (e.g., story "Night Shift")')
             if missing:
-                _append(state, "assistant", "To start your story, please provide: " + ", ".join(missing) + ".")
+                _append(
+                    state,
+                    "assistant",
+                    "To start your story, please provide: " + ", ".join(missing) + ".",
+                )
                 state["last_mode"] = "monitor"
                 return state
             # Create scaffolding: multiverse, universe, arc, story, initial scene
@@ -227,10 +267,25 @@ def monitor_node(state: GraphState) -> GraphState:
             # Prepare deltas
             deltas = {
                 "new_multiverse": {"id": mv_id, "name": (w.get("universe_name") or "GM Session")},
-                "new_universe": {"id": uni_id, "name": (w.get("universe_name") or "GM Session"), "multiverse_id": mv_id},
+                "new_universe": {
+                    "id": uni_id,
+                    "name": (w.get("universe_name") or "GM Session"),
+                    "multiverse_id": mv_id,
+                },
                 "new_arc": {"id": arc_id, "title": "Session Arc", "universe_id": uni_id},
-                "new_story": {"id": st_id, "title": w.get("story_title"), "universe_id": uni_id, "arc_id": arc_id, "sequence_index": 1},
-                "new_scene": {"id": sc_id, "title": "Scene 1", "story_id": st_id, "participants": []},
+                "new_story": {
+                    "id": st_id,
+                    "title": w.get("story_title"),
+                    "universe_id": uni_id,
+                    "arc_id": arc_id,
+                    "sequence_index": 1,
+                },
+                "new_scene": {
+                    "id": sc_id,
+                    "title": "Scene 1",
+                    "story_id": st_id,
+                    "participants": [],
+                },
                 "universe_id": uni_id,
                 "_draft": f"Start GM story: {w.get('story_title')}",
             }
@@ -240,11 +295,26 @@ def monitor_node(state: GraphState) -> GraphState:
                 llm = select_llm_from_env()
                 agent = narrator_agent(llm)
                 topics_text = ", ".join(w.get("topics") or [])
-                primer = agent.act([
-                    {"role": "system", "content": "You are the GM. Write a short intro beat (3-5 sentences) based on the given topics and interests. Keep it engaging and concise."},
-                    {"role": "user", "content": f"Topics: {topics_text}. Interests: {', '.join(w.get('interests') or [])}."},
-                ])
-                _commit({"facts": [{"description": primer, "occurs_in": sc_id, "universe_id": uni_id}], "_draft": primer[:120]})
+                primer = agent.act(
+                    [
+                        {
+                            "role": "system",
+                            "content": "You are the GM. Write a short intro beat (3-5 sentences) based on the given topics and interests. Keep it engaging and concise.",
+                        },
+                        {
+                            "role": "user",
+                            "content": f"Topics: {topics_text}. Interests: {', '.join(w.get('interests') or [])}.",
+                        },
+                    ]
+                )
+                _commit(
+                    {
+                        "facts": [
+                            {"description": primer, "occurs_in": sc_id, "universe_id": uni_id}
+                        ],
+                        "_draft": primer[:120],
+                    }
+                )
             except Exception:
                 pass
             # Save session context and inform user
@@ -255,7 +325,11 @@ def monitor_node(state: GraphState) -> GraphState:
             # Clear wizard to avoid loops
             meta.pop("wizard", None)
             state["meta"] = meta
-            _append(state, "assistant", f"Story created (mode={res.get('mode')}). You can now /narrate to continue from the intro.")
+            _append(
+                state,
+                "assistant",
+                f"Story created (mode={res.get('mode')}). You can now /narrate to continue from the intro.",
+            )
             state["last_mode"] = "monitor"
             return state
         if intent.action == "setup_universe":
@@ -279,31 +353,58 @@ def monitor_node(state: GraphState) -> GraphState:
                 meta = state.get("meta") or {}
                 meta["wizard"] = w
                 state["meta"] = meta
-                _append(state, "assistant", "Configurar universo: por favor indica " + ", ".join(missing) + ".")
+                _append(
+                    state,
+                    "assistant",
+                    "Configurar universo: por favor indica " + ", ".join(missing) + ".",
+                )
                 state["last_mode"] = "monitor"
                 return state
             # Tenemos suficientes datos → crear universo
             mv_id = w.get("multiverse_id") or state.get("multiverse_id")
             uid = w.get("universe_id") or _gen_id("universe")
             new_u = {"id": uid, "name": w.get("name"), "multiverse_id": mv_id}
-            res = _commit({"new_universe": new_u, "universe_id": uid, "_draft": f"Setup universo {uid}"})
+            res = _commit(
+                {"new_universe": new_u, "universe_id": uid, "_draft": f"Setup universo {uid}"}
+            )
             # Continuar wizard: crear historia
             meta = state.get("meta") or {}
             meta["wizard"] = {"flow": "setup_story", "universe_id": uid}
             state["meta"] = meta
             state["universe_id"] = uid
-            _append(state, "assistant", f"Universo configurado (modo={res.get('mode')}). Indica el nombre de la historia inicial (p.ej. nombre \"Prólogo\").")
+            _append(
+                state,
+                "assistant",
+                f'Universo configurado (modo={res.get("mode")}). Indica el nombre de la historia inicial (p.ej. nombre "Prólogo").',
+            )
             state["last_mode"] = "monitor"
             return state
-        
+
         if intent.action == "create_multiverse":
-            new_mv = {"id": intent.id, "name": intent.name, "omniverse_id": state.get("omniverse_id")}
-            res = _commit({"new_multiverse": new_mv, "_draft": f"Crear multiverso {intent.id or '(auto-id)'}"})
+            new_mv = {
+                "id": intent.id,
+                "name": intent.name,
+                "omniverse_id": state.get("omniverse_id"),
+            }
+            res = _commit(
+                {"new_multiverse": new_mv, "_draft": f"Crear multiverso {intent.id or '(auto-id)'}"}
+            )
             action_reply = f"Multiverso creado (modo={res.get('mode')})."
         elif intent.action == "create_universe":
             mv_id = intent.multiverse_id or state.get("multiverse_id")
-            new_u = {"id": intent.id, "name": intent.name, "multiverse_id": mv_id, "description": None}
-            res = _commit({"new_universe": new_u, "universe_id": universe_id, "_draft": f"Crear universo {intent.id or '(auto-id)'}"})
+            new_u = {
+                "id": intent.id,
+                "name": intent.name,
+                "multiverse_id": mv_id,
+                "description": None,
+            }
+            res = _commit(
+                {
+                    "new_universe": new_u,
+                    "universe_id": universe_id,
+                    "_draft": f"Crear universo {intent.id or '(auto-id)'}",
+                }
+            )
             action_reply = f"Universo creado (modo={res.get('mode')})."
         elif intent.action == "save_fact":
             desc = (intent.description or "").strip()
@@ -328,7 +429,11 @@ def monitor_node(state: GraphState) -> GraphState:
                 action_reply = "Please specify a multiverse id (e.g., multiverse mv:demo)."
             else:
                 try:
-                    rows = query_tool(ctx, "list_universes_for_multiverse", multiverse_id=mv) if ctx else []
+                    rows = (
+                        query_tool(ctx, "list_universes_for_multiverse", multiverse_id=mv)
+                        if ctx
+                        else []
+                    )
                     if not rows:
                         action_reply = f"No universes found in {mv}."
                     else:
@@ -360,16 +465,29 @@ def monitor_node(state: GraphState) -> GraphState:
                 action_reply = "Please provide an entity name and universe (e.g., show 'Tony Stark' in universe u:demo)."
             else:
                 try:
-                    ent = query_tool(ctx, "entity_by_name_in_universe", universe_id=uid, name=name) if ctx else None
+                    ent = (
+                        query_tool(ctx, "entity_by_name_in_universe", universe_id=uid, name=name)
+                        if ctx
+                        else None
+                    )
                     if not ent:
                         action_reply = f"Entity '{name}' not found in {uid}."
                     else:
                         # basic appearances and facts
-                        scenes = query_tool(ctx, "scenes_for_entity", entity_id=ent["id"]) if ctx else []
-                        info = [f"Entity: {ent['name']} (id={ent['id']}, type={ent.get('type') or '-'})"]
+                        scenes = (
+                            query_tool(ctx, "scenes_for_entity", entity_id=ent["id"]) if ctx else []
+                        )
+                        info = [
+                            f"Entity: {ent['name']} (id={ent['id']}, type={ent.get('type') or '-'})"
+                        ]
                         if scenes:
                             info.append("Appears in scenes:")
-                            info.extend([f"  - story={s.get('story_id')}, scene={s.get('scene_id')}, seq={s.get('sequence_index')}" for s in scenes])
+                            info.extend(
+                                [
+                                    f"  - story={s.get('story_id')}, scene={s.get('scene_id')}, seq={s.get('sequence_index')}"
+                                    for s in scenes
+                                ]
+                            )
                         action_reply = "\n".join(info)
                 except Exception as e:
                     action_reply = f"Error fetching entity info: {e}"
@@ -380,14 +498,28 @@ def monitor_node(state: GraphState) -> GraphState:
                 action_reply = "Please provide a character name and universe (e.g., enemies of 'Rogue' in universe u:demo)."
             else:
                 try:
-                    ent = query_tool(ctx, "entity_by_name_in_universe", universe_id=uid, name=name) if ctx else None
+                    ent = (
+                        query_tool(ctx, "entity_by_name_in_universe", universe_id=uid, name=name)
+                        if ctx
+                        else None
+                    )
                     if not ent:
                         action_reply = f"Entity '{name}' not found in {uid}."
                     else:
                         # MVP heuristic: list entities with role='ENEMY' in universe
-                        rows = query_tool(ctx, "entities_in_universe_by_role", universe_id=uid, role="ENEMY") if ctx else []
+                        rows = (
+                            query_tool(
+                                ctx, "entities_in_universe_by_role", universe_id=uid, role="ENEMY"
+                            )
+                            if ctx
+                            else []
+                        )
                         lines = [f"- {r.get('name')} ({r.get('id')})" for r in rows] if rows else []
-                        action_reply = (f"Enemies in {uid}:\n" + "\n".join(lines)) if lines else f"No enemies found in {uid}."
+                        action_reply = (
+                            (f"Enemies in {uid}:\n" + "\n".join(lines))
+                            if lines
+                            else f"No enemies found in {uid}."
+                        )
                 except Exception as e:
                     action_reply = f"Error listing enemies: {e}"
         elif intent.action == "last_seen":
@@ -397,21 +529,28 @@ def monitor_node(state: GraphState) -> GraphState:
                 action_reply = "Please provide a character name and universe (e.g., last time they saw 'Deadpool' in universe u:demo)."
             else:
                 try:
-                    ent = query_tool(ctx, "entity_by_name_in_universe", universe_id=uid, name=name) if ctx else None
+                    ent = (
+                        query_tool(ctx, "entity_by_name_in_universe", universe_id=uid, name=name)
+                        if ctx
+                        else None
+                    )
                     if not ent:
                         action_reply = f"Entity '{name}' not found in {uid}."
                     else:
                         # Find scenes for entity then pick the highest sequence index per story
-                        scenes = query_tool(ctx, "scenes_for_entity", entity_id=ent["id"]) if ctx else []
+                        scenes = (
+                            query_tool(ctx, "scenes_for_entity", entity_id=ent["id"]) if ctx else []
+                        )
                         if not scenes:
                             action_reply = f"No appearances found for {name}."
                         else:
                             # Simple sort by (story_id, sequence_index)
-                            scenes_sorted = sorted(scenes, key=lambda s: (s.get("story_id"), s.get("sequence_index") or -1))
-                            last = scenes_sorted[-1]
-                            action_reply = (
-                                f"Last seen in story={last.get('story_id')}, scene={last.get('scene_id')} (seq={last.get('sequence_index')})."
+                            scenes_sorted = sorted(
+                                scenes,
+                                key=lambda s: (s.get("story_id"), s.get("sequence_index") or -1),
                             )
+                            last = scenes_sorted[-1]
+                            action_reply = f"Last seen in story={last.get('story_id')}, scene={last.get('scene_id')} (seq={last.get('sequence_index')})."
                 except Exception as e:
                     action_reply = f"Error computing last seen: {e}"
         elif intent.action == "end_scene":
@@ -428,7 +567,11 @@ def monitor_node(state: GraphState) -> GraphState:
             # Start next scene in the same story
             story_id = state.get("story_id")
             if not story_id:
-                _append(state, "assistant", persisted_msg + "Scene ended. No active story to start the next scene.")
+                _append(
+                    state,
+                    "assistant",
+                    persisted_msg + "Scene ended. No active story to start the next scene.",
+                )
                 state["last_mode"] = "monitor"
                 return state
             next_seq = None
@@ -436,7 +579,11 @@ def monitor_node(state: GraphState) -> GraphState:
                 if ctx:
                     scenes = query_tool(ctx, "scenes_in_story", story_id=story_id) or []
                     # compute next sequence index; fallback: count + 1
-                    seqs = [s.get("sequence_index") for s in scenes if s.get("sequence_index") is not None]
+                    seqs = [
+                        s.get("sequence_index")
+                        for s in scenes
+                        if s.get("sequence_index") is not None
+                    ]
                     if seqs:
                         next_seq = (max(seqs) or 0) + 1
                     else:
@@ -476,7 +623,9 @@ def monitor_node(state: GraphState) -> GraphState:
                 if ctx and intent.participants and uid:
                     for name in intent.participants:
                         try:
-                            ent = query_tool(ctx, "entity_by_name_in_universe", universe_id=uid, name=name)
+                            ent = query_tool(
+                                ctx, "entity_by_name_in_universe", universe_id=uid, name=name
+                            )
                             if ent:
                                 participants_ids.append(ent["id"])  # type: ignore[index]
                         except Exception:
@@ -488,7 +637,11 @@ def monitor_node(state: GraphState) -> GraphState:
                         "story_id": story_id,
                         "participants": participants_ids or None,
                     },
-                    "facts": ([{"description": intent.description, "occurs_in": sc_id}] if intent.description else None),
+                    "facts": (
+                        [{"description": intent.description, "occurs_in": sc_id}]
+                        if intent.description
+                        else None
+                    ),
                     "_draft": f"Add scene {intent.name or sc_id}",
                 }
                 res = _commit(deltas)
@@ -506,7 +659,9 @@ def monitor_node(state: GraphState) -> GraphState:
                 if ctx and intent.participants and uid:
                     for name in intent.participants:
                         try:
-                            ent = query_tool(ctx, "entity_by_name_in_universe", universe_id=uid, name=name)
+                            ent = query_tool(
+                                ctx, "entity_by_name_in_universe", universe_id=uid, name=name
+                            )
                             if ent:
                                 participants_ids.append(ent["id"])  # type: ignore[index]
                         except Exception:
@@ -518,7 +673,11 @@ def monitor_node(state: GraphState) -> GraphState:
                     "scene_id": sc_id,
                     "facts": (facts or None),
                     # Note: adding participants to an existing scene requires updating APPEARS_IN via new_scene participants delta; reuse new_scene path
-                    "new_scene": ({"id": sc_id, "participants": participants_ids} if participants_ids else None),
+                    "new_scene": (
+                        {"id": sc_id, "participants": participants_ids}
+                        if participants_ids
+                        else None
+                    ),
                     "_draft": (intent.description or "Append to scene"),
                 }
                 res = _commit(deltas)
@@ -533,10 +692,12 @@ def monitor_node(state: GraphState) -> GraphState:
                 try:
                     # Minimal retcon: write a Fact documenting the change; deep graph surgery is a larger follow-up.
                     desc = f"RETCON: {name} {'→ ' + repl if repl else 'removed from continuity'}."
-                    res = _commit({
-                        "facts": [{"description": desc, "universe_id": uid}],
-                        "_draft": desc[:120],
-                    })
+                    res = _commit(
+                        {
+                            "facts": [{"description": desc, "universe_id": uid}],
+                            "_draft": desc[:120],
+                        }
+                    )
                     action_reply = f"Retcon noted (mode={res.get('mode')})."
                 except Exception as e:
                     action_reply = f"Error retconning entity: {e}"
@@ -547,16 +708,30 @@ def monitor_node(state: GraphState) -> GraphState:
             else:
                 names = intent.names or []
                 if not names:
-                    action_reply = "Provide one or more names in quotes, e.g., seed pcs \"Alice\", \"Bob\"."
+                    action_reply = (
+                        'Provide one or more names in quotes, e.g., seed pcs "Alice", "Bob".'
+                    )
                 else:
                     # Assign IDs so we can link to the current scene if present
                     new_entities = [
-                        {"id": _gen_id("entity"), "name": n, "type": intent.kind, "universe_id": uid}
+                        {
+                            "id": _gen_id("entity"),
+                            "name": n,
+                            "type": intent.kind,
+                            "universe_id": uid,
+                        }
                         for n in names
                     ]
-                    deltas = {"new_entities": new_entities, "universe_id": uid, "_draft": f"Seed {intent.kind or 'entity'}s: {', '.join(names[:3])}"}
+                    deltas = {
+                        "new_entities": new_entities,
+                        "universe_id": uid,
+                        "_draft": f"Seed {intent.kind or 'entity'}s: {', '.join(names[:3])}",
+                    }
                     if state.get("scene_id"):
-                        deltas["new_scene"] = {"id": state["scene_id"], "participants": [e["id"] for e in new_entities]}
+                        deltas["new_scene"] = {
+                            "id": state["scene_id"],
+                            "participants": [e["id"] for e in new_entities],
+                        }
                     res = _commit(deltas)
                     action_reply = f"Seeded {len(new_entities)} {intent.kind or 'entity'}(s) (mode={res.get('mode')})."
         elif intent.action == "create_entity":
@@ -565,10 +740,14 @@ def monitor_node(state: GraphState) -> GraphState:
                 action_reply = "Please set a universe_id first."
             else:
                 if not intent.name:
-                    action_reply = "Provide a name, e.g., create character \"Logan\" as npc type mutant."
+                    action_reply = (
+                        'Provide a name, e.g., create character "Logan" as npc type mutant.'
+                    )
                 else:
                     # Distill attributes from description (if provided via 'with ...' in parser in the future) or use entity_type/kind
-                    attrs = distill_entity_attributes(intent.description) if intent.description else {}
+                    attrs = (
+                        distill_entity_attributes(intent.description) if intent.description else {}
+                    )
                     if intent.entity_type:
                         attrs.setdefault("type", intent.entity_type)
                     e_id = _gen_id("entity")
@@ -579,7 +758,11 @@ def monitor_node(state: GraphState) -> GraphState:
                         "universe_id": uid,
                         "attributes": (attrs or None),
                     }
-                    deltas = {"new_entities": [new_e], "universe_id": uid, "_draft": f"Create entity {intent.name}"}
+                    deltas = {
+                        "new_entities": [new_e],
+                        "universe_id": uid,
+                        "_draft": f"Create entity {intent.name}",
+                    }
                     # Optional linking: story/scene assignment if present in state or intent
                     story_id = intent.story_id or state.get("story_id")
                     scene_id = intent.scene_id or state.get("scene_id")
@@ -596,15 +779,23 @@ def monitor_node(state: GraphState) -> GraphState:
             for m in msgs[-60:]:
                 r = m.get("role")
                 if r in ("user", "assistant"):
-                    lines.append(f"{r}: {m.get('content','')}")
+                    lines.append(f"{r}: {m.get('content', '')}")
             transcript = "\n".join(lines)
             if not transcript.strip():
                 action_reply = "No conversation to save."
             else:
-                res = _commit({
-                    "facts": [{"description": f"TRANSCRIPT\n{transcript}", "universe_id": uid, "occurs_in": sc_id}],
-                    "_draft": "Save transcript",
-                })
+                res = _commit(
+                    {
+                        "facts": [
+                            {
+                                "description": f"TRANSCRIPT\n{transcript}",
+                                "universe_id": uid,
+                                "occurs_in": sc_id,
+                            }
+                        ],
+                        "_draft": "Save transcript",
+                    }
+                )
                 action_reply = f"Conversation saved (mode={res.get('mode')})."
         elif intent.action == "show_conversation":
             # MVP: retrieve transcript fact(s) for current scene; if none, try universe-level
@@ -617,10 +808,15 @@ def monitor_node(state: GraphState) -> GraphState:
                 if not facts and ctx and state.get("story_id"):
                     facts = query_tool(ctx, "facts_for_story", story_id=state.get("story_id")) or []
                 # filter transcript facts
-                transcripts = [f for f in (facts or []) if isinstance(f.get("description"), str) and f.get("description", "").startswith("TRANSCRIPT\n")]
+                transcripts = [
+                    f
+                    for f in (facts or [])
+                    if isinstance(f.get("description"), str)
+                    and f.get("description", "").startswith("TRANSCRIPT\n")
+                ]
                 if transcripts:
                     latest = transcripts[-1]
-                    content = latest.get("description", "")[len("TRANSCRIPT\n"):]
+                    content = latest.get("description", "")[len("TRANSCRIPT\n") :]
                     action_reply = content or "(empty transcript)"
                 else:
                     action_reply = "No transcript found for the current scene/story."
@@ -632,28 +828,50 @@ def monitor_node(state: GraphState) -> GraphState:
         if wizard:
             flow = wizard.get("flow")
             if flow == "setup_story":
-                m = re.search(r"(?:nombre|name)\s+\"([^\"]+)\"|'([^']+)'", text, flags=re.IGNORECASE)
+                m = re.search(
+                    r"(?:nombre|name)\s+\"([^\"]+)\"|'([^']+)'", text, flags=re.IGNORECASE
+                )
                 title = (m.group(1) or m.group(2)) if m else None
                 if not title:
-                    _append(state, "assistant", "Por favor indica el nombre de la historia (p.ej. nombre \"Prólogo\").")
+                    _append(
+                        state,
+                        "assistant",
+                        'Por favor indica el nombre de la historia (p.ej. nombre "Prólogo").',
+                    )
                     state["last_mode"] = "monitor"
                     return state
                 st_id = _gen_id("story")
                 u_id = wizard.get("universe_id") or state.get("universe_id")
                 new_story = {"id": st_id, "title": title, "universe_id": u_id}
-                res = _commit({"new_story": new_story, "universe_id": u_id, "_draft": f"Crear historia {title}"})
+                res = _commit(
+                    {
+                        "new_story": new_story,
+                        "universe_id": u_id,
+                        "_draft": f"Crear historia {title}",
+                    }
+                )
                 # Paso a escena
                 meta = state.get("meta") or {}
                 meta["wizard"] = {"flow": "setup_scene", "universe_id": u_id, "story_id": st_id}
                 state["meta"] = meta
-                _append(state, "assistant", f"Historia creada (modo={res.get('mode')}). Indica el nombre de la escena inicial (p.ej. nombre \"Escena 1: Llegada\").")
+                _append(
+                    state,
+                    "assistant",
+                    f'Historia creada (modo={res.get("mode")}). Indica el nombre de la escena inicial (p.ej. nombre "Escena 1: Llegada").',
+                )
                 state["last_mode"] = "monitor"
                 return state
             if flow == "setup_scene":
-                m = re.search(r"(?:nombre|name)\s+\"([^\"]+)\"|'([^']+)'", text, flags=re.IGNORECASE)
+                m = re.search(
+                    r"(?:nombre|name)\s+\"([^\"]+)\"|'([^']+)'", text, flags=re.IGNORECASE
+                )
                 title = (m.group(1) or m.group(2)) if m else None
                 if not title:
-                    _append(state, "assistant", "Por favor indica el nombre de la escena (p.ej. nombre \"Escena 1\").")
+                    _append(
+                        state,
+                        "assistant",
+                        'Por favor indica el nombre de la escena (p.ej. nombre "Escena 1").',
+                    )
                     state["last_mode"] = "monitor"
                     return state
                 sc_id = _gen_id("scene")
@@ -665,18 +883,35 @@ def monitor_node(state: GraphState) -> GraphState:
                 try:
                     llm = select_llm_from_env()
                     agent = narrator_agent(llm)
-                    primer = agent.act([
-                        {"role": "system", "content": "Genera un inicio breve (3-5 frases) para la primera escena dada su premisa/título."},
-                        {"role": "user", "content": f"Escena: {title}. Presenta un gancho inmersivo."},
-                    ])
-                    _commit({"facts": [{"description": primer, "occurs_in": sc_id}], "_draft": primer[:120]})
+                    primer = agent.act(
+                        [
+                            {
+                                "role": "system",
+                                "content": "Genera un inicio breve (3-5 frases) para la primera escena dada su premisa/título.",
+                            },
+                            {
+                                "role": "user",
+                                "content": f"Escena: {title}. Presenta un gancho inmersivo.",
+                            },
+                        ]
+                    )
+                    _commit(
+                        {
+                            "facts": [{"description": primer, "occurs_in": sc_id}],
+                            "_draft": primer[:120],
+                        }
+                    )
                 except Exception:
                     pass
                 # Cerrar wizard
                 meta = state.get("meta") or {}
                 meta.pop("wizard", None)
                 state["meta"] = meta
-                _append(state, "assistant", f"Escena creada (modo={res.get('mode')}). Narrativa inicial lista. Puedes continuar con /narrar para seguir la historia.")
+                _append(
+                    state,
+                    "assistant",
+                    f"Escena creada (modo={res.get('mode')}). Narrativa inicial lista. Puedes continuar con /narrar para seguir la historia.",
+                )
                 state["last_mode"] = "monitor"
                 return state
 
@@ -706,7 +941,7 @@ def build_langgraph_modes(tools: ToolContext | None = None) -> Any:
     """
     try:
         from langgraph.graph import END, StateGraph
-    except Exception as e:  # pragma: no cover - entorno sin langgraph
+    except Exception:  # pragma: no cover - entorno sin langgraph
         # Fallback sin langgraph: adaptador que ejecuta secuencialmente
         class _SeqAdapter:
             def invoke(self, state: dict[str, Any]) -> dict[str, Any]:

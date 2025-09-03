@@ -46,6 +46,7 @@ def test_qdrant_index_minimal(monkeypatch):
     fake_pkg, http_models = make_fake_qdrant()
     # inject qdrant_client and its http.models
     import sys
+
     sys.modules["qdrant_client"] = fake_pkg
     sys.modules["qdrant_client.http"] = types.SimpleNamespace(models=http_models)
 

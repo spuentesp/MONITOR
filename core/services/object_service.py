@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from core.persistence.object_store import ObjectStore
-from core.persistence.mongo_store import MongoStore
 from core.persistence.mongo_repos import DocMeta, NarrativeService
+from core.persistence.mongo_store import MongoStore
+from core.persistence.object_store import ObjectStore
 
 
 @dataclass

@@ -11,4 +11,6 @@ def critic_agent(llm) -> Agent:
         "You are Critic. Score the draft on clarity, pacing, and hook. Suggest 1-2 crisp improvements."
         " Avoid rewriting unless asked.",
     )
-    return Agent(AgentConfig(name="Critic", system_prompt=sys, llm=llm, temperature=0.2, max_tokens=180))
+    return Agent(
+        AgentConfig(name="Critic", system_prompt=sys, llm=llm, temperature=0.2, max_tokens=180)
+    )

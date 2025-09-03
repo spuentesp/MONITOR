@@ -29,7 +29,12 @@ def test_recorder_facts_relations_and_states_paths():
         ],
         relations=[{"a": "e1", "b": "e2", "type": "ally", "weight": 1}],
     )
-    assert res["ok"] and res["written"]["facts"] == 1 and res["written"]["relation_states"] == 1 and res["written"]["relations"] == 1
+    assert (
+        res["ok"]
+        and res["written"]["facts"] == 1
+        and res["written"]["relation_states"] == 1
+        and res["written"]["relations"] == 1
+    )
 
 
 class FakeRepo:

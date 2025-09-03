@@ -22,4 +22,3 @@ def test_select_llm_openai_misconfigured_returns_mock(monkeypatch):
 def test_import_ports_llm_module_executes():
     # Importing ensures top-level class definitions are executed for coverage
     import core.ports.llm as ports_llm  # noqa: F401
-

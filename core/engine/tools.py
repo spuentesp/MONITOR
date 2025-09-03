@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+import base64
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
 import hashlib
 import json
+from typing import Any
 from uuid import uuid4
-import base64
+
+from core.engine.resolve_tool import resolve_commit_tool
+from core.persistence.mongo_repos import DocMeta, Memory, NarrativeService, Note, Turn
+from core.services.indexing_service import IndexingService
+from core.services.object_service import ObjectService
+from core.services.retrieval_service import RetrievalService
 
 try:  # Optional typing only; no runtime import dependency
     from core.ports.cache import CachePort, StagingPort  # type: ignore
@@ -41,19 +47,14 @@ class ToolContext:
     idempotency: set[str] | None = None
 
     # Optional satellite stores (constructed lazily; connect() when used)
-    mongo: Any | None = None          # MongoStore
-    qdrant: Any | None = None         # QdrantIndex
-    opensearch: Any | None = None     # SearchIndex
-    minio: Any | None = None          # ObjectStore
-    embedder: Any | None = None       # Callable[[str], list[float]]
+    mongo: Any | None = None  # MongoStore
+    qdrant: Any | None = None  # QdrantIndex
+    opensearch: Any | None = None  # SearchIndex
+    minio: Any | None = None  # ObjectStore
+    embedder: Any | None = None  # Callable[[str], list[float]]
 
 
 # --- Satellite services exposed as tools (Resolve-gated) ---
-from core.engine.resolve_tool import resolve_commit_tool
-from core.persistence.mongo_repos import NarrativeService, Turn, Note, Memory, DocMeta
-from core.services.object_service import ObjectService
-from core.services.indexing_service import IndexingService
-from core.services.retrieval_service import RetrievalService
 
 
 def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
@@ -261,7 +262,9 @@ def bootstrap_story_tool(
     if protagonist_name:
         eid = f"entity:{uuid4()}"
         ent_ids.append(eid)
-        new_entities = [{"id": eid, "name": protagonist_name, "role": "protagonist", "universe_id": u_id}]
+        new_entities = [
+            {"id": eid, "name": protagonist_name, "role": "protagonist", "universe_id": u_id}
+        ]
     deltas = {
         "new_universe": new_universe,
         "universe_id": u_id,
@@ -309,13 +312,15 @@ def narrative_tool(
     # Build a compact preview for Resolve
     preview = {"op": op, "args": {k: ("<bytes>" if k == "data" else v) for k, v in kwargs.items()}}
     mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
-    decision = resolve_commit_tool({
-        "llm": llm,
-        "deltas": preview,
-        "validations": {"ok": True},
-        "mode": mode,
-        "hints": {"source": "narrative_tool"},
-    })
+    decision = resolve_commit_tool(
+        {
+            "llm": llm,
+            "deltas": preview,
+            "validations": {"ok": True},
+            "mode": mode,
+            "hints": {"source": "narrative_tool"},
+        }
+    )
     commit = bool(decision.get("commit")) and (mode == "autopilot")
 
     if not commit:
@@ -376,7 +381,12 @@ def narrative_tool(
             ins = service.insert_docmeta(doc)
         else:
             return {"ok": False, "error": f"unknown op: {op}"}
-        return {"ok": True, "mode": "commit", "inserted_id": getattr(ins, "inserted_id", None), "decision": decision}
+        return {
+            "ok": True,
+            "mode": "commit",
+            "inserted_id": getattr(ins, "inserted_id", None),
+            "decision": decision,
+        }
     except Exception as e:
         return {"ok": False, "error": str(e), "mode": "commit_attempt"}
 
@@ -407,16 +417,24 @@ def object_upload_tool(
     # Compact preview and resolve
     preview = {
         "op": "object_upload",
-        "args": {"bucket": bucket, "key": key, "filename": filename, "content_type": content_type, "universe_id": universe_id},
+        "args": {
+            "bucket": bucket,
+            "key": key,
+            "filename": filename,
+            "content_type": content_type,
+            "universe_id": universe_id,
+        },
     }
     mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
-    decision = resolve_commit_tool({
-        "llm": llm,
-        "deltas": preview,
-        "validations": {"ok": True},
-        "mode": mode,
-        "hints": {"source": "object_upload_tool"},
-    })
+    decision = resolve_commit_tool(
+        {
+            "llm": llm,
+            "deltas": preview,
+            "validations": {"ok": True},
+            "mode": mode,
+            "hints": {"source": "object_upload_tool"},
+        }
+    )
     commit = bool(decision.get("commit")) and (mode == "autopilot")
     if not commit:
         return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}
@@ -471,18 +489,29 @@ def indexing_tool(
     if not sample_text:
         return {"ok": False, "error": "no text provided in docs"}
     v = ctx.embedder(sample_text)
-    svc.ensure_targets(vector_collection=vector_collection, vector_size=len(v), text_index=text_index)
+    svc.ensure_targets(
+        vector_collection=vector_collection, vector_size=len(v), text_index=text_index
+    )
 
     # Resolve gate
-    preview = {"op": "index_docs", "args": {"count": len(docs), "vector_collection": vector_collection, "text_index": text_index}}
+    preview = {
+        "op": "index_docs",
+        "args": {
+            "count": len(docs),
+            "vector_collection": vector_collection,
+            "text_index": text_index,
+        },
+    }
     mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
-    decision = resolve_commit_tool({
-        "llm": llm,
-        "deltas": preview,
-        "validations": {"ok": True},
-        "mode": mode,
-        "hints": {"source": "indexing_tool"},
-    })
+    decision = resolve_commit_tool(
+        {
+            "llm": llm,
+            "deltas": preview,
+            "validations": {"ok": True},
+            "mode": mode,
+            "hints": {"source": "indexing_tool"},
+        }
+    )
     commit = bool(decision.get("commit")) and (mode == "autopilot")
     if not commit:
         return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}
@@ -509,5 +538,11 @@ def retrieval_tool(
     if ctx.embedder is None:
         raise RuntimeError("No embedder configured in ToolContext")
     svc = RetrievalService(qdrant=ctx.qdrant, opensearch=ctx.opensearch, embedder=ctx.embedder)
-    res = svc.search(query=query, vector_collection=vector_collection, text_index=text_index, k=k, filter_terms=filter_terms)
+    res = svc.search(
+        query=query,
+        vector_collection=vector_collection,
+        text_index=text_index,
+        k=k,
+        filter_terms=filter_terms,
+    )
     return {"ok": True, "results": res}

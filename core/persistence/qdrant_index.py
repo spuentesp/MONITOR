@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Iterable
 import os
+from typing import Any
 
 
 @dataclass
@@ -17,7 +18,7 @@ class QdrantIndex:
     collection: str | None = None
     client: Any | None = None
 
-    def connect(self) -> "QdrantIndex":
+    def connect(self) -> QdrantIndex:
         if self.client is not None:
             return self
         url = self.url or os.getenv("QDRANT_URL") or "http://localhost:6333"
@@ -44,6 +45,7 @@ class QdrantIndex:
         colls = self.client.get_collections().collections
         if not any(c.name == name for c in colls):
             from qdrant_client.http import models as qm  # type: ignore
+
             self.client.create_collection(
                 collection_name=name,
                 vectors_config=qm.VectorParams(size=vector_size, distance=qm.Distance(distance)),
@@ -62,6 +64,7 @@ class QdrantIndex:
         if not name:
             raise ValueError("Qdrant collection not set")
         from qdrant_client.http import models as qm  # type: ignore
+
         ids: list[str] = []
         vecs: list[list[float]] = []
         payloads: list[dict[str, Any]] = []
@@ -92,17 +95,25 @@ class QdrantIndex:
         if not name:
             raise ValueError("Qdrant collection not set")
         from qdrant_client.http import models as qm  # type: ignore
+
         filt = None
         if query_filter:
             # Simple exact-match filter builder {field: value}
-            must = [qm.FieldCondition(key=k, match=qm.MatchValue(value=v)) for k, v in query_filter.items()]
+            must = [
+                qm.FieldCondition(key=k, match=qm.MatchValue(value=v))
+                for k, v in query_filter.items()
+            ]
             filt = qm.Filter(must=must)
-        res = self.client.search(collection_name=name, query_vector=vector, query_filter=filt, limit=limit)
+        res = self.client.search(
+            collection_name=name, query_vector=vector, query_filter=filt, limit=limit
+        )
         out: list[dict[str, Any]] = []
         for p in res:
-            out.append({
-                "id": getattr(p, "id", None),
-                "score": getattr(p, "score", None),
-                "payload": getattr(p, "payload", None),
-            })
+            out.append(
+                {
+                    "id": getattr(p, "id", None),
+                    "score": getattr(p, "score", None),
+                    "payload": getattr(p, "payload", None),
+                }
+            )
         return out

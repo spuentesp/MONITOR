@@ -88,7 +88,11 @@ def test_redis_cache_and_staging_with_fake(monkeypatch):
 
     class Rec:
         def commit_deltas(self, **payload):
-            return {"ok": True, "written": {"facts": len(payload.get("facts") or [])}, "warnings": []}
+            return {
+                "ok": True,
+                "written": {"facts": len(payload.get("facts") or [])},
+                "warnings": [],
+            }
 
     res = staged.flush(Rec(), clear_after=True)
     assert res["ok"] is True and res["written"].get("facts", 0) >= 0

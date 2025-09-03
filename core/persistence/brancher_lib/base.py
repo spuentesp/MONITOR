@@ -7,6 +7,7 @@ try:
 except Exception:  # pragma: no cover
     RepoPort = Any  # type: ignore
 
+
 class BranchBase:
     def __init__(self, repo: RepoPort | Any):
         self.repo = repo

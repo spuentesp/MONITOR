@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import builtins
 
+import pytest
+
 from core.engine.langgraph_flow import select_engine_backend
 from core.engine.orchestrator import run_once
-import pytest
 
 
 def test_select_engine_backend_defaults_to_langgraph(monkeypatch):

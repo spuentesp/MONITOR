@@ -14,4 +14,6 @@ def conductor_agent(llm) -> Agent:
             "Prefer steps that improve coherence and correctness."
         ),
     )
-    return Agent(AgentConfig(name="Conductor", system_prompt=sys, llm=llm, temperature=0.1, max_tokens=8))
+    return Agent(
+        AgentConfig(name="Conductor", system_prompt=sys, llm=llm, temperature=0.1, max_tokens=8)
+    )

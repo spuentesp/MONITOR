@@ -38,6 +38,7 @@ def test_search_index_minimal(monkeypatch):
 
     fake_pkg = make_fake_opensearch()
     import sys
+
     sys.modules["opensearchpy"] = fake_pkg
 
     s = si.SearchIndex(url="http://x:9200").connect()

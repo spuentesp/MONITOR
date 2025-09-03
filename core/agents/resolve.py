@@ -10,7 +10,9 @@ def resolve_agent(llm) -> Agent:
         "resolve",
         (
             "You are Resolve. Given proposed deltas, validation results, and mode, decide whether to commit now or stage.\n"
-            "Return ONLY JSON: {\"commit\": <true|false>, \"reason\": <short>, \"fixes\": <optional obj>}"
+            'Return ONLY JSON: {"commit": <true|false>, "reason": <short>, "fixes": <optional obj>}'
         ),
     )
-    return Agent(AgentConfig(name="Resolve", system_prompt=sys, llm=llm, temperature=0.2, max_tokens=200))
+    return Agent(
+        AgentConfig(name="Resolve", system_prompt=sys, llm=llm, temperature=0.2, max_tokens=200)
+    )

@@ -57,8 +57,9 @@ class GroqChat(LLM):
 
     def __init__(self, api_key: str, model: str):
         try:
-            from groq import Groq  # type: ignore
-            from groq import BadRequestError  # type: ignore
+            from groq import (
+                Groq,  # type: ignore
+            )
         except Exception as e:  # pragma: no cover
             raise RuntimeError("groq package not installed; pip install groq") from e
         self._client = Groq(api_key=api_key)  # type: ignore
@@ -161,7 +162,9 @@ def list_groq_models(api_key: str) -> list[str]:
             data = getattr(res, "data", None) or []
             out = []
             for item in data:
-                mid = getattr(item, "id", None) or (item.get("id") if isinstance(item, dict) else None)
+                mid = getattr(item, "id", None) or (
+                    item.get("id") if isinstance(item, dict) else None
+                )
                 if isinstance(mid, str):
                     out.append(mid)
             if out:
@@ -186,7 +189,9 @@ def list_groq_models(api_key: str) -> list[str]:
             body = resp.read().decode("utf-8")
             payload = json.loads(body)
             data = payload.get("data", [])
-            out = [x.get("id") for x in data if isinstance(x, dict) and isinstance(x.get("id"), str)]
+            out = [
+                x.get("id") for x in data if isinstance(x, dict) and isinstance(x.get("id"), str)
+            ]
             if out:
                 return sorted(out)
     except Exception:

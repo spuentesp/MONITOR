@@ -40,7 +40,11 @@ def test_step_and_chat_endpoints():
     data = r.json()
     assert "draft" in data and "summary" in data
 
-    payload = {"turns": [{"content": "hi", "scene_id": None}], "mode": "copilot", "persist_each": False}
+    payload = {
+        "turns": [{"content": "hi", "scene_id": None}],
+        "mode": "copilot",
+        "persist_each": False,
+    }
     r2 = client.post("/chat", json=payload, headers=_ctx_header())
     assert r2.status_code == 200
     assert "steps" in r2.json()
@@ -48,12 +52,18 @@ def test_step_and_chat_endpoints():
 
 def test_chat_persist_each_and_step_record_fact_and_flush():
     # persist_each uses recorder_tool in dry-run; just exercise path
-    payload = {"turns": [{"content": "there", "scene_id": "s1"}], "mode": "copilot", "persist_each": True}
+    payload = {
+        "turns": [{"content": "there", "scene_id": "s1"}],
+        "mode": "copilot",
+        "persist_each": True,
+    }
     r = client.post("/chat", json=payload, headers=_ctx_header())
     assert r.status_code == 200
 
     # step with record_fact should attach persisted key (dry-run)
-    r2 = client.post("/step", json={"intent": "x", "scene_id": "s1", "record_fact": True}, headers=_ctx_header())
+    r2 = client.post(
+        "/step", json={"intent": "x", "scene_id": "s1", "record_fact": True}, headers=_ctx_header()
+    )
     assert r2.status_code == 200
     assert "persisted" in r2.json()
 
@@ -63,7 +73,11 @@ def test_chat_persist_each_and_step_record_fact_and_flush():
 
 
 def test_resolve_endpoint_stages_by_default():
-    payload = {"deltas": {"facts": [{"description": "x"}], "scene_id": None}, "mode": "copilot", "commit": False}
+    payload = {
+        "deltas": {"facts": [{"description": "x"}], "scene_id": None},
+        "mode": "copilot",
+        "commit": False,
+    }
     r = client.post("/resolve", json=payload, headers=_ctx_header())
     assert r.status_code == 200
     body = r.json()

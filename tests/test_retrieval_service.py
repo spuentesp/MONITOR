@@ -34,7 +34,13 @@ def test_retrieval_service_hybrid_and_filters():
     q = FakeQdrant()
     s = FakeOpenSearch()
     svc = RetrievalService(qdrant=q, opensearch=s, embedder=embedder)
-    res = svc.search(query="spider", vector_collection="vec_docs", text_index="txt_docs", k=5, filter_terms={"scene_id": "s1"})
+    res = svc.search(
+        query="spider",
+        vector_collection="vec_docs",
+        text_index="txt_docs",
+        k=5,
+        filter_terms={"scene_id": "s1"},
+    )
     # d2 appears in both; should be on top
     assert res and res[0]["doc_id"] == "d2"
     # ensure both backends received filters

@@ -45,6 +45,7 @@ def test_object_store_minimal(monkeypatch):
 
     fake_pkg = make_fake_minio()
     import sys
+
     sys.modules["minio"] = fake_pkg
 
     s = osx.ObjectStore(endpoint="x:9000").connect()

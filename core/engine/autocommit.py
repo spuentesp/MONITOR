@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from threading import Thread, Event
-from queue import Queue, Empty
-from typing import Any, Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from queue import Empty, Queue
+from threading import Event, Thread
 import time
-
+from typing import Any
 
 DeciderFn = Callable[[dict[str, Any]], tuple[bool, str]]
 
@@ -119,7 +119,7 @@ class AutoCommitWorker:
                     self.last_reason = reason
                     continue
                 deltas = item.get("deltas") or {}
-                res = self.recorder.commit_deltas(
+                self.recorder.commit_deltas(
                     scene_id=deltas.get("scene_id"),
                     facts=deltas.get("facts"),
                     relation_states=deltas.get("relation_states"),

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
-from typing import Literal, Optional
-
+import re
+from typing import Literal
 
 Action = Literal[
     "create_multiverse",
@@ -36,37 +35,38 @@ Action = Literal[
 class MonitorIntent:
     action: Action
     # payload
-    multiverse_id: Optional[str] = None
-    universe_id: Optional[str] = None
-    story_id: Optional[str] = None
-    id: Optional[str] = None  # id to create (universe/multiverse)
-    name: Optional[str] = None
-    description: Optional[str] = None  # fact description
-    scene_id: Optional[str] = None
-    entity_name: Optional[str] = None
-    role: Optional[str] = None
-    participants: Optional[list[str]] = None
-    replacement_name: Optional[str] = None
-    names: Optional[list[str]] = None
-    kind: Optional[str] = None  # PC or NPC
-    entity_type: Optional[str] = None  # domain-specific type/class
-    topics: Optional[list[str]] = None
-    interests: Optional[list[str]] = None
-    system_id: Optional[str] = None
+    multiverse_id: str | None = None
+    universe_id: str | None = None
+    story_id: str | None = None
+    id: str | None = None  # id to create (universe/multiverse)
+    name: str | None = None
+    description: str | None = None  # fact description
+    scene_id: str | None = None
+    entity_name: str | None = None
+    role: str | None = None
+    participants: list[str] | None = None
+    replacement_name: str | None = None
+    names: list[str] | None = None
+    kind: str | None = None  # PC or NPC
+    entity_type: str | None = None  # domain-specific type/class
+    topics: list[str] | None = None
+    interests: list[str] | None = None
+    system_id: str | None = None
 
 
 _RE_QSTR = r'"([^\"]+)"|\'([^\']+)\''
 
+
 # Common helpers
-def _extract_name(text: str) -> Optional[str]:
+def _extract_name(text: str) -> str | None:
     # Match either double- or single-quoted name without including quotes in the group result
-    m = re.search(rf"(?:nombre|name)\s+(?:\"([^\"]+)\"|'([^']+)')", text, flags=re.IGNORECASE)
+    m = re.search(r"(?:nombre|name)\s+(?:\"([^\"]+)\"|'([^']+)')", text, flags=re.IGNORECASE)
     if not m:
         return None
     return m.group(1) or m.group(2)
 
 
-def _extract_after(keyword: str, text: str) -> Optional[str]:
+def _extract_after(keyword: str, text: str) -> str | None:
     m = re.search(rf"{keyword}\s+(\S+)", text, flags=re.IGNORECASE)
     return m.group(1) if m else None
 
@@ -87,7 +87,11 @@ def _extract_name_list(text: str) -> list[str]:
     if names:
         return names
     # Fallback: capture after the keyword, split by comma
-    m = re.search(r"\b(seed|crear|create|agregar|add)\b[\s\S]*?\b(pcs|players|npcs|pnjs|characters|personajes)\b\s+(.+)$", text, flags=re.IGNORECASE)
+    m = re.search(
+        r"\b(seed|crear|create|agregar|add)\b[\s\S]*?\b(pcs|players|npcs|pnjs|characters|personajes)\b\s+(.+)$",
+        text,
+        flags=re.IGNORECASE,
+    )
     if m:
         tail = m.group(3)
         for part in tail.split(","):
@@ -97,7 +101,7 @@ def _extract_name_list(text: str) -> list[str]:
     return names
 
 
-def parse_monitor_intent(text: str) -> Optional[MonitorIntent]:
+def parse_monitor_intent(text: str) -> MonitorIntent | None:
     """Parse simple Monitor commands from free text.
 
     Supported:
@@ -148,7 +152,9 @@ def parse_monitor_intent(text: str) -> Optional[MonitorIntent]:
         # everything after the keyword becomes description; try to capture scene
         # Extract scene first to avoid including it in description
         scene = _extract_after(r"(?:scene|escena)", t)
-        desc = re.sub(r"^[\s\S]*?(guardar|persistir|save)\s+(hecho|fact)\s*", "", t, flags=re.IGNORECASE)
+        desc = re.sub(
+            r"^[\s\S]*?(guardar|persistir|save)\s+(hecho|fact)\s*", "", t, flags=re.IGNORECASE
+        )
         desc = re.sub(r"(?:scene|escena)\s+\S+\s*", "", desc, flags=re.IGNORECASE).strip()
         return MonitorIntent(action="save_fact", description=desc or None, scene_id=scene)
 
@@ -169,7 +175,11 @@ def parse_monitor_intent(text: str) -> Optional[MonitorIntent]:
     # Show entity info by name within a universe
     if re.search(r"\b(show|info|who\s+is|tell\s+me\s+about)\b", tl):
         # capture quoted or unquoted name chunk before optional 'in universe'
-        m = re.search(rf"(show|info|who\\s+is|tell\\s+me\\s+about)\s+({_RE_QSTR}|[A-Za-z0-9_\- ]+)", t, flags=re.IGNORECASE)
+        m = re.search(
+            rf"(show|info|who\\s+is|tell\\s+me\\s+about)\s+({_RE_QSTR}|[A-Za-z0-9_\- ]+)",
+            t,
+            flags=re.IGNORECASE,
+        )
         if m:
             raw = m.group(2)
             name = None
@@ -190,19 +200,27 @@ def parse_monitor_intent(text: str) -> Optional[MonitorIntent]:
         return MonitorIntent(action="list_enemies", entity_name=name, universe_id=u)
 
     # Last time they saw <name>
-    if re.search(r"\blast\s+time\s+(they\s+)?saw\b", tl) or re.search(r"\bultima\s+vez\s+que\s+(lo|la|les)\s+vieron\b", tl):
+    if re.search(r"\blast\s+time\s+(they\s+)?saw\b", tl) or re.search(
+        r"\bultima\s+vez\s+que\s+(lo|la|les)\s+vieron\b", tl
+    ):
         m = re.search(r"(?:saw|vieron)\s+([^,]+)$", t, flags=re.IGNORECASE)
         name = m.group(1).strip() if m else None
         u = _extract_after(r"(?:universo|universe)", t)
         return MonitorIntent(action="last_seen", entity_name=name, universe_id=u)
 
     # Add scene
-    if re.search(r"\b(add|create)\s+(a\s+)?scene\b", tl) or re.search(r"\bagregar\s+(una\s+)?escena\b", tl):
+    if re.search(r"\b(add|create)\s+(a\s+)?scene\b", tl) or re.search(
+        r"\bagregar\s+(una\s+)?escena\b", tl
+    ):
         name = _extract_name(t)
         story = _extract_after(r"(?:story|historia)", t)
         # participants: quoted names after 'participants' or 'with'
         parts: list[str] = []
-        for m in re.finditer(r"(?:participants|con|including|incluyendo)\s+((?:\"[^\"]+\"|'[^']+'|[^,]+)(?:\s*,\s*(?:\"[^\"]+\"|'[^']+'|[^,]+))*)", t, flags=re.IGNORECASE):
+        for m in re.finditer(
+            r"(?:participants|con|including|incluyendo)\s+((?:\"[^\"]+\"|'[^']+'|[^,]+)(?:\s*,\s*(?:\"[^\"]+\"|'[^']+'|[^,]+))*)",
+            t,
+            flags=re.IGNORECASE,
+        ):
             chunk = m.group(1)
             for p in re.findall(rf"{_RE_QSTR}|([^,]+)", chunk):
                 if isinstance(p, tuple):
@@ -218,15 +236,32 @@ def parse_monitor_intent(text: str) -> Optional[MonitorIntent]:
         # description after 'with'
         m = re.search(r"\bwith\b\s+(.*)$", t, flags=re.IGNORECASE)
         desc = m.group(1).strip() if m else None
-        return MonitorIntent(action="add_scene", name=name, story_id=story, participants=(parts or None), description=desc)
+        return MonitorIntent(
+            action="add_scene",
+            name=name,
+            story_id=story,
+            participants=(parts or None),
+            description=desc,
+        )
 
     # Modify last scene
-    if re.search(r"\b(modify|update|append)\s+(the\s+)?last\s+scene\b", tl) or re.search(r"\bmodificar\s+(la\s+)?ultima\s+escena\b", tl):
+    if re.search(r"\b(modify|update|append)\s+(the\s+)?last\s+scene\b", tl) or re.search(
+        r"\bmodificar\s+(la\s+)?ultima\s+escena\b", tl
+    ):
         # capture description after the phrase
-        desc = re.sub(r"^[\s\S]*?(modify|update|append)\s+(the\s+)?last\s+scene\s*", "", t, flags=re.IGNORECASE).strip()
+        desc = re.sub(
+            r"^[\s\S]*?(modify|update|append)\s+(the\s+)?last\s+scene\s*",
+            "",
+            t,
+            flags=re.IGNORECASE,
+        ).strip()
         # optional participants list
         parts: list[str] = []
-        for m in re.finditer(r"(?:participants|con|including|incluyendo)\s+((?:\"[^\"]+\"|'[^']+'|[^,]+)(?:\s*,\s*(?:\"[^\"]+\"|'[^']+'|[^,]+))*)", t, flags=re.IGNORECASE):
+        for m in re.finditer(
+            r"(?:participants|con|including|incluyendo)\s+((?:\"[^\"]+\"|'[^']+'|[^,]+)(?:\s*,\s*(?:\"[^\"]+\"|'[^']+'|[^,]+))*)",
+            t,
+            flags=re.IGNORECASE,
+        ):
             chunk = m.group(1)
             for p in re.findall(rf"{_RE_QSTR}|([^,]+)", chunk):
                 if isinstance(p, tuple):
@@ -237,17 +272,23 @@ def parse_monitor_intent(text: str) -> Optional[MonitorIntent]:
                 if candidate:
                     candidate = re.sub(r"^['\"]|['\"]$", "", candidate)
                     parts.append(candidate)
-        return MonitorIntent(action="modify_last_scene", description=(desc or None), participants=(parts or None))
+        return MonitorIntent(
+            action="modify_last_scene", description=(desc or None), participants=(parts or None)
+        )
 
     # Retcon entity
     if re.search(r"\bretcon\b", tl):
         m = re.search(r"retcon\s+([^\s].*?)\s*(?:to\s+([^\s].*))?$", t, flags=re.IGNORECASE)
         name = m.group(1).strip() if m else None
-        replacement = m.group(2).strip() if (m and m.lastindex and m.lastindex >= 2 and m.group(2)) else None
+        replacement = (
+            m.group(2).strip() if (m and m.lastindex and m.lastindex >= 2 and m.group(2)) else None
+        )
         return MonitorIntent(action="retcon_entity", entity_name=name, replacement_name=replacement)
 
     # Start a new story (GM onboarding)
-    if re.search(r"\bstart\s+(a\s+)?new\s+story\b", tl) or re.search(r"\biniciar\s+(una\s+)?nueva\s+historia\b", tl):
+    if re.search(r"\bstart\s+(a\s+)?new\s+story\b", tl) or re.search(
+        r"\biniciar\s+(una\s+)?nueva\s+historia\b", tl
+    ):
         topics = _extract_name_list(t)
         interests_match = re.search(r"interests?\s+(.+)$", t, flags=re.IGNORECASE)
         interests = _extract_name_list(interests_match.group(1)) if interests_match else None
@@ -255,12 +296,19 @@ def parse_monitor_intent(text: str) -> Optional[MonitorIntent]:
         uni_name = None
         m_un = re.search(r"\buniverse\s+('([^']+)'|\"([^\"]+)\")", t, flags=re.IGNORECASE)
         if m_un:
-            uni_name = (m_un.group(2) or m_un.group(3))
+            uni_name = m_un.group(2) or m_un.group(3)
         story_name = None
         m_st = re.search(r"\bstory\s+('([^']+)'|\"([^\"]+)\")", t, flags=re.IGNORECASE)
         if m_st:
-            story_name = (m_st.group(2) or m_st.group(3))
-        return MonitorIntent(action="start_story", topics=(topics or None), interests=interests, system_id=system_id, name=uni_name, description=story_name)
+            story_name = m_st.group(2) or m_st.group(3)
+        return MonitorIntent(
+            action="start_story",
+            topics=(topics or None),
+            interests=interests,
+            system_id=system_id,
+            name=uni_name,
+            description=story_name,
+        )
 
     # Seed PCs
     if re.search(r"\bseed\s+(pcs|players)\b", tl) or re.search(r"\bsembrar\s+(pj|pjs)\b", tl):
@@ -293,10 +341,22 @@ def parse_monitor_intent(text: str) -> Optional[MonitorIntent]:
         scene = _extract_after(r"(?:scene|escena)", t)
         # Fallback: name right after keyword character/entity
         if not name:
-            m2 = re.search(r"(?:entity|character|personaje)\s+(?:\"([^\"]+)\"|'([^']+)')", t, flags=re.IGNORECASE)
+            m2 = re.search(
+                r"(?:entity|character|personaje)\s+(?:\"([^\"]+)\"|'([^']+)')",
+                t,
+                flags=re.IGNORECASE,
+            )
             if m2:
                 name = m2.group(1) or m2.group(2)
-        return MonitorIntent(action="create_entity", name=name, kind=kind, entity_type=etype, description=desc, story_id=story, scene_id=scene)
+        return MonitorIntent(
+            action="create_entity",
+            name=name,
+            kind=kind,
+            entity_type=etype,
+            description=desc,
+            story_id=story,
+            scene_id=scene,
+        )
 
     # Save conversation
     if re.search(r"\bsave\s+(the\s+)?conversation\b", tl):
@@ -307,7 +367,9 @@ def parse_monitor_intent(text: str) -> Optional[MonitorIntent]:
         return MonitorIntent(action="show_conversation")
 
     # End scene
-    if re.search(r"\b(end|finish|close)\s+(the\s+)?scene\b", tl) or re.search(r"\b(terminar|cerrar)\s+(la\s+)?escena\b", tl):
+    if re.search(r"\b(end|finish|close)\s+(the\s+)?scene\b", tl) or re.search(
+        r"\b(terminar|cerrar)\s+(la\s+)?escena\b", tl
+    ):
         return MonitorIntent(action="end_scene")
 
     return None

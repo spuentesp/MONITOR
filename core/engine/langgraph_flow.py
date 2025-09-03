@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 import os
 from typing import Any
-import json
+
 from core.engine.resolve_tool import resolve_commit_tool
 
 
@@ -126,13 +127,15 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         # LLM-backed steward for quick validation hints
         hints = _safe_act(
             "steward",
-            [{
-                "role": "user",
-                "content": (
-                    f"Validate plan and draft context: "
-                    f"{str({k: v for k, v in state.items() if k in ['plan', 'evidence']})[:800]}"
-                ),
-            }],
+            [
+                {
+                    "role": "user",
+                    "content": (
+                        f"Validate plan and draft context: "
+                        f"{str({k: v for k, v in state.items() if k in ['plan', 'evidence']})[:800]}"
+                    ),
+                }
+            ],
             default=None,
         )
         if hints is not None:
@@ -143,17 +146,33 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         return [
             {
                 "name": "bootstrap_story",
-                "args": {"title": "str", "protagonist_name": "str?", "time_label": "str?", "tags": "list[str]?", "universe_id": "str?"},
+                "args": {
+                    "title": "str",
+                    "protagonist_name": "str?",
+                    "time_label": "str?",
+                    "tags": "list[str]?",
+                    "universe_id": "str?",
+                },
                 "returns": {"refs": {"scene_id": "str", "story_id": "str", "universe_id": "str"}},
             },
             {
                 "name": "query",
-                "args": {"method": "str", "scene_id": "str?", "story_id": "str?", "universe_id": "str?"},
+                "args": {
+                    "method": "str",
+                    "scene_id": "str?",
+                    "story_id": "str?",
+                    "universe_id": "str?",
+                },
                 "returns": "any",
             },
             {
                 "name": "recorder",
-                "args": {"facts": "list[Fact]?", "relations": "list[Relation]?", "relation_states": "list[RelationState]?", "scene_id": "str?"},
+                "args": {
+                    "facts": "list[Fact]?",
+                    "relations": "list[Relation]?",
+                    "relation_states": "list[RelationState]?",
+                    "scene_id": "str?",
+                },
                 "returns": {"mode": "str", "refs": {"scene_id": "str?", "run_id": "str"}},
             },
             {
@@ -163,7 +182,16 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
             },
             {
                 "name": "object_upload",
-                "args": {"bucket": "str", "key": "str", "data_b64": "str", "filename": "str", "content_type": "str?", "universe_id": "str", "story_id": "str?", "scene_id": "str?"},
+                "args": {
+                    "bucket": "str",
+                    "key": "str",
+                    "data_b64": "str",
+                    "filename": "str",
+                    "content_type": "str?",
+                    "universe_id": "str",
+                    "story_id": "str?",
+                    "scene_id": "str?",
+                },
                 "returns": {"ok": "bool", "mode": "str"},
             },
         ]
@@ -183,7 +211,12 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
             compact_ctx["evidence_summary"] = state.get("evidence_summary")
         plan = _safe_act(
             "planner",
-            [{"role": "user", "content": f"Intent: {state.get('intent')}\nContext: {compact_ctx}\nTools: {_tool_schema()}\nReturn JSON array of actions."}],
+            [
+                {
+                    "role": "user",
+                    "content": f"Intent: {state.get('intent')}\nContext: {compact_ctx}\nTools: {_tool_schema()}\nReturn JSON array of actions.",
+                }
+            ],
             default="[]",
         )
         try:
@@ -242,14 +275,18 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                     res = tools["query_tool"](ctx, **args)
                 elif tool == "narrative":
                     payload = args.get("payload") or {}
-                    res = tools["narrative_tool"](ctx, args.get("op"), llm=tools.get("llm"), **payload)
+                    res = tools["narrative_tool"](
+                        ctx, args.get("op"), llm=tools.get("llm"), **payload
+                    )
                 elif tool == "object_upload":
                     res = tools["object_upload_tool"](ctx, llm=tools.get("llm"), **args)
                 else:
                     res = {"ok": False, "error": f"unknown tool: {tool}"}
             except Exception as e:
                 res = {"ok": False, "error": str(e)}
-            results.append({"tool": act.get("tool") if isinstance(act, dict) else None, "result": res})
+            results.append(
+                {"tool": act.get("tool") if isinstance(act, dict) else None, "result": res}
+            )
         # If we created a scene, persist it in state for continuity
         next_state = {**state, "action_results": results}
         if new_scene_id and not next_state.get("scene_id"):
@@ -288,16 +325,32 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         ontology_ctx: dict[str, Any] = {}
         try:
             if scene_id:
-                ontology_ctx["system"] = tools["query_tool"](tools["ctx"], "effective_system_for_scene", scene_id=scene_id)
-                ontology_ctx["participants"] = tools["query_tool"](tools["ctx"], "participants_by_role_for_scene", scene_id=scene_id)
-                ontology_ctx["relations"] = tools["query_tool"](tools["ctx"], "relations_effective_in_scene", scene_id=scene_id)
-                ontology_ctx["facts"] = tools["query_tool"](tools["ctx"], "facts_for_scene", scene_id=scene_id)[:8]
+                ontology_ctx["system"] = tools["query_tool"](
+                    tools["ctx"], "effective_system_for_scene", scene_id=scene_id
+                )
+                ontology_ctx["participants"] = tools["query_tool"](
+                    tools["ctx"], "participants_by_role_for_scene", scene_id=scene_id
+                )
+                ontology_ctx["relations"] = tools["query_tool"](
+                    tools["ctx"], "relations_effective_in_scene", scene_id=scene_id
+                )
+                ontology_ctx["facts"] = tools["query_tool"](
+                    tools["ctx"], "facts_for_scene", scene_id=scene_id
+                )[:8]
             elif story_id:
-                ontology_ctx["system"] = tools["query_tool"](tools["ctx"], "effective_system_for_story", story_id=story_id)
-                ontology_ctx["participants"] = tools["query_tool"](tools["ctx"], "participants_by_role_for_story", story_id=story_id)
-                ontology_ctx["facts"] = tools["query_tool"](tools["ctx"], "facts_for_story", story_id=story_id)[:8]
+                ontology_ctx["system"] = tools["query_tool"](
+                    tools["ctx"], "effective_system_for_story", story_id=story_id
+                )
+                ontology_ctx["participants"] = tools["query_tool"](
+                    tools["ctx"], "participants_by_role_for_story", story_id=story_id
+                )
+                ontology_ctx["facts"] = tools["query_tool"](
+                    tools["ctx"], "facts_for_story", story_id=story_id
+                )[:8]
             elif universe_id:
-                ontology_ctx["system"] = tools["query_tool"](tools["ctx"], "effective_system_for_universe", universe_id=universe_id)
+                ontology_ctx["system"] = tools["query_tool"](
+                    tools["ctx"], "effective_system_for_universe", universe_id=universe_id
+                )
         except Exception:
             pass
         # Optionally produce an agentic summary of ontology context to reduce payload size
@@ -305,7 +358,12 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
             if ontology_ctx:
                 summary = _safe_act(
                     "librarian",
-                    [{"role": "user", "content": f"Summarize context in 1-2 lines: {str(ontology_ctx)[:800]}"}],
+                    [
+                        {
+                            "role": "user",
+                            "content": f"Summarize context in 1-2 lines: {str(ontology_ctx)[:800]}",
+                        }
+                    ],
                     default=None,
                 )
             else:
@@ -375,13 +433,15 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
             "errors": validations.get("errors") or [],
         }
         mode = "copilot" if getattr(tools.get("ctx"), "dry_run", True) else "autopilot"
-        decision = resolve_commit_tool({
-            "llm": tools.get("llm"),
-            "deltas": preview,
-            "validations": val,
-            "mode": mode,
-            "hints": {"source": "langgraph"},
-        })
+        decision = resolve_commit_tool(
+            {
+                "llm": tools.get("llm"),
+                "deltas": preview,
+                "validations": val,
+                "mode": mode,
+                "hints": {"source": "langgraph"},
+            }
+        )
         return {**state, "resolve_decision": decision}
 
     def recorder(state: dict[str, Any]) -> dict[str, Any]:
@@ -415,12 +475,13 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         else:
             # Build a temporary dry-run ctx for staging
             from dataclasses import replace as _replace
+
             try:
                 stage_ctx = _replace(ctx, dry_run=True)
             except Exception:
                 stage_ctx = ctx
                 try:
-                    setattr(stage_ctx, "dry_run", True)
+                    stage_ctx.dry_run = True
                 except Exception:
                     pass
             commit = tools["recorder_tool"](stage_ctx, draft=draft, deltas=deltas)
@@ -428,6 +489,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
 
     workflow = StateGraph(State)
     workflow.add_node("intent_router", intent_router)
+
     # Health gate: optional pre-flight check via Conductor; if any satellite/graph is down, abort early when strict
     def health_gate(state: dict[str, Any]) -> dict[str, Any]:
         strict = _env_flag("MONITOR_AGENTIC_STRICT", "0")
@@ -467,6 +529,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
     workflow.add_node("recorder", recorder)
 
     workflow.set_entry_point("intent_router")
+
     # Branch on intent_type: monitor/qa short-circuit vs narrative path
     def _route(state: dict[str, Any]):
         it = (state.get("intent_type") or "").lower()
@@ -494,32 +557,59 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         if not ok:
             return "qa_node"  # short-circuit with terse status
         return "director"
-    workflow.add_conditional_edges("health_gate", _post_health, {"qa_node": "qa_node", "director": "director"})
+
+    workflow.add_conditional_edges(
+        "health_gate", _post_health, {"qa_node": "qa_node", "director": "director"}
+    )
 
     workflow.add_edge("director", "librarian")
     workflow.add_edge("librarian", "steward")
+
     # Conductor chooses whether to go plan or directly narrate/qa/monitor
     def _post_steward(state: dict[str, Any]):
         snap = {k: state.get(k) for k in ("intent_type", "scene_id", "evidence_summary")}
-        choice = _safe_act("conductor", [{"role": "user", "content": f"State: {snap}. Options: [planner, narrator, qa_node]"}], default="planner")
+        choice = _safe_act(
+            "conductor",
+            [{"role": "user", "content": f"State: {snap}. Options: [planner, narrator, qa_node]"}],
+            default="planner",
+        )
         ch = (choice or "planner").strip().lower()
         return "planner" if ch not in ("narrator", "qa_node") else ch
-    workflow.add_conditional_edges("steward", _post_steward, {"planner": "planner", "narrator": "narrator", "qa_node": "qa_node"})
+
+    workflow.add_conditional_edges(
+        "steward",
+        _post_steward,
+        {"planner": "planner", "narrator": "narrator", "qa_node": "qa_node"},
+    )
     workflow.add_edge("planner", "execute_actions")
     workflow.add_edge("execute_actions", "narrator")
+
     # Optionally allow conductor to re-route after narrator (e.g., re-plan if drift detected later)
     def _post_narrator(state: dict[str, Any]):
         snap = {k: state.get(k) for k in ("scene_id", "draft")}
-        choice = _safe_act("conductor", [{"role": "user", "content": f"State: {snap}. Options: [continuity_guard, planner]"}], default="continuity_guard")
+        choice = _safe_act(
+            "conductor",
+            [{"role": "user", "content": f"State: {snap}. Options: [continuity_guard, planner]"}],
+            default="continuity_guard",
+        )
         ch = (choice or "continuity_guard").strip().lower()
         return "continuity_guard" if ch not in ("planner",) else ch
-    workflow.add_conditional_edges("narrator", _post_narrator, {"continuity_guard": "continuity_guard", "planner": "planner"})
+
+    workflow.add_conditional_edges(
+        "narrator", _post_narrator, {"continuity_guard": "continuity_guard", "planner": "planner"}
+    )
+
     # In strict mode, ensure continuity exists before critic (redundant call is harmless)
     def _needs_continuity(state: dict[str, Any]):
         if _env_flag("MONITOR_AGENTIC_STRICT", "0"):
             return "continuity_guard" if not state.get("continuity") else "critic"
         return "critic"
-    workflow.add_conditional_edges("continuity_guard", _needs_continuity, {"continuity_guard": "continuity_guard", "critic": "critic"})
+
+    workflow.add_conditional_edges(
+        "continuity_guard",
+        _needs_continuity,
+        {"continuity_guard": "continuity_guard", "critic": "critic"},
+    )
     workflow.add_edge("critic", "archivist")
 
     # Copilot checkpoint: allow pause before Recorder based on config/env flag
@@ -555,7 +645,19 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                 pass
             # Fallback: sequential execution to produce a final state dict
             state = dict(inputs)
-            for fn in (intent_router, director, librarian, steward, planner, execute_actions, narrator, continuity_guard, critic, archivist, resolve_decider):
+            for fn in (
+                intent_router,
+                director,
+                librarian,
+                steward,
+                planner,
+                execute_actions,
+                narrator,
+                continuity_guard,
+                critic,
+                archivist,
+                resolve_decider,
+            ):
                 state = fn(state)
             if not should_pause(state):
                 state = recorder(state)

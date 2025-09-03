@@ -1,15 +1,15 @@
 from pathlib import Path
 import sys
 
+from core.engine.monitor_parser import parse_monitor_intent  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from core.engine.monitor_parser import parse_monitor_intent
-
 
 def test_parse_create_multiverse_with_name_and_id():
-    t = "/monitor crear multiverso mv:demo nombre \"Demo MV\""
+    t = '/monitor crear multiverso mv:demo nombre "Demo MV"'
     intent = parse_monitor_intent(t)
     assert intent and intent.action == "create_multiverse"
     assert intent.id == "mv:demo"
@@ -17,7 +17,7 @@ def test_parse_create_multiverse_with_name_and_id():
 
 
 def test_parse_create_universe_with_multiverse():
-    t = "@monitor create universe universe:demo name \"Demo U\" multiverse mv:1"
+    t = '@monitor create universe universe:demo name "Demo U" multiverse mv:1'
     intent = parse_monitor_intent(t)
     assert intent and intent.action == "create_universe"
     assert intent.id == "universe:demo"

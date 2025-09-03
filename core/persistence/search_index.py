@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Iterable
 import os
+from typing import Any
 
 
 @dataclass
@@ -17,7 +18,7 @@ class SearchIndex:
     password: str | None = None
     client: Any | None = None
 
-    def connect(self) -> "SearchIndex":
+    def connect(self) -> SearchIndex:
         if self.client is not None:
             return self
         url = self.url or os.getenv("OPENSEARCH_URL") or "http://localhost:9200"
@@ -56,7 +57,9 @@ class SearchIndex:
             body = {k: v for k, v in d.items() if k != "id"}
             self.client.index(index=index, id=_id, body=body)
 
-    def search(self, index: str, query: str, *, size: int = 5, filter_terms: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    def search(
+        self, index: str, query: str, *, size: int = 5, filter_terms: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
         self.connect()
         assert self.client is not None
         must: list[dict[str, Any]] = [{"query_string": {"query": query}}]
@@ -65,4 +68,6 @@ class SearchIndex:
                 must.append({"term": {k: v}})
         resp = self.client.search(index=index, body={"query": {"bool": {"must": must}}}, size=size)
         hits = resp.get("hits", {}).get("hits", [])
-        return [{"id": h.get("_id"), "score": h.get("_score"), "source": h.get("_source")} for h in hits]
+        return [
+            {"id": h.get("_id"), "score": h.get("_score"), "source": h.get("_source")} for h in hits
+        ]

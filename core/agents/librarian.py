@@ -11,4 +11,6 @@ def librarian_agent(llm) -> Agent:
         "You are Librarian. Retrieve and summarize relevant story context (entities, scenes, relations)."
         " Be concise and return only the most useful details for the next beat.",
     )
-    return Agent(AgentConfig(name="Librarian", system_prompt=sys, llm=llm, temperature=0.2, max_tokens=220))
+    return Agent(
+        AgentConfig(name="Librarian", system_prompt=sys, llm=llm, temperature=0.2, max_tokens=220)
+    )
