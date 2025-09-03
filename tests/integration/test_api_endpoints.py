@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from core.interfaces.api_interface import app
+
+pytestmark = pytest.mark.integration
 
 client = TestClient(app)
 

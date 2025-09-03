@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -21,6 +21,9 @@ from core.generation.mock_llm import MockLLM  # noqa: E402
 class DummyQueryService:
     def relations_effective_in_scene(self, scene_id: str):
         return [{"a": "e:1", "b": "e:2", "type": "ALLY"}]
+
+
+pytestmark = pytest.mark.integration
 
 
 @pytest.mark.skipif(not HAS_LANGGRAPH, reason="langgraph not installed")

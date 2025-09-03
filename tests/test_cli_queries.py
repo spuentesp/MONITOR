@@ -1,5 +1,7 @@
 from pathlib import Path
 import sys
+import pytest
+pytestmark = pytest.mark.integration
 
 from typer.testing import CliRunner
 

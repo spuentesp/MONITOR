@@ -9,3 +9,12 @@ ignore = ["E501"]
 [tool.ruff.lint.isort]
 known-first-party = ["core"]
 force-sort-within-sections = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-q -ra"
+markers = [
+	"unit: fast, isolated unit tests",
+	"integration: slower, cross-component integration tests",
+	"e2e: end-to-end tests hitting external dependencies or flows",
+]

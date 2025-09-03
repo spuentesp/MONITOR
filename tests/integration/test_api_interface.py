@@ -1,13 +1,11 @@
-from pathlib import Path
-import sys
+from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+from core.interfaces.api_interface import app
 
-from core.interfaces.api_interface import app  # noqa: E402
+pytestmark = pytest.mark.integration
 
 
 def test_root_open():
@@ -38,4 +36,4 @@ def test_accepts_valid_context_token():
         return {"ok": True}
 
     r = client.get("/secure", headers={"X-Context-Token": token})
-    assert r.status_code in (200, 307)  # 307 may happen due to testclient quirks
+    assert r.status_code in (200, 307)

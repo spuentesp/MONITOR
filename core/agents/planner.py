@@ -5,15 +5,25 @@ from core.agents.base import Agent, AgentConfig
 
 def planner_agent(llm) -> Agent:
     system = (
-        "You are a planner. Given intent and context, output ONLY a JSON array of actions to execute. "
-        'Each action: {"tool": <query|recorder|bootstrap_story>, "args": <object>, "reason": <string>} . '
-        "Prefer minimal, safe actions. Always produce valid JSON with double quotes.\n\n"
+        "You are a planner. Given an intent and compact context, output ONLY a JSON array of actions.\n"
+        "Each action: {\"tool\": <bootstrap_story|query|recorder|narrative|object_upload|indexing|retrieval>, \"args\": <object>, \"reason\": <string>}\n"
+        "Rules:\n"
+        "- Prefer minimal, safe actions.\n"
+        "- Use available context placeholders: {scene_id}, {story_id}, {universe_id} if present.\n"
+        "- Always produce valid JSON with double quotes. No commentary.\n\n"
         "Examples:\n"
-        "Intent: let's start a new story about 800 CE\n"
+        "1) Start a new story about 800 CE\n"
         '-> [{"tool": "bootstrap_story", "args": {"title": "Journey to 800 CE", "time_label": "800 CE", "tags": ["historic"]}, "reason": "initialize story and opening scene"}]\n\n'
-        "Intent: monitor audit relations in this scene\n"
-        '-> [{"tool": "query", "args": {"method": "relations_effective_in_scene", "scene_id": '
-        "" + '"{scene_id}"' + '}, "reason": "fetch current relations"}]\n'
+        "2) Audit relations in this scene\n"
+        '-> [{"tool": "query", "args": {"method": "relations_effective_in_scene", "scene_id": "{scene_id}"}, "reason": "fetch current relations"}]\n\n'
+        "3) Add a short narrator turn to current scene (non-canonical note)\n"
+        '-> [{"tool": "narrative", "args": {"op": "insert_turn", "payload": {"text": "The fog thickens.", "role": "narrator", "universe_id": "{universe_id}", "story_id": "{story_id}", "scene_id": "{scene_id}"}}, "reason": "record narrative turn"}]\n\n'
+        "4) Ingest two docs for this universe (index only)\n"
+        '-> [{"tool": "indexing", "args": {"vector_collection": "kb_{universe_id}", "text_index": "kb_{universe_id}", "docs": [{"doc_id": "d1", "title": "Bestiary", "text": "Griffins and wyverns."}, {"doc_id": "d2", "title": "Herbs", "text": "Kingsfoil heals."}]} , "reason": "enable retrieval"}]\n\n'
+        "5) Search knowledge base\n"
+        '-> [{"tool": "retrieval", "args": {"query": "healing herb for wounds", "vector_collection": "kb_{universe_id}", "text_index": "kb_{universe_id}", "k": 5}, "reason": "find pertinent info"}]\n\n'
+        "6) Record a fact about this scene\n"
+        '-> [{"tool": "recorder", "args": {"scene_id": "{scene_id}", "facts": [{"description": "Fog is dense at the docks."}]}, "reason": "capture observation"}]\n'
     )
     return Agent(
         AgentConfig(name="Planner", system_prompt=system, llm=llm, temperature=0.1, max_tokens=280)

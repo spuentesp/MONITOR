@@ -233,6 +233,8 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         new_story_id: str | None = None
         new_universe_id: str | None = None
         new_tags: list[str] | None = None
+        evidence_accum: list[dict[str, Any]] = []
+        narrative_result: dict[str, Any] | None = None
         for act in actions:
             try:
                 tool = (act or {}).get("tool")
@@ -275,9 +277,25 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                     res = tools["query_tool"](ctx, **args)
                 elif tool == "narrative":
                     payload = args.get("payload") or {}
+                    # If we have evidence from prior retrieval, inject citations into meta
+                    if evidence_accum and "meta" not in payload:
+                        payload["meta"] = {"citations": evidence_accum}
                     res = tools["narrative_tool"](
                         ctx, args.get("op"), llm=tools.get("llm"), **payload
                     )
+                    if isinstance(res, dict):
+                        narrative_result = res
+                elif tool == "indexing":
+                    # args must include vector_collection, text_index, docs
+                    res = tools["indexing_tool"](ctx, llm=tools.get("llm"), **args)
+                elif tool == "retrieval":
+                    res = tools["retrieval_tool"](ctx, **args)
+                    try:
+                        hits = (res or {}).get("results") or []
+                        if isinstance(hits, list):
+                            evidence_accum.extend(hits)
+                    except Exception:
+                        pass
                 elif tool == "object_upload":
                     res = tools["object_upload_tool"](ctx, llm=tools.get("llm"), **args)
                 else:
@@ -289,6 +307,8 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
             )
         # If we created a scene, persist it in state for continuity
         next_state = {**state, "action_results": results}
+        if narrative_result is not None:
+            next_state["narrative_result"] = narrative_result
         if new_scene_id and not next_state.get("scene_id"):
             next_state["scene_id"] = new_scene_id
         if new_story_id and not next_state.get("story_id"):

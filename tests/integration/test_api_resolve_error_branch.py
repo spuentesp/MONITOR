@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from core.interfaces.api_interface import app
+
+pytestmark = pytest.mark.integration
 
 client = TestClient(app)
 
@@ -15,7 +18,6 @@ def _ctx_header():
 
 
 def test_resolve_endpoint_error_branch_stages_anyway():
-    # Missing entity ids in relation_states should produce errors (ok=False)
     payload = {
         "deltas": {"relation_states": [{"entity_a": None, "entity_b": None}], "scene_id": None},
         "mode": "copilot",

@@ -38,3 +38,23 @@
 {"scene_id": "s1", "facts": [{"description": "The city of Erebo lay shrouded in a perpetual twilight haze. You stood at the edge of the city's main square, a lone figure amidst the crumbling architecture and twisted ironwork. …", "occurs_in": "s1"}]}
 {"facts": [{"description": "x"}]}
 {"relation_states": [{}]}
+{"facts": [{"description": "The faint glow of a lantern casts flickering shadows across a dimly lit alleyway. Your boots scrape against the worn stone pavement as you step into the narrow passageway. A faint scent of smoke and ash wafts through the"}]}
+{"facts": [{"description": "You stand at the edge of a bustling market square in the heart of the city of Tenebrous. The air is thick with the smells of exotic spices and roasting meats. People of all shapes and sizes hurry past, their faces a blur"}]}
+{"universe_id": "universe:e0d53adb-a8f9-43eb-b6e2-dd844fe4d3e7", "new_universe": {"id": "universe:e0d53adb-a8f9-43eb-b6e2-dd844fe4d3e7", "name": "Omniverse"}, "new_story": {"id": "story:442dfec6-dda9-47a6-87d4-d41bc832a20f", "title": "No Context", "universe_id": "universe:e0d53adb-a8f9-43eb-b6e2-dd844fe4d3e7", "tags": ["Unknown", "empty"]}, "new_scene": {"id": "scene:d8cae46c-9879-4dd4-af03-733ef646e621", "title": "Opening Scene", "story_id": "story:442dfec6-dda9-47a6-87d4-d41bc832a20f", "sequence_index": 1}}
+{"scene_id": "s1", "facts": [{"description": "The dimly lit alleyway stretched out before you, the air thick with the stench of garbage and decay. Flickering streetlights cast eerie shadows on the walls, making it seem as though the very darkness itself was watching", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The dimly lit alleyway stretched out before you, the air thick with the stench of garbage and decay. Flickering streetlights cast eerie shadows on the walls, making it seem as thou…", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The darkness swallows you whole, an inky shroud that wraps around your face like a damp cloth. You try to remember how you got here, but the events leading up to this moment are shrouded in an impenetrable fog.\n\nAs you f", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The darkness swallows you whole, an inky shroud that wraps around your face like a damp cloth. You try to remember how you got here, but the events leading up to this moment are sh…", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{"facts": [{"description": "You stand at the edge of a small, seaside town, the air filled with the sweet scent of saltwater and the faint tang of smoke from the local tavern. The town's inhabitants, a mix of fishermen and travelers, hurry about th"}]}
+{}
+{"facts": [{"description": "You find yourself standing at the edge of a dense forest, the trees towering above you like sentinels. A faint mist clings to the underbrush, casting an eerie veil over the landscape. You've been walking for hours, the s"}]}
+{}
+{"universe_id": "universe:c554b5cc-7c6a-4060-862d-40e7b15821ee", "new_universe": {"id": "universe:c554b5cc-7c6a-4060-862d-40e7b15821ee", "name": "Omniverse"}, "new_story": {"id": "story:94a0f8aa-52d1-4c53-99b1-adc10d791268", "title": "Context-less Story", "universe_id": "universe:c554b5cc-7c6a-4060-862d-40e7b15821ee", "tags": []}, "new_scene": {"id": "scene:491e4f87-3d93-467f-9914-cc6976d0c516", "title": "Opening Scene", "story_id": "story:94a0f8aa-52d1-4c53-99b1-adc10d791268", "sequence_index": 1}}
+{"scene_id": "s1", "facts": [{"description": "The dusty streets of Ravenshire's oldest quarter are shrouded in a thick, grey mist. Flickering torches cast eerie shadows on the walls as a lone figure emerges from the gloom. You are Kael, a skilled thief with a reputa", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The dusty streets of Ravenshire's oldest quarter are shrouded in a thick, grey mist. Flickering torches cast eerie shadows on the walls as a lone figure emerges from the gloom. You…", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You stare blankly at the small, weathered wooden door in front of you. It's been hours since you arrived in Raven's Peak, a crumbling town shrouded in mist and legend. The local innkeeper, a gruff but kind-eyed woman nam", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You stare blankly at the small, weathered wooden door in front of you. It's been hours since you arrived in Raven's Peak, a crumbling town shrouded in mist and legend. The local in…", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
