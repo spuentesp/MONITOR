@@ -7,14 +7,14 @@ try:
 except Exception:  # pragma: no cover
     RepoPort = Any  # type: ignore
 
-from core.persistence.queries_lib.axioms import AxiomsQueries
-from core.persistence.queries_lib.base import BaseQueries
-from core.persistence.queries_lib.catalog import CatalogQueries
-from core.persistence.queries_lib.entities import EntitiesQueries
-from core.persistence.queries_lib.facts import FactsQueries
-from core.persistence.queries_lib.relations import RelationsQueries
-from core.persistence.queries_lib.scenes import ScenesQueries
-from core.persistence.queries_lib.systems import SystemsQueries
+from core.persistence.queries.axioms import AxiomsQueries
+from core.persistence.queries.base import BaseQueries
+from core.persistence.queries.catalog import CatalogQueries
+from core.persistence.queries.entities import EntitiesQueries
+from core.persistence.queries.facts import FactsQueries
+from core.persistence.queries.relations import RelationsQueries
+from core.persistence.queries.scenes import ScenesQueries
+from core.persistence.queries.systems import SystemsQueries
 
 
 class QueryService(

@@ -155,25 +155,38 @@ The persistence layer provides:
 - **Relationship Queries**: Analyze entity connections
 - **Timeline Queries**: Track story progression
 
-### Query Files (`query_files/`)
+### Query Files (`queries/cypher/`)
 
-**Purpose**: Externalized query definitions for maintainability.
+**Purpose**: Externalized Cypher query definitions for Neo4j operations.
 
 **Organization**:
-- Cypher queries for Neo4j operations
-- MongoDB aggregation pipelines
-- Search query templates
-- Query optimization hints
+- Individual .cypher files for specific queries
+- Optimized Cypher queries for graph operations
+- Query templates for dynamic parameter binding
+- Performance-tuned graph traversals
 
-### Queries Library (`queries_lib/`)
+**Key Queries**:
+- Entity relationship traversals
+- Scene and story navigation
+- System effectiveness analysis
+- Temporal queries and timelines
 
-**Purpose**: Query building utilities and helpers.
+### Query Components (`queries/`)
+
+**Purpose**: Unified query management with domain-specific query classes and utilities.
+
+**Structure**:
+- `base.py` - Base query functionality and common patterns
+- `service.py` - Main QueryService that composes all query types
+- `axioms.py`, `entities.py`, `facts.py`, etc. - Domain-specific query classes
+- `builders/` - Dynamic query construction utilities  
+- `cypher/` - Externalized .cypher query templates
 
 **Features**:
-- Dynamic query construction
-- Parameter binding and validation
-- Query optimization suggestions
-- Performance monitoring
+- Domain-organized query methods (entities, scenes, facts, etc.)
+- Dynamic query construction and parameter binding
+- Query optimization and performance monitoring
+- Unified service interface for all query operations
 
 ---
 
@@ -194,18 +207,6 @@ The persistence layer provides:
 - Temporal querying capabilities
 - Event aggregation and statistics
 - Integration with analytics
-
-### Brancher (`brancher.py`)
-
-**Purpose**: Universe branching and timeline management at persistence layer.
-
-**Note**: This is legacy code replaced by composition-based services in `core/services/branching/`.
-
-### Projector (`projector.py`)
-
-**Purpose**: Model-to-storage projection at persistence layer.
-
-**Note**: This is legacy code replaced by composition-based services in `core/services/projection/`.
 
 ---
 
@@ -231,17 +232,13 @@ The persistence layer provides:
 
 ## Legacy Libraries
 
-### Brancher Library (`brancher_lib/`)
+**Note**: All legacy wrapper libraries have been removed and replaced with direct service usage.
 
-**Purpose**: Legacy branching operations library.
-
-**Status**: Deprecated - Use `core/services/branching/` instead
-
-### Projector Library (`projector_lib/`)
-
-**Purpose**: Legacy projection operations library.
-
-**Status**: Deprecated - Use `core/services/projection/` instead
+**Migration Path**: 
+- `brancher.py` functionality → `core/services/branching/BrancherService`
+- `projector.py` functionality → `core/services/projection/ProjectionService`
+- All imports updated to use services directly
+- No backward compatibility layers maintained (lean architecture approach)
 
 ---
 
