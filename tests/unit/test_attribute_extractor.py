@@ -1,4 +1,5 @@
 import pytest
+
 pytestmark = pytest.mark.unit
 
 from core.engine.attribute_extractor import distill_entity_attributes

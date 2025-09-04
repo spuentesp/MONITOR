@@ -1,6 +1,8 @@
 from pathlib import Path
 import sys
+
 import pytest
+
 pytestmark = pytest.mark.unit
 
 from core.engine.monitor_parser import parse_monitor_intent  # noqa: E402

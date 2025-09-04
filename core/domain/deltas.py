@@ -104,7 +104,7 @@ class RelationEdge(_Base):
         if self.a is None and hasattr(self, "from"):
             object.__setattr__(self, "a", getattr(self, "from"))
         if self.b is None and hasattr(self, "to"):
-            object.__setattr__(self, "b", getattr(self, "to"))
+            object.__setattr__(self, "b", self.to)
 
 
 class DeltaBatch(_Base):

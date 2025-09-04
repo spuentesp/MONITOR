@@ -1,4 +1,5 @@
 import pytest
+
 pytestmark = pytest.mark.integration
 
 from core.persistence.neo4j_repo import Neo4jRepo

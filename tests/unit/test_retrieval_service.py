@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import pytest
+
 pytestmark = pytest.mark.unit
 
 from core.services.retrieval_service import RetrievalService

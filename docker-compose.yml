@@ -66,6 +66,16 @@ services:
       - "9001:9001"  # Console
     volumes:
       - minio-data:/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: monitor-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
 volumes:
   neo4j-data:
   neo4j-logs:
@@ -73,3 +83,4 @@ volumes:
   qdrant-data:
   opensearch-data:
   minio-data:
+  redis-data:

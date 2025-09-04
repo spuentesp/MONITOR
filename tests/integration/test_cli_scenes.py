@@ -1,6 +1,7 @@
 import json
-import pytest
 from pathlib import Path
+
+import pytest
 
 from core.interfaces.cli_interface import init_multiverse
 

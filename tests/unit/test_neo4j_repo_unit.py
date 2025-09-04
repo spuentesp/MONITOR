@@ -1,7 +1,9 @@
 import pytest
+
 pytestmark = pytest.mark.unit
 
 import types
+
 import core.persistence.neo4j_repo as mod
 
 

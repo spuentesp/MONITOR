@@ -13,6 +13,7 @@ from core.engine.orchestrator import (
 from core.engine.resolve_tool import resolve_commit_tool
 from core.engine.steward import StewardService
 from core.generation.providers import select_llm_from_env
+from core.interfaces.branches_api import router as branches_router
 from core.interfaces.langgraph_modes_api import router as langgraph_modes_router
 from core.loaders.agent_prompts import load_agent_prompts
 
@@ -63,6 +64,9 @@ def health():
 
 # LangGraph Modes (Narrator vs Monitor)
 app.include_router(langgraph_modes_router, prefix="/api")
+
+# Branching & cloning API
+app.include_router(branches_router, prefix="/api")
 
 
 # --- Minimal Chat API ---

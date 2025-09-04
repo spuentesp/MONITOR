@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import pytest
+
 pytestmark = pytest.mark.unit
 
 from core.generation.providers import select_llm_from_env

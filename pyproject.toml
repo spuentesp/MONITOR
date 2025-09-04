@@ -6,6 +6,9 @@ target-version = "py312"
 select = ["E","F","I","UP","B","W"]
 ignore = ["E501"]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E402"]
+
 [tool.ruff.lint.isort]
 known-first-party = ["core"]
 force-sort-within-sections = true
@@ -13,6 +16,10 @@ force-sort-within-sections = true
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-q -ra"
+
+[tool.importlinter]
+# Configuration lives in importlinter.ini at repo root; this stanza is a hint for CI tooling.
+profile = "default"
 markers = [
 	"unit: fast, isolated unit tests",
 	"integration: slower, cross-component integration tests",

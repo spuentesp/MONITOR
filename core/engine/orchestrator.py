@@ -22,12 +22,12 @@ from core.engine.langgraph_flow import select_engine_backend
 from core.engine.tools import (
     ToolContext,
     bootstrap_story_tool,
-    narrative_tool,
     indexing_tool,
-    retrieval_tool,
+    narrative_tool,
     object_upload_tool,
     query_tool,
     recorder_tool,
+    retrieval_tool,
 )
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.queries import QueryService

@@ -1,6 +1,8 @@
 from pathlib import Path
 import sys
+
 import pytest
+
 pytestmark = pytest.mark.unit
 
 import yaml

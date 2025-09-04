@@ -1,4 +1,5 @@
 import pytest
+
 pytestmark = pytest.mark.integration
 
 from core.persistence.neo4j_repo import Neo4jRepo
@@ -22,7 +23,6 @@ def populated_db():
     repo = Neo4jRepo().connect()
     repo.run("MATCH (n) DETACH DELETE n")
     repo.bootstrap_constraints()
-    from tests.data import example_multiverse  # type: ignore  # ensure package discoverable
     import pathlib
     yaml_path = pathlib.Path(__file__).resolve().parents[2] / "tests" / "data" / "example_multiverse.yaml"
     Projector(repo).project_from_yaml(yaml_path, ensure_constraints=False)

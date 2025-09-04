@@ -8,8 +8,8 @@ import json
 from typing import Any
 from uuid import uuid4
 
-from core.engine.resolve_tool import resolve_commit_tool
 from core.domain.deltas import DeltaBatch
+from core.engine.resolve_tool import resolve_commit_tool
 from core.persistence.mongo_repos import DocMeta, Memory, NarrativeService, Note, Turn
 from core.services.indexing_service import IndexingService
 from core.services.object_service import ObjectService
