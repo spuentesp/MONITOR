@@ -4,10 +4,8 @@ from typing import Any
 
 from core.utils.constants import MAX_FACT_DESCRIPTION
 
-FACT_DESC_MAX = MAX_FACT_DESCRIPTION
 
-
-def truncate_fact_description(text: str, max_len: int = FACT_DESC_MAX) -> str:
+def truncate_fact_description(text: str, max_len: int = MAX_FACT_DESCRIPTION) -> str:
     """Truncate a fact description with a single ellipsis if over length."""
     if len(text) <= max_len:
         return text
