@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from core.persistence.query_files.builders.query_loader import load_query
+from core.persistence.queries.builders.query_loader import load_query
 
 
 class EntitiesQueries:

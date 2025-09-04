@@ -5,8 +5,8 @@ from typing import Any, Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from core.persistence.brancher import BranchService
 from core.persistence.neo4j_repo import Neo4jRepo
+from core.services.branching.brancher_service import BrancherService
 
 router = APIRouter(prefix="/branches", tags=["branches"])
 
@@ -38,18 +38,18 @@ class CloneReq(BaseModel):
     dry_run: bool = False
 
 
-def _svc() -> BranchService:
+def _svc() -> BrancherService:
     repo = Neo4jRepo().connect()
-    return BranchService(repo)
+    return BrancherService(repo)
 
 
 @router.post("/branch-at-scene")
 def branch_at_scene(req: BranchAtSceneReq) -> dict[str, Any]:
     try:
         svc = _svc()
-        res = svc.branch_universe_at_scene(
+        res = svc.branch_at_scene(
             source_universe_id=req.source_universe_id,
-            divergence_scene_id=req.divergence_scene_id,
+            scene_id=req.divergence_scene_id,
             new_universe_id=req.new_universe_id,
             new_universe_name=req.new_universe_name,
             force=req.force,
@@ -65,7 +65,7 @@ def clone_universe(req: CloneReq) -> dict[str, Any]:
     try:
         svc = _svc()
         if req.mode == "full":
-            res = svc.clone_universe_full(
+            res = svc.clone_full(
                 source_universe_id=req.source_universe_id,
                 new_universe_id=req.new_universe_id,
                 new_universe_name=req.new_universe_name,
@@ -73,7 +73,7 @@ def clone_universe(req: CloneReq) -> dict[str, Any]:
                 dry_run=req.dry_run,
             )
         else:
-            res = svc.clone_universe_subset(
+            res = svc.clone_subset(
                 source_universe_id=req.source_universe_id,
                 new_universe_id=req.new_universe_id,
                 new_universe_name=req.new_universe_name,

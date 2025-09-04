@@ -6,7 +6,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))  # noqa: E402
 
 from core.persistence.neo4j_repo import Neo4jRepo  # noqa: E402
-from core.persistence.projector import Projector  # noqa: E402
+from core.services.projection.projection_service import ProjectionService
 
 yaml_path = Path(__file__).resolve().parents[1] / "tests" / "data" / "example_multiverse.yaml"
 
@@ -15,7 +15,7 @@ print(f"Connected to {repo.uri} as {repo.user}")
 print("Bootstrapping constraints...")
 repo.bootstrap_constraints()
 print("Projecting from YAML...")
-Projector(repo).project_from_yaml(yaml_path, ensure_constraints=False)
+ProjectionService(repo).project_from_yaml(yaml_path, ensure_constraints=False)
 print("Done.")
 
 # Quick smoke check: count a few labels

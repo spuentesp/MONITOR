@@ -11,10 +11,10 @@ from core.engine.orchestrator import (
 )
 from core.generation.mock_llm import MockLLM
 from core.loaders.yaml_loader import load_omniverse_from_yaml
-from core.persistence.brancher import BranchService
 from core.persistence.neo4j_repo import Neo4jRepo
-from core.persistence.projector import Projector
 from core.persistence.queries import QueryService
+from core.services.branching.brancher_service import BrancherService
+from core.services.projection.projection_service import ProjectionService
 from core.utils.merge import deep_merge
 from core.utils.persist import persist_simple_fact_args
 
@@ -66,7 +66,7 @@ def project_from_yaml(
     ensure_constraints: bool = _OPT_ENSURE,
 ):
     repo = Neo4jRepo().connect()
-    projector = Projector(repo)
+    projector = ProjectionService(repo)
     projector.project_from_yaml(path, ensure_constraints=ensure_constraints)
     typer.echo(f"Projected YAML into Neo4j: {path}")
     repo.close()
@@ -378,8 +378,8 @@ def branch_universe(
     dry_run: bool = typer.Option(False, "--dry-run", help="Compute counts only; no writes"),
 ):
     repo = Neo4jRepo().connect()
-    svc = BranchService(repo)
-    out = svc.branch_universe_at_scene(
+    svc = BrancherService(repo)
+    out = svc.branch_at_scene(
         source_universe_id, divergence_scene_id, new_universe_id, name, force=force, dry_run=dry_run
     )
     _print_json(out)
@@ -395,8 +395,8 @@ def clone_universe(
     dry_run: bool = typer.Option(False, "--dry-run", help="Compute counts only; no writes"),
 ):
     repo = Neo4jRepo().connect()
-    svc = BranchService(repo)
-    out = svc.clone_universe_full(
+    svc = BrancherService(repo)
+    out = svc.clone_full(
         source_universe_id, new_universe_id, name, force=force, dry_run=dry_run
     )
     _print_json(out)
@@ -424,10 +424,10 @@ def clone_universe_subset(
     dry_run: bool = typer.Option(False, "--dry-run", help="Compute counts only; no writes"),
 ):
     repo = Neo4jRepo().connect()
-    svc = BranchService(repo)
+    svc = BrancherService(repo)
     story_list = [s.strip() for s in stories.split(",")] if stories else None
     arc_list = [a.strip() for a in arcs.split(",")] if arcs else None
-    out = svc.clone_universe_subset(
+    out = svc.clone_subset(
         source_universe_id,
         new_universe_id,
         name,

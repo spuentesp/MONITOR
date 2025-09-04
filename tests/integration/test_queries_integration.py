@@ -3,7 +3,7 @@ import pytest
 pytestmark = pytest.mark.integration
 
 from core.persistence.neo4j_repo import Neo4jRepo
-from core.persistence.projector import Projector
+from core.services.projection.projection_service import ProjectionService
 from core.persistence.queries import QueryService
 
 
@@ -28,7 +28,7 @@ def populated_db():
     yaml_path = (
         pathlib.Path(__file__).resolve().parents[2] / "tests" / "data" / "example_multiverse.yaml"
     )
-    Projector(repo).project_from_yaml(yaml_path, ensure_constraints=False)
+    ProjectionService(repo).project_from_yaml(yaml_path, ensure_constraints=False)
     yield repo
     repo.close()
 

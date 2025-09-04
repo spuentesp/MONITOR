@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from core.persistence.projector import Projector  # noqa: E402
+from core.services.projection.projection_service import ProjectionService
 
 
 class FakeRepo:
@@ -35,7 +35,7 @@ class FakeRepo:
 def test_projector_projects_all_node_types_and_relations(tmp_path: Path):
     yaml_path = ROOT / "tests" / "data" / "example_multiverse.yaml"
     repo = FakeRepo()
-    p = Projector(repo)
+    p = ProjectionService(repo)
     p.project_from_yaml(yaml_path, ensure_constraints=True)
 
     # Constraints were ensured
