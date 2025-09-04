@@ -124,3 +124,38 @@ def test_diff_shape(monkeypatch):
         "facts_only_in_source",
         "facts_only_in_target",
     }
+
+
+def test_typed_diff_and_append_missing(monkeypatch):
+    class FakeRepo:
+        def connect(self):
+            return self
+
+        def run(self, q, **params):  # type: ignore[no-untyped-def]
+            # Return simple empty/zero responses, except count aggregations
+            qn = " ".join(q.split())
+            if "RETURN collect" in qn:
+                return [{"ids": []}]
+            if "RETURN count(" in qn:
+                return [{"c": 0}]
+            if "RETURN count(DISTINCT" in qn and "AS inserted" in qn:
+                return [{"inserted": 0}]
+            return [{"c": 0}]
+
+    import core.interfaces.branches_api as mod
+
+    monkeypatch.setattr(mod, "Neo4jRepo", lambda: FakeRepo())
+
+    r = client.get("/api/branches/U-1/diff/U-2/typed", headers=_ctx_header())
+    assert r.status_code == 200
+    body = r.json()
+    assert set(body.keys()) >= {"stories", "scenes", "entities", "facts", "provenance"}
+
+    # Append missing should succeed with ops counter
+    r2 = client.post(
+        "/api/branches/promote",
+        json={"source_universe_id": "U-1", "target_universe_id": "U-2", "strategy": "append_missing"},
+        headers=_ctx_header(),
+    )
+    assert r2.status_code == 200
+    assert "ops" in r2.json()

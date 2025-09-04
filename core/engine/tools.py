@@ -121,17 +121,51 @@ def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
 
 
 def rules_tool(ctx: ToolContext, action: str, **kwargs) -> dict[str, Any]:
-    """Placeholder rules interpreter.
+    """Minimal rules evaluator supporting a few simple checks.
 
-    Returns a deterministic stub resolution; to be replaced with real system logic.
+    Supported actions:
+      - forbid_relation(type, a, b): returns violation if relation exists/effective.
+      - require_role_in_scene(role, scene_id): returns violation if no participant with role.
+      - max_participants(scene_id, limit): returns violation if participants > limit.
     """
-    return {
-        "action": action,
-        "inputs": kwargs,
-        "result": "partial",
-        "effects": [],
-        "trace": ["stub:rules_tool"],
-    }
+    effects: list[dict[str, Any]] = []
+    violations: list[str] = []
+    trace: list[str] = ["rules:minimal"]
+    try:
+        if action == "forbid_relation":
+            rtype = kwargs["type"]
+            a = kwargs["a"]
+            b = kwargs["b"]
+            try:
+                active = bool(ctx.query_service.relation_is_active_in_scene(a=a, b=b, type=rtype))
+            except Exception:
+                active = False
+            if active:
+                violations.append(f"forbid_relation: {rtype} between {a} and {b} is active")
+        elif action == "require_role_in_scene":
+            role = kwargs["role"]
+            scene_id = kwargs["scene_id"]
+            try:
+                participants = ctx.query_service.participants_by_role_for_scene(scene_id, role=role)
+            except Exception:
+                participants = []
+            if not participants:
+                violations.append(f"require_role_in_scene: no participants with role {role} in {scene_id}")
+        elif action == "max_participants":
+            scene_id = kwargs["scene_id"]
+            limit = int(kwargs["limit"])
+            try:
+                ents = ctx.query_service.entities_in_scene(scene_id)
+            except Exception:
+                ents = []
+            if len(ents) > limit:
+                violations.append(f"max_participants: {len(ents)}>{limit} in scene {scene_id}")
+        else:
+            trace.append("noop:unknown_action")
+    except KeyError as e:
+        violations.append(f"missing_arg:{e}")
+    result = "ok" if not violations else "violations"
+    return {"action": action, "inputs": kwargs, "result": result, "violations": violations, "effects": effects, "trace": trace}
 
 
 def notes_tool(_: ToolContext, text: str, scope: dict[str, str] | None = None) -> dict[str, Any]:
