@@ -36,7 +36,6 @@ The system operates as a collaborative AI dungeon master with specialized agents
   - `core/agents/*` - Individual agent implementations
 - **orchestration**: Multi-phase LangGraph flows with narrative memory.
   - `core/engine/flows/*` - Modular flow construction and node implementations
-  - `core/engine/flows/enhanced_narrative_flow.py` - Advanced narrative intelligence flow
   - `core/engine/orchestrator.py`, `core/engine/tools.py`
 - **interfaces** (edges): API, CLI, and user interfaces.
   - `core/interfaces/*`, `frontend/*`
@@ -157,8 +156,7 @@ Agents operate with comprehensive narrative and world context:
 
 ### **Flow Implementations**
 
-- **Standard Flow** (`core/engine/flows/graph_builder.py`): Base multi-agent coordination
-- **Enhanced Flow** (`core/engine/flows/enhanced_narrative_flow.py`): Advanced narrative intelligence
+- **Standard Flow** (`core/engine/flows/graph_builder.py`): Multi-agent DM coordination
 - **Modular Nodes** (`core/engine/flows/nodes/`): Reusable flow components
 
 ## Current Implementation Status
