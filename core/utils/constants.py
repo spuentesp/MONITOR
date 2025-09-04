@@ -1,0 +1,16 @@
+"""Common constants used throughout the MONITOR system."""
+
+# Text length limits for different contexts
+MAX_FACT_DESCRIPTION = 200
+MAX_CONTINUITY_TOKENS = 200
+MAX_RESOLVE_TOKENS = 200
+MAX_SUMMARY_LENGTH = 500
+MAX_LIBRARIAN_DESC = 100
+
+# HTTP status codes
+HTTP_BAD_REQUEST = 400
+HTTP_FORBIDDEN = 403
+HTTP_INTERNAL_ERROR = 500
+
+# Narrative limits
+MAX_NARRATIVE_SUMMARY = 200

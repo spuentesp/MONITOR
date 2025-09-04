@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from core.agents.base import Agent, AgentConfig
 from core.loaders.agent_prompts import load_agent_prompts
+from core.utils.constants import MAX_CONTINUITY_TOKENS
 
 
 def continuity_agent(llm) -> Agent:
@@ -15,7 +16,7 @@ def continuity_agent(llm) -> Agent:
             '{"drift": <bool>, "incorrect": <bool>, "reasons": [<short strings>],\n'
             ' "violations": [{"subject": <\'entity\'|\'relation\'|\'system\'>, "key": <id or rule name>, "reason": <short>}],\n'
             ' "note": <one-line advice>}\n'
-            "Keep it under 200 tokens. Do not include narrative prose."
+            f"Keep it under {MAX_CONTINUITY_TOKENS} tokens. Do not include narrative prose."
         ),
     )
     # Cooler temperature isn't needed; keep deterministic classification

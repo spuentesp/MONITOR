@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-FACT_DESC_MAX = 200
+from core.utils.constants import MAX_FACT_DESCRIPTION
+
+FACT_DESC_MAX = MAX_FACT_DESCRIPTION
 
 
 def truncate_fact_description(text: str, max_len: int = FACT_DESC_MAX) -> str:

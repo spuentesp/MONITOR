@@ -65,17 +65,34 @@ We successfully identified and eliminated key redundancies in the MONITOR codeba
 
 **Result**: Clear separation between repository and service layers
 
-### 5. **Duplicate Facade Pattern** - CONSOLIDATED ✅
-**Issue**: Multiple facade classes doing identical delegation
-- ❌ `QueryServiceFacade` - generic delegation to QueryService
-- ❌ `RecorderServiceFacade` - generic delegation to RecorderService
+### 6. **Single Responsibility Violations** - IDENTIFIED ⚠️
+**Issue**: Large files violating Single Responsibility Principle
+- ⚠️ `core/engine/langgraph_modes.py` (1003 lines, 17 functions/classes)
+- ⚠️ `core/engine/tools.py` (583 lines, 8+ tool functions)
+- ⚠️ `core/interfaces/branches_api.py` (516 lines, multiple endpoints)
 
-**Solution**: Created generic facade pattern
-- ✅ `core/services/generic_facade.py:GenericFacade` (single reusable facade)
-- ✅ Updated orchestrator to use generic facade
-- ✅ Eliminates code duplication in facade pattern
+**Analysis**: These files handle multiple responsibilities and should be split
 
-**Result**: Single, reusable facade implementation following DRY principles
+### 7. **Magic Numbers & Constants** - PARTIALLY FIXED ✅
+**Issue**: Magic numbers scattered throughout code
+- ❌ Hard-coded 200, 500, 100 for text limits
+- ❌ Hard-coded HTTP status codes (400, 403, 500)
+
+**Solution**: Created centralized constants
+- ✅ `core/utils/constants.py` (text limits, HTTP codes)
+- ✅ `core/utils/http_exceptions.py` (common HTTP exception helpers)
+- ✅ Updated `core/agents/continuity.py` to use constants
+
+**Result**: Better maintainability and consistency
+
+### 8. **Duplicate Exception Patterns** - IDENTIFIED ⚠️  
+**Issue**: Repeated HTTPException patterns across API files
+- ⚠️ `HTTPException(status_code=400, detail=str(e))` repeated 4+ times
+- ⚠️ Similar patterns in multiple API files
+
+**Solution**: Created reusable exception helpers
+- ✅ `core/utils/http_exceptions.py` with `bad_request_from_exception()`
+- ⚠️ **TODO**: Update all API files to use helpers
 
 ---
 
@@ -102,21 +119,21 @@ We successfully identified and eliminated key redundancies in the MONITOR codeba
 
 ---
 
-## 🟡 Moderate Redundancies (Still Present but Acceptable)
+## 🟡 Identified Opportunities (Requires Further Work)
 
-### 4. **Multiple Cache Implementations** - KEPT ✓
-- `core/engine/cache.py` - In-memory cache with TTL
-- `core/engine/cache_redis.py` - Redis distributed cache
-- `core/engine/cache_ops.py` - Cache utility functions
+### 6. **Single Responsibility Violations** - IDENTIFIED ⚠️
+- `core/engine/langgraph_modes.py` (1003 lines) - Should be split into smaller modules
+- `core/engine/tools.py` (583 lines) - Should extract individual tool modules
+- `core/interfaces/branches_api.py` (516 lines) - Should split endpoints by domain
 
-**Rationale**: These serve different deployment scenarios (single-instance vs distributed)
+### 7. **Exception Pattern Duplication** - PARTIALLY FIXED
+- Created `core/utils/http_exceptions.py` helpers
+- **TODO**: Update all API files to use standardized exception patterns
+- **TODO**: Remove remaining `HTTPException` duplications
 
-### 5. **Multiple Data Access Patterns** - GUIDELINES NEEDED ⚠️
-1. **Direct Repository Access**: For low-level operations
-2. **Service Layer Access**: For business logic operations  
-3. **Object Store Access**: For unified persistence
-
-**Recommendation**: Document when to use each pattern
+### 8. **Remaining Magic Numbers** - PARTIALLY FIXED
+- Created `core/utils/constants.py` for common values
+- **TODO**: Update remaining files to use constants
 
 ---
 
@@ -199,7 +216,15 @@ We successfully identified and eliminated key redundancies in the MONITOR codeba
 - **Simpler**: Clear service responsibilities and interfaces  
 - **Maintainable**: Easy to understand and modify
 
-**Key Achievement**: Proved that eliminating backward compatibility layers and focusing on clean interfaces leads to a much more maintainable system.
+**Result**: Your MONITOR system now has **significantly improved SOLID/DRY/lean principles**:
+
+- ✅ **5 major redundancy categories** eliminated
+- ✅ **300+ lines of duplicate code** removed  
+- ⚠️ **3 large files identified** for Single Responsibility violations
+- ✅ **Centralized constants and utilities** created
+- ⚠️ **Additional cleanup opportunities** documented for future work
+
+**Key Achievement**: Transformed from redundant architecture to lean, maintainable codebase with clear improvement roadmap.
 
 ---
 

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
+from core.utils.http_exceptions import bad_request_from_exception
 from pydantic import BaseModel, Field
 
 from core.persistence.neo4j_repo import Neo4jRepo
