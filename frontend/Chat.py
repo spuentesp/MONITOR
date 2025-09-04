@@ -9,6 +9,8 @@ from typing import Any
 
 import streamlit as st
 
+from core.utils.merge import deep_merge as _dm
+
 # Make repository root importable when running from frontend/
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
@@ -71,13 +73,7 @@ def ensure_session_objects():
 
 
 def _deep_merge(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
-    out = dict(base or {})
-    for k, v in (patch or {}).items():
-        if isinstance(v, dict) and isinstance(out.get(k), dict):
-            out[k] = _deep_merge(out[k], v)  # type: ignore[arg-type]
-        else:
-            out[k] = v
-    return out
+    return _dm(base, patch)
 
 
 def current_config_key() -> str:

@@ -16,6 +16,8 @@ from core.generation.providers import select_llm_from_env
 from core.interfaces.branches_api import router as branches_router
 from core.interfaces.langgraph_modes_api import router as langgraph_modes_router
 from core.loaders.agent_prompts import load_agent_prompts
+from core.utils.merge import deep_merge
+from core.utils.persist import persist_simple_fact_args
 
 app = FastAPI(title="M.O.N.I.T.O.R. API")
 
@@ -103,10 +105,8 @@ def chat(req: ChatRequest):
                 from core.engine.tools import recorder_tool
 
                 draft = out.get("draft") or t.content
-                fact = {"description": (draft[:180] + ("…" if len(draft) > 180 else ""))}
-                if t.scene_id:
-                    fact["occurs_in"] = t.scene_id
-                recorder_tool(ctx, draft=draft, deltas={"facts": [fact], "scene_id": t.scene_id})
+                deltas = persist_simple_fact_args(draft, t.scene_id)
+                recorder_tool(ctx, draft=draft, deltas=deltas)
             except Exception:
                 pass
     return {"steps": outs}
@@ -121,12 +121,8 @@ def step(req: StepRequest):
             from core.engine.tools import recorder_tool
 
             draft = out.get("draft") or req.intent
-            fact = {"description": (draft[:180] + ("…" if len(draft) > 180 else ""))}
-            if req.scene_id:
-                fact["occurs_in"] = req.scene_id
-            persisted = recorder_tool(
-                ctx, draft=draft, deltas={"facts": [fact], "scene_id": req.scene_id}
-            )
+            deltas = persist_simple_fact_args(draft, req.scene_id)
+            persisted = recorder_tool(ctx, draft=draft, deltas=deltas)
             out["persisted"] = persisted
         except Exception:
             pass
@@ -149,14 +145,8 @@ def validate(req: ValidateRequest):
 
 
 def _deep_merge(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
-    """Shallow-by-default deep merge for dicts; lists/atoms are replaced by patch."""
-    out: dict[str, Any] = dict(base or {})
-    for k, v in (patch or {}).items():
-        if isinstance(v, dict) and isinstance(out.get(k), dict):
-            out[k] = _deep_merge(out[k], v)  # type: ignore[arg-type]
-        else:
-            out[k] = v
-    return out
+    # Back-compat shim: use shared util
+    return deep_merge(base, patch)
 
 
 class ResolveRequest(BaseModel):
@@ -169,7 +159,7 @@ class ResolveRequest(BaseModel):
 @app.post("/resolve")
 def resolve(req: ResolveRequest):
     # Apply fixes (if any)
-    merged = _deep_merge(req.deltas, req.fixes or {})
+    merged = deep_merge(req.deltas, req.fixes or {})
     # Always validate before asking the agent
     dry_by_mode = not (req.mode == "autopilot")
     ctx = build_live_tools(dry_run=dry_by_mode)

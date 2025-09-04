@@ -24,7 +24,16 @@ class Neo4jRepo:
                 raise ValueError(
                     "Missing Neo4j connection env. Set NEO4J_URI, NEO4J_USER, NEO4J_PASS."
                 )
-            self._driver = GraphDatabase.driver(self.uri, auth=(self.user, self.password))
+            # Add a short connection timeout so tests don't hang if Neo4j is unreachable
+            try:
+                self._driver = GraphDatabase.driver(
+                    self.uri,
+                    auth=(self.user, self.password),
+                    connection_timeout=3.0,  # seconds
+                )
+            except TypeError:
+                # Older neo4j drivers may not accept connection_timeout; fall back
+                self._driver = GraphDatabase.driver(self.uri, auth=(self.user, self.password))
         return self
 
     def close(self):

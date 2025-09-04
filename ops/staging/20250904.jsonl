@@ -193,3 +193,116 @@
 {"scene_id": "s1", "facts": [{"description": "x", "occurs_in": "s1"}]}
 {"facts": [{"description": "x"}]}
 {"relation_states": [{}]}
+{}
+{"facts": [{"description": "You find yourself standing at the edge of a dense forest, the trees towering above you like sentinels. The air is heavy with the scent of damp earth and decaying leaves. A faint mist clings to the forest floor, making ev"}]}
+{}
+{"facts": [{"description": "You stand at the edge of the dusty town, the sun beating down on your leather boots. The main street stretches out before you, lined with faded saloons and shops that seem to lean in, as if sharing a secret. A lone cowbo"}]}
+{"universe_id": "universe:f0eda54d-a8b1-486c-8df4-103c1707c8b7", "new_universe": {"id": "universe:f0eda54d-a8b1-486c-8df4-103c1707c8b7", "name": "Omniverse"}, "new_story": {"id": "story:2609106d-3c2c-4284-96f6-1566ef9677be", "title": "No Context", "universe_id": "universe:f0eda54d-a8b1-486c-8df4-103c1707c8b7", "tags": ["Unknown", "empty"]}, "new_scene": {"id": "scene:50b5694b-9104-443e-9895-ba8aa81cf03a", "title": "Opening Scene", "story_id": "story:2609106d-3c2c-4284-96f6-1566ef9677be", "sequence_index": 1}}
+{"scene_id": "s1", "facts": [{"description": "The abandoned amusement park stood like a skeletal sentinel, its rusting Ferris wheel creaking in the wind. You've been here since dawn, searching for a lead on a cryptic message that hinted at a long-lost treasure hidde", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The abandoned amusement park stood like a skeletal sentinel, its rusting Ferris wheel creaking in the wind. You've been here since dawn, searching for a lead on a cryptic message t…", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "You stand at the edge of a dense forest, the trees towering above you like sentinels. The air is heavy with the scent of damp earth and decaying leaves. A narrow path unwinds before you, disappearing into the shadowy dep", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You stand at the edge of a dense forest, the trees towering above you like sentinels. The air is heavy with the scent of damp earth and decaying leaves. A narrow path unwinds befor…", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"facts": [{"description": "The city of Elyria, a place of grandeur and decay, sprawls before you like a canvas of crumbling stone and whispering shadows. The wind carries the whispers of the forgotten, and the distant clang of hammer on anvil echo"}]}
+{}
+{"facts": [{"description": "You find yourself standing at the edge of a dense forest, the trees towering above you like sentinels. The air is thick with the scent of damp earth and decaying leaves. A faint mist clings to the ground, veiling the und"}]}
+{"universe_id": "universe:8266f10d-fb4e-451e-ace0-7c7af7b1e1d2", "new_universe": {"id": "universe:8266f10d-fb4e-451e-ace0-7c7af7b1e1d2", "name": "Omniverse"}, "new_story": {"id": "story:1c6874d5-5f26-492a-b8fc-03102f4d9ccb", "title": "Default Story", "universe_id": "universe:8266f10d-fb4e-451e-ace0-7c7af7b1e1d2", "tags": ["Unknown Time", "default"]}, "new_scene": {"id": "scene:267568ed-5c0e-492e-b754-a39fb029d415", "title": "Opening Scene", "story_id": "story:1c6874d5-5f26-492a-b8fc-03102f4d9ccb", "sequence_index": 1}}
+{"scene_id": "s1", "facts": [{"description": "You stand at the edge of a worn, wooden dock, the creaking of the old wooden planks beneath your feet echoing out across the calm, mist-shrouded waters of the lake. The first light of dawn is creeping over the hills beyo", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You stand at the edge of a worn, wooden dock, the creaking of the old wooden planks beneath your feet echoing out across the calm, mist-shrouded waters of the lake. The first light…", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "**Scene: Desert Oasis**\n\nThe sun beats down upon the dusty earth as you trudge through the endless expanse of sand. A mirage beckons in the distance – a tantalizing promise of shade and respite from the blistering heat. ", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "**Scene: Desert Oasis**\n\nThe sun beats down upon the dusty earth as you trudge through the endless expanse of sand. A mirage beckons in the distance – a tantalizing promise of shad…", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"facts": [{"description": "You stand at the edge of a dense forest, the canopy above a vibrant tapestry of greens. The air is cool and damp, filled with the scent of damp earth and decaying leaves. A faint mist clings to the underbrush, casting an"}]}
+{"facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest, the trees towering above you like sentinels. The air is heavy with the scent of damp earth and decaying leaves. A faint, mournful cry echoes throug"}]}
+{}
+{"universe_id": "universe:43875a1d-bc20-45df-b211-57a988768903", "new_universe": {"id": "universe:43875a1d-bc20-45df-b211-57a988768903", "name": "Omniverse"}, "new_story": {"id": "story:88b41faf-09bf-4863-ba0e-39ab33f51681", "title": "Story Context", "universe_id": "universe:43875a1d-bc20-45df-b211-57a988768903", "tags": ["No Context", "no_context"]}, "new_scene": {"id": "scene:b7bb1040-2ff5-43fc-a53c-f4f8a1b19272", "title": "Opening Scene", "story_id": "story:88b41faf-09bf-4863-ba0e-39ab33f51681", "sequence_index": 1}}
+{"scene_id": "s1", "facts": [{"description": "You sit in the dimly lit tavern, the air thick with smoke and the murmur of hushed conversations. A lone candle flickers at the center of your table, casting an eerie glow on the scar above your left eyebrow. The barkeep", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You sit in the dimly lit tavern, the air thick with smoke and the murmur of hushed conversations. A lone candle flickers at the center of your table, casting an eerie glow on the s…", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1"}
+{"scene_id": "s1", "facts": [{"description": "x", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1"}
+{"scene_id": "s1", "facts": [{"description": "x", "occurs_in": "s1"}]}
+{}
+{}
+{"facts": [{"description": "The fog rolls in off the sea, shrouding the crumbling lighthouse in a damp mist. You've been stranded here for what feels like an eternity, the only sound the creaking of wooden beams and the distant crash of waves. A fa"}]}
+{}
+{}
+{}
+{"facts": [{"description": "You stand at the edge of a dense fog that clings to the cobblestone streets of Ravenshire, a town shrouded in mystery and superstition. The air is heavy with the scent of damp earth and smoke. Lanterns flicker from windo"}]}
+{}
+{"facts": [{"description": "You find yourself standing at the edge of a dense forest, the moon casting an eerie glow through the treetops. The air is heavy with the scent of damp earth and decaying leaves. A narrow dirt path stretches out before yo"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The old, abandoned lighthouse stands atop the rugged cliff, its wooden beams worn by the relentless sea wind and salt. You've been warned about the lighthouse's dark past, but a mysterious message scrawled on the wall ca", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The old, abandoned lighthouse stands atop the rugged cliff, its wooden beams worn by the relentless sea wind and salt. You've been warned about the lighthouse's dark past, but a my…", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "You stand at the edge of the dimly lit tavern, the sign creaking in the wind outside reading \"The Raven's Wing\". The air inside is thick with smoke and the murmur of hushed conversations. A lone bard in the corner strums", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You stand at the edge of the dimly lit tavern, the sign creaking in the wind outside reading \"The Raven's Wing\". The air inside is thick with smoke and the murmur of hushed convers…", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1"}
+{"scene_id": "s1", "facts": [{"description": "x", "occurs_in": "s1"}]}
+{}
+{"facts": [{"description": "The scene unfolds: hello What do you do?"}]}
+{}
+{"facts": [{"description": "The scene unfolds: hi What do you do?"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: x What do you do?", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: x What do you do?", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"facts": [{"description": "The scene unfolds: hello What do you do?"}]}
+{}
+{"facts": [{"description": "The scene unfolds: hi What do you do?"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: x What do you do?", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: x What do you do?", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"facts": [{"description": "The scene unfolds: hello What do you do?"}]}
+{}
+{"facts": [{"description": "The scene unfolds: hi What do you do?"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: x What do you do?", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: x What do you do?", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"facts": [{"description": "The scene unfolds: hello What do you do?"}]}
+{}
+{"facts": [{"description": "The scene unfolds: hi What do you do?"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: there What do you do?", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: x What do you do?", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The scene unfolds: x What do you do?", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}

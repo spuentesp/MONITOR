@@ -6,6 +6,7 @@ from typing import Any
 
 from core.engine.resolve_tool import resolve_commit_tool
 
+
 # Persona and verbosity toggles via env
 def _flag_bool(name: str, default: bool = False) -> bool:
     return os.getenv(name, "1" if default else "0") in ("1", "true", "True")

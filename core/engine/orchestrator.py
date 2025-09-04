@@ -53,7 +53,12 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
     from core.services.query_service import QueryServiceFacade
     from core.services.recorder_service import RecorderServiceFacade
 
+    # Allow forcing demo stubs regardless of host env (useful in tests/CI)
+    force_demo = os.getenv("MONITOR_FORCE_DEMO", "0") in ("1", "true", "True")
+
     try:
+        if force_demo:
+            raise RuntimeError("force_demo")
         repo = Neo4jRepo().connect()
         qs = QueryServiceFacade(QueryService(repo))
         recorder = RecorderServiceFacade(RecorderService(repo))

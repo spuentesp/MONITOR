@@ -15,6 +15,8 @@ from core.persistence.brancher import BranchService
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.projector import Projector
 from core.persistence.queries import QueryService
+from core.utils.merge import deep_merge
+from core.utils.persist import persist_simple_fact_args
 
 load_dotenv(override=False)
 app = typer.Typer(help="M.O.N.I.T.O.R. CLI")
@@ -89,18 +91,12 @@ def orchestrate_step(
     # Optional: persist a simple Fact (draft summary) to demonstrate Recorder
     if record_fact:
         ctx = build_live_tools(dry_run=(mode != "autopilot"))
-        draft = out.get("draft") or intent
-        fact = {"description": (draft[:180] + ("…" if len(draft) > 180 else ""))}
-        if scene_id:
-            fact["occurs_in"] = scene_id
-        commit = {
-            "facts": [fact],
-            "scene_id": scene_id,
-        }
-        from core.engine.tools import recorder_tool
+    draft = out.get("draft") or intent
+    commit = persist_simple_fact_args(draft, scene_id)
+    from core.engine.tools import recorder_tool
 
-        persisted = recorder_tool(ctx, draft=draft, deltas=commit)
-        out["persisted"] = persisted
+    persisted = recorder_tool(ctx, draft=draft, deltas=commit)
+    out["persisted"] = persisted
     typer.echo(json.dumps(out, indent=2, ensure_ascii=False))
 
 
@@ -128,10 +124,7 @@ def agents_chat(
         # Optional: persist a simple Fact (draft summary) each turn
         if persist:
             draft = out.get("draft") or intent
-            fact = {"description": (draft[:180] + ("…" if len(draft) > 180 else ""))}
-            if scene_id:
-                fact["occurs_in"] = scene_id
-            commit = {"facts": [fact], "scene_id": scene_id}
+            commit = persist_simple_fact_args(draft, scene_id)
             from core.engine.tools import recorder_tool
 
             persisted = recorder_tool(ctx, draft=draft, deltas=commit)
@@ -164,16 +157,7 @@ def resolve_deltas(
     deltas = json.loads(Path(deltas_file).read_text(encoding="utf-8"))
     fixes = json.loads(Path(fixes_file).read_text(encoding="utf-8")) if fixes_file else None
 
-    def _deep_merge(a: dict, b: dict) -> dict:
-        out = dict(a or {})
-        for k, v in (b or {}).items():
-            if isinstance(v, dict) and isinstance(out.get(k), dict):
-                out[k] = _deep_merge(out[k], v)  # type: ignore[arg-type]
-            else:
-                out[k] = v
-        return out
-
-    merged = _deep_merge(deltas, fixes or {})
+    merged = deep_merge(deltas, fixes or {})
     will_commit = bool(commit and mode == "autopilot")
     ctx = build_live_tools(dry_run=(not will_commit))
     from core.engine.steward import StewardService
@@ -212,10 +196,7 @@ def weave_story(
         draft = out.get("draft") or b
         full_text.append(draft)
         if persist:
-            fact = {"description": (draft[:180] + ("…" if len(draft) > 180 else ""))}
-            if scene_id:
-                fact["occurs_in"] = scene_id
-            commit = {"facts": [fact], "scene_id": scene_id}
+            commit = persist_simple_fact_args(draft, scene_id)
             from core.engine.tools import recorder_tool
 
             out["persisted"] = recorder_tool(ctx, draft=draft, deltas=commit)
