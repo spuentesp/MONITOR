@@ -204,7 +204,7 @@ flowchart LR
 - Caching/staging: `core/engine/cache.py` (in-memory) or Redis variants.
 
 Query/Recorder facades
-- Query: `core/services/query_service.py` → `core/persistence/queries_lib/*` (graph reads).
+- Query: `core/services/query_service.py` → `core/persistence/queries/*` (graph reads).
 - Recorder: `core/services/recorder_service.py` → `core/persistence/recorder.py` (graph writes).
 
 ## Read/write expectations and policies

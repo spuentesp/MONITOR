@@ -40,8 +40,7 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
 
     Falls back to a demo in-memory stub when Neo4j connection/env is missing so Streamlit can run.
     """
-    from core.services.query_service import QueryServiceFacade
-    from core.services.recorder_service import RecorderServiceFacade
+    from core.services.generic_facade import GenericFacade
 
     # Allow forcing demo stubs regardless of host env (useful in tests/CI)
     force_demo = env_bool("MONITOR_FORCE_DEMO", False)
@@ -50,8 +49,8 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
         if force_demo:
             raise RuntimeError("force_demo")
         repo = Neo4jRepo().connect()
-        qs = QueryServiceFacade(QueryService(repo))
-        recorder = RecorderServiceFacade(RecorderService(repo))
+        qs = GenericFacade(QueryService(repo))
+        recorder = GenericFacade(RecorderService(repo))
     except Exception:
         # Demo fallback: minimal stubs that satisfy allowed query and recorder operations
         class _QDemo:
@@ -129,8 +128,8 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
             def commit_deltas(self, **_payload):
                 return {"ok": True, "written": {}, "warnings": []}
 
-        qs = QueryServiceFacade(_QDemo())
-        recorder = RecorderServiceFacade(_RDemo())
+        qs = GenericFacade(_QDemo())
+        recorder = GenericFacade(_RDemo())
     backend = env_str("MONITOR_CACHE_BACKEND", "", lower=True) or ""  # "redis" or ""
     ttl = env_float("MONITOR_CACHE_TTL", 60)
     if backend == "redis" and RedisReadThroughCache and RedisStagingStore:

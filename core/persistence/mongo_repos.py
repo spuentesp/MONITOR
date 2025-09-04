@@ -76,7 +76,8 @@ class MongoRepos:
 
 
 @dataclass
-class NarrativeService:
+class MongoNarrativeRepository:
+    """MongoDB repository for narrative document operations."""
     store: MongoStore
 
     def _ensure_graph_ids(self, doc: BaseDoc):

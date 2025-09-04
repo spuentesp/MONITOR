@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from core.persistence.mongo_repos import DocMeta, Memory, NarrativeService, Note, Turn
+from core.persistence.mongo_repos import DocMeta, Memory, MongoNarrativeRepository, Note, Turn
 
 from . import ToolContext
 
@@ -26,7 +26,7 @@ def narrative_tool(
     # Ensure store available
     if ctx.mongo is None:
         raise RuntimeError("Mongo store not configured")
-    service = NarrativeService(ctx.mongo)
+    service = MongoNarrativeRepository(ctx.mongo)
 
     # Reads are not gated
     if op == "list_turns_for_scene":

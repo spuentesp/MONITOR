@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from core.persistence.mongo_repos import DocMeta, NarrativeService
+from core.persistence.mongo_repos import DocMeta, MongoNarrativeRepository
 from core.persistence.mongo_store import MongoStore
 from core.persistence.object_store import ObjectStore
 
@@ -31,7 +31,7 @@ class ObjectService:
         # Put object
         self.objects.put_bytes(bucket, key, data, content_type=content_type)
         # Register DocMeta in Mongo
-        ns = NarrativeService(self.mongo)
+        ns = MongoNarrativeRepository(self.mongo)
         doc = DocMeta(
             universe_id=universe_id,
             story_id=story_id,

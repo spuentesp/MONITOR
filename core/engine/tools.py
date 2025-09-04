@@ -9,7 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 from core.domain.deltas import DeltaBatch
-from core.persistence.mongo_repos import DocMeta, Memory, NarrativeService, Note, Turn
+from core.persistence.mongo_repos import DocMeta, Memory, MongoNarrativeRepository, Note, Turn
 from core.services.indexing_service import IndexingService
 from core.services.object_service import ObjectService
 from core.services.retrieval_service import RetrievalService
@@ -356,7 +356,7 @@ def narrative_tool(
     # Ensure store available
     if ctx.mongo is None:
         raise RuntimeError("Mongo store not configured")
-    service = NarrativeService(ctx.mongo)
+    service = MongoNarrativeRepository(ctx.mongo)
 
     # Reads are not gated
     if op == "list_turns_for_scene":
