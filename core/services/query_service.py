@@ -62,5 +62,16 @@ class QueryServiceFacade(QueryReadPort):
     def list_universes_for_multiverse(self, multiverse_id: str):  # type: ignore[override]
         return self._impl.list_universes_for_multiverse(multiverse_id)
 
+    # Minimal helper to list universes when no multiverse scoping is provided
+    def list_universes(self):  # type: ignore[override]
+        impl = getattr(self._impl, "list_universes", None)
+        if callable(impl):
+            return impl()
+        # Fallback: if impl exposes a catalog, derive a flat universe list
+        try:
+            return self._impl.stories_in_universe.__self__.list_universes()  # type: ignore[attr-defined]
+        except Exception:
+            return []
+
     def entity_by_name_in_universe(self, universe_id: str, name: str):  # type: ignore[override]
         return self._impl.entity_by_name_in_universe(universe_id, name)

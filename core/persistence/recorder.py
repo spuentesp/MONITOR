@@ -192,10 +192,23 @@ class RecorderService:
                 SET s += row.props
                 WITH s, row
                 OPTIONAL MATCH (u:Universe {id: row.props.universe_id})
-                FOREACH (_ IN CASE WHEN u IS NULL THEN [] ELSE [1] END | MERGE (u)-[:HAS_STORY {sequence_index: row.seq}]->(s))
+                FOREACH (_ IN CASE WHEN u IS NULL THEN [] ELSE [1] END | MERGE (u)-[r:HAS_STORY]->(s))
+                WITH s, row, r
+                                FOREACH (_ IN CASE WHEN row.seq IS NULL THEN [] ELSE [1] END | SET r.sequence_index = row.seq)
+                                WITH s, row, r
+                                CALL {
+                                    WITH row, r
+                                    WITH row, r WHERE row.seq IS NULL
+                                    MATCH (u2:Universe {id: row.props.universe_id})-[rs:HAS_STORY]->(:Story)
+                                    WITH r, coalesce(max(rs.sequence_index), -1) + 1 AS next_idx
+                                    SET r.sequence_index = coalesce(r.sequence_index, next_idx)
+                                    RETURN 0 AS _
+                                }
                 WITH s, row
                 OPTIONAL MATCH (a:Arc {id: row.props.arc_id})
-                FOREACH (_ IN CASE WHEN a IS NULL THEN [] ELSE [1] END | MERGE (a)-[:HAS_STORY {sequence_index: row.seq}]->(s))
+                FOREACH (_ IN CASE WHEN a IS NULL THEN [] ELSE [1] END | MERGE (a)-[ra:HAS_STORY]->(s))
+                WITH s, row, ra
+                FOREACH (_ IN CASE WHEN row.seq IS NULL THEN [] ELSE [1] END | SET ra.sequence_index = row.seq)
                 """,
                 row={"id": st_id, "props": props, "seq": new_story.get("sequence_index")},
             )
@@ -303,6 +316,12 @@ class RecorderService:
             ev_rows: list[dict[str, Any]] = []
             for f in facts:
                 fid = self._ensure_id("fact", f.get("id"))
+                # Enforce provenance: require a scene_id either per fact or defaulted from request
+                occurs_in = f.get("occurs_in") or scene_id
+                if not occurs_in:
+                    raise ValueError(
+                        "Fact commit requires a scene context (occurs_in or default scene_id)."
+                    )
                 props = {
                     "universe_id": f.get("universe_id") or universe_id,
                     "description": f.get("description"),
@@ -316,7 +335,7 @@ class RecorderService:
                     {
                         "id": fid,
                         "props": props,
-                        "occurs_in": f.get("occurs_in") or scene_id,
+                        "occurs_in": occurs_in,
                         "participants": participants,
                     }
                 )

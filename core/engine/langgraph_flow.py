@@ -6,6 +6,36 @@ from typing import Any
 
 from core.engine.resolve_tool import resolve_commit_tool
 
+# Persona and verbosity toggles via env
+def _flag_bool(name: str, default: bool = False) -> bool:
+    return os.getenv(name, "1" if default else "0") in ("1", "true", "True")
+
+MONITOR_VERBOSE_TASKS = _flag_bool("MONITOR_VERBOSE_TASKS", True)
+MONITOR_PERSONA = os.getenv("MONITOR_PERSONA", "guardian")
+
+def _ops_prelude(actions: list[dict[str, Any]]) -> str | None:
+    if not MONITOR_VERBOSE_TASKS:
+        return None
+    msgs: list[str] = []
+    for a in actions:
+        t = a.get("tool")
+        if t == "bootstrap_universe":
+            msgs.append("Creating a new universe: axioms/ontology from prompt; persisting.")
+        elif t == "bootstrap_story":
+            msgs.append("Creating a new story: linking to universe; computing sequence index.")
+        elif t == "recorder_tool" or t == "recorder":
+            msgs.append("Recording facts/events into the current scene.")
+        elif t == "query_tool" or t == "query":
+            msgs.append("Querying knowledge scoped to current context.")
+        elif t == "rules_tool" or t == "rules":
+            msgs.append("Evaluating rules for continuity and constraints.")
+        elif t:
+            msgs.append(f"Executing tool: {t}.")
+    if not msgs:
+        return None
+    title = "Monitor, Guardian of Time and Space" if MONITOR_PERSONA == "guardian" else "Monitor"
+    return f"{title}: Operations — " + " ".join(f"- {m}" for m in msgs)
+
 
 def _env_flag(name: str, default: str = "0") -> bool:
     """Parse common boolean-ish env flags once.
@@ -102,6 +132,14 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                 structured.update(reply)
                 structured.setdefault("beats", [intent] if intent else [])
                 structured.setdefault("assumptions", [])
+            # Add a prelude announcing planned operations (best-effort heuristic)
+            try:
+                actions = structured.get("actions") or []
+                prelude = _ops_prelude(actions if isinstance(actions, list) else [])
+                if prelude:
+                    return {**state, "plan": structured, "operations_prelude": prelude}
+            except Exception:
+                pass
             return {**state, "plan": structured}
         return {**state, "plan": {"beats": [intent], "assumptions": []}}
 
@@ -328,6 +366,9 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
     def narrator(state: dict[str, Any]) -> dict[str, Any]:
         msgs = [{"role": "user", "content": state.get("intent", "")}]
         draft = _safe_act("narrator", msgs, default="")
+        pre = state.get("operations_prelude")
+        if pre and isinstance(draft, str) and draft.strip():
+            draft = f"{pre}\n\n{draft}"
         return {**state, "draft": draft}
 
     def continuity_guard(state: dict[str, Any]) -> dict[str, Any]:

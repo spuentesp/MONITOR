@@ -182,3 +182,14 @@
 {"facts": [{"description": "**The Road Unfolds**  \n- The gravel of the ancient Via Flaminia stretches ahead, a ribbon of stone and dust that seems to pulse beneath the summer sun.  \n- Your camper, a sleek, modern capsule of chrome and canvas, sits "}]}
 {}
 {"facts": [{"description": "The night sky over the city of Vespera never quite settles; constellations shift like living thoughts, and the streets pulse with rumors of a hidden Archive that records every choice made within its walls. Scholars claim"}]}
+{"facts": [{"description": "You stand at the edge of the dense forest, a worn dirt path leading in like a serpent's tongue. The canopy above is a vibrant tapestry of greens, with sunlight filtering through in dappled patterns. A faint scent of damp"}]}
+{}
+{}
+{}
+{"scene_id": "s1"}
+{"scene_id": "s1", "facts": [{"description": "there", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1"}
+{"scene_id": "s1", "facts": [{"description": "x", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}

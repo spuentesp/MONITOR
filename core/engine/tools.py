@@ -92,6 +92,7 @@ def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
         "stories_in_universe",
         "list_multiverses",
         "list_universes_for_multiverse",
+    "list_universes",
         # Entity lookup helpers
         "entity_by_name_in_universe",
     }
@@ -227,6 +228,17 @@ def recorder_tool(
 
     # Immediate commit path (autopilot)
     if not ctx.dry_run and ctx.recorder is not None:
+        # Early guardrails: require universe for structural writes; require scene for facts
+        if ctx is None or getattr(ctx, "recorder", None) is None:
+            return {"ok": False, "error": "recorder not configured", "mode": "commit_attempt"}
+        try:
+            if deltas.get("facts"):
+                occ = deltas.get("scene_id") or any(bool(f.get("occurs_in")) for f in deltas.get("facts", []))
+                if not occ:
+                    return {"ok": False, "error": "facts require a scene_id or per-fact occurs_in", "mode": "commit_attempt"}
+        except Exception:
+            pass
+
         res = ctx.recorder.commit_deltas(
             scene_id=deltas.get("scene_id"),
             facts=deltas.get("facts"),
