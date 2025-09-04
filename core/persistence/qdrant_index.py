@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 import os
 from typing import Any
+from core.utils.env import env_str
 
 
 @dataclass
@@ -21,8 +22,8 @@ class QdrantIndex:
     def connect(self) -> QdrantIndex:
         if self.client is not None:
             return self
-        url = self.url or os.getenv("QDRANT_URL") or "http://localhost:6333"
-        api_key = self.api_key or os.getenv("QDRANT_API_KEY")
+    url = self.url or (env_str("QDRANT_URL") or "http://localhost:6333")
+    api_key = self.api_key or env_str("QDRANT_API_KEY")
         try:
             from qdrant_client import QdrantClient  # type: ignore
         except Exception as e:  # pragma: no cover - optional dependency

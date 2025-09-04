@@ -255,11 +255,8 @@ def recorder_tool(
         except Exception:
             pass
         # Invalidate read cache after write
-        try:
-            if ctx.read_cache is not None:
-                ctx.read_cache.clear()
-        except Exception:
-            pass
+        from core.engine.cache_ops import clear_cache_if_present
+        clear_cache_if_present(ctx)
         return {
             "mode": "commit",
             "result": res,
@@ -267,11 +264,8 @@ def recorder_tool(
             "trace": ["recorder:persist"],
         }
     # Dry-run return; clear cache because world may be updated by the worker soon
-    try:
-        if ctx.read_cache is not None:
-            ctx.read_cache.clear()
-    except Exception:
-        pass
+    from core.engine.cache_ops import clear_cache_if_present
+    clear_cache_if_present(ctx)
     return {
         "mode": "dry_run",
         "draft_preview": draft[:180],
@@ -363,18 +357,9 @@ def narrative_tool(
     # Build a compact preview for Resolve
     preview = {"op": op, "args": {k: ("<bytes>" if k == "data" else v) for k, v in kwargs.items()}}
     mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
-    decision = resolve_commit_tool(
-        {
-            "llm": llm,
-            "deltas": preview,
-            "validations": {"ok": True},
-            "mode": mode,
-            "hints": {"source": "narrative_tool"},
-        }
-    )
-    commit = bool(decision.get("commit")) and (mode == "autopilot")
-
-    if not commit:
+    from core.engine.commit import decide_commit
+    decision, allow = decide_commit(llm, preview, {"ok": True}, mode, {"source": "narrative_tool"})
+    if not allow:
         return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}
 
     # Perform mutation
@@ -477,17 +462,9 @@ def object_upload_tool(
         },
     }
     mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
-    decision = resolve_commit_tool(
-        {
-            "llm": llm,
-            "deltas": preview,
-            "validations": {"ok": True},
-            "mode": mode,
-            "hints": {"source": "object_upload_tool"},
-        }
-    )
-    commit = bool(decision.get("commit")) and (mode == "autopilot")
-    if not commit:
+    from core.engine.commit import decide_commit
+    decision, allow = decide_commit(llm, preview, {"ok": True}, mode, {"source": "object_upload_tool"})
+    if not allow:
         return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}
 
     # Decode and upload
@@ -554,17 +531,9 @@ def indexing_tool(
         },
     }
     mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
-    decision = resolve_commit_tool(
-        {
-            "llm": llm,
-            "deltas": preview,
-            "validations": {"ok": True},
-            "mode": mode,
-            "hints": {"source": "indexing_tool"},
-        }
-    )
-    commit = bool(decision.get("commit")) and (mode == "autopilot")
-    if not commit:
+    from core.engine.commit import decide_commit
+    decision, allow = decide_commit(llm, preview, {"ok": True}, mode, {"source": "indexing_tool"})
+    if not allow:
         return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}
 
     try:

@@ -5,45 +5,25 @@ import os
 from typing import Any
 
 from core.engine.resolve_tool import resolve_commit_tool
+from core.utils.env import env_bool, env_str
+from core.utils.persist import truncate_fact_description
+from core.engine.flow_utils import tool_schema as flow_tool_schema, ops_prelude as flow_ops_prelude
 
 
 # Persona and verbosity toggles via env
 def _flag_bool(name: str, default: bool = False) -> bool:
-    return os.getenv(name, "1" if default else "0") in ("1", "true", "True")
+    return env_bool(name, default)
 
 MONITOR_VERBOSE_TASKS = _flag_bool("MONITOR_VERBOSE_TASKS", True)
-MONITOR_PERSONA = os.getenv("MONITOR_PERSONA", "guardian")
+MONITOR_PERSONA = env_str("MONITOR_PERSONA", "guardian") or "guardian"
 
 def _ops_prelude(actions: list[dict[str, Any]]) -> str | None:
-    if not MONITOR_VERBOSE_TASKS:
-        return None
-    msgs: list[str] = []
-    for a in actions:
-        t = a.get("tool")
-        if t == "bootstrap_universe":
-            msgs.append("Creating a new universe: axioms/ontology from prompt; persisting.")
-        elif t == "bootstrap_story":
-            msgs.append("Creating a new story: linking to universe; computing sequence index.")
-        elif t == "recorder_tool" or t == "recorder":
-            msgs.append("Recording facts/events into the current scene.")
-        elif t == "query_tool" or t == "query":
-            msgs.append("Querying knowledge scoped to current context.")
-        elif t == "rules_tool" or t == "rules":
-            msgs.append("Evaluating rules for continuity and constraints.")
-        elif t:
-            msgs.append(f"Executing tool: {t}.")
-    if not msgs:
-        return None
-    title = "Monitor, Guardian of Time and Space" if MONITOR_PERSONA == "guardian" else "Monitor"
-    return f"{title}: Operations — " + " ".join(f"- {m}" for m in msgs)
+    return flow_ops_prelude(actions, persona=MONITOR_PERSONA, verbose=MONITOR_VERBOSE_TASKS)
 
 
 def _env_flag(name: str, default: str = "0") -> bool:
-    """Parse common boolean-ish env flags once.
-
-    Accepts 1/true/True as truthy; everything else is false.
-    """
-    return os.getenv(name, default) in ("1", "true", "True")
+    """Parse common boolean-ish env flags once using shared util."""
+    return env_bool(name, default in ("1", "true", "True"))
 
 
 def build_langgraph_flow(tools: Any, config: dict | None = None):
@@ -182,58 +162,8 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         return {**state, "validation": {"ok": True, "warnings": []}}
 
     def _tool_schema() -> list[dict[str, Any]]:
-        return [
-            {
-                "name": "bootstrap_story",
-                "args": {
-                    "title": "str",
-                    "protagonist_name": "str?",
-                    "time_label": "str?",
-                    "tags": "list[str]?",
-                    "universe_id": "str?",
-                },
-                "returns": {"refs": {"scene_id": "str", "story_id": "str", "universe_id": "str"}},
-            },
-            {
-                "name": "query",
-                "args": {
-                    "method": "str",
-                    "scene_id": "str?",
-                    "story_id": "str?",
-                    "universe_id": "str?",
-                },
-                "returns": "any",
-            },
-            {
-                "name": "recorder",
-                "args": {
-                    "facts": "list[Fact]?",
-                    "relations": "list[Relation]?",
-                    "relation_states": "list[RelationState]?",
-                    "scene_id": "str?",
-                },
-                "returns": {"mode": "str", "refs": {"scene_id": "str?", "run_id": "str"}},
-            },
-            {
-                "name": "narrative",
-                "args": {"op": "str", "payload": "dict"},
-                "returns": {"ok": "bool", "mode": "str"},
-            },
-            {
-                "name": "object_upload",
-                "args": {
-                    "bucket": "str",
-                    "key": "str",
-                    "data_b64": "str",
-                    "filename": "str",
-                    "content_type": "str?",
-                    "universe_id": "str",
-                    "story_id": "str?",
-                    "scene_id": "str?",
-                },
-                "returns": {"ok": "bool", "mode": "str"},
-            },
-        ]
+        return flow_tool_schema()
+        return _tool_schema()
 
     def planner(state: dict[str, Any]) -> dict[str, Any]:
         """Agentic planner: always request a JSON list of actions; empty list means no-ops.
@@ -478,7 +408,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         continuity = state.get("continuity")
         if draft.strip():
             fact = {
-                "description": draft[:220],
+                "description": truncate_fact_description(draft),
                 "occurs_in": state.get("scene_id"),
             }
             if isinstance(continuity, dict):
@@ -513,7 +443,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         continuity = state.get("continuity")
         if draft.strip():
             fact = {
-                "description": (draft[:220]),
+                "description": truncate_fact_description(draft),
                 "occurs_in": state.get("scene_id"),
             }
             if isinstance(continuity, dict):
@@ -536,16 +466,8 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
             commit = tools["recorder_tool"](ctx, draft=draft, deltas=deltas)
         else:
             # Build a temporary dry-run ctx for staging
-            from dataclasses import replace as _replace
-
-            try:
-                stage_ctx = _replace(ctx, dry_run=True)
-            except Exception:
-                stage_ctx = ctx
-                try:
-                    stage_ctx.dry_run = True
-                except Exception:
-                    pass
+            from core.engine.context_utils import as_dry_run
+            stage_ctx = as_dry_run(ctx, True)
             commit = tools["recorder_tool"](stage_ctx, draft=draft, deltas=deltas)
         return {**state, "commit": commit}
 
@@ -730,5 +652,5 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
 
 def select_engine_backend() -> str:
     """Return 'langgraph' by default; allow explicit override via env."""
-    val = os.getenv("MONITOR_ENGINE_BACKEND", "langgraph").lower()
+    val = (env_str("MONITOR_ENGINE_BACKEND", "langgraph", lower=True) or "langgraph")
     return "langgraph" if val in ("langgraph", "lg") else "inmemory"

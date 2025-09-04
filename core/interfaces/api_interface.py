@@ -11,6 +11,7 @@ from core.engine.orchestrator import (
     run_once,
 )
 from core.engine.resolve_tool import resolve_commit_tool
+from core.engine.commit import stage_or_commit
 from core.engine.steward import StewardService
 from core.generation.providers import select_llm_from_env
 from core.interfaces.branches_api import router as branches_router
@@ -165,36 +166,24 @@ def resolve(req: ResolveRequest):
     ctx = build_live_tools(dry_run=dry_by_mode)
     svc = StewardService(ctx.query_service)
     ok, warns, errs = svc.validate(merged)
-    # Ask Resolve agent to decide commit vs stage; default is stage
+    # Resolve + stage/commit using unified helper
     try:
         from core.generation.providers import select_llm_from_env
 
         llm = select_llm_from_env()
     except Exception:
         llm = None
-    decision = resolve_commit_tool(
-        {
-            "llm": llm,
-            "deltas": merged,
-            "validations": {"ok": ok, "warnings": warns, "errors": errs},
-            "mode": req.mode,
-            "hints": {"user_commit": req.commit},
-        }
+    live_ctx = build_live_tools(dry_run=(req.mode != "autopilot"))
+    combined = stage_or_commit(
+        live_ctx,
+        llm=llm,
+        deltas=merged,
+        validations={"ok": ok, "warnings": warns, "errors": errs},
+        mode=req.mode,
+        hints={"user_commit": req.commit},
     )
-    agent_commit = bool(decision.get("commit"))
-    # Only allow commit when autopilot AND agent approves AND validations ok
-    will_commit = bool((req.mode == "autopilot") and agent_commit and ok)
-
-    from core.engine.tools import recorder_tool
-
-    if ok and will_commit:
-        # Persist immediately in autopilot per agent decision
-        commit_ctx = build_live_tools(dry_run=False)
-        commit_out = recorder_tool(commit_ctx, draft="", deltas=merged)
-    else:
-        # Stage in dry-run for traceability
-        stage_ctx = build_live_tools(dry_run=True)
-        commit_out = recorder_tool(stage_ctx, draft="", deltas=merged)
+    decision = combined.get("decision")
+    commit_out = combined.get("commit")
     return {
         "ok": ok,
         "warnings": warns,

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import os
 from typing import Any
+from core.utils.env import env_str, env_bool
 
 
 @dataclass
@@ -21,14 +22,10 @@ class ObjectStore:
     def connect(self) -> ObjectStore:
         if self.client is not None:
             return self
-        ep = self.endpoint or os.getenv("MINIO_ENDPOINT") or "localhost:9000"
-        ak = self.access_key or os.getenv("MINIO_ACCESS_KEY") or "minioadmin"
-        sk = self.secret_key or os.getenv("MINIO_SECRET_KEY") or "minioadmin"
-        secure = (
-            self.secure
-            if self.secure is not None
-            else os.getenv("MINIO_SECURE", "0") in ("1", "true", "True")
-        )
+        ep = self.endpoint or (env_str("MINIO_ENDPOINT") or "localhost:9000")
+        ak = self.access_key or (env_str("MINIO_ACCESS_KEY") or "minioadmin")
+        sk = self.secret_key or (env_str("MINIO_SECRET_KEY") or "minioadmin")
+        secure = self.secure if self.secure is not None else env_bool("MINIO_SECURE", False)
         try:
             from minio import Minio  # type: ignore
         except Exception as e:  # pragma: no cover - optional dependency

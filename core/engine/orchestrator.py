@@ -5,20 +5,11 @@ from queue import Queue
 import re
 from typing import Any
 
-from core.agents.archivist import archivist_agent
-from core.agents.conductor import conductor_agent
-from core.agents.continuity import continuity_agent
-from core.agents.critic import critic_agent
-from core.agents.director import director_agent
-from core.agents.intent_router import intent_router_agent
-from core.agents.librarian import librarian_agent as librarian_llm_agent
-from core.agents.narrator import narrator_agent
-from core.agents.planner import planner_agent
-from core.agents.qa import qa_agent
-from core.agents.steward import steward_agent as steward_llm_agent
+from core.agents.factory import build_agents
 from core.engine.autocommit import AutoCommitWorker, DeciderFn
 from core.engine.cache import ReadThroughCache, StagingStore
 from core.engine.langgraph_flow import select_engine_backend
+from core.utils.env import env_bool, env_str, env_float
 from core.engine.tools import (
     ToolContext,
     bootstrap_story_tool,
@@ -54,7 +45,7 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
     from core.services.recorder_service import RecorderServiceFacade
 
     # Allow forcing demo stubs regardless of host env (useful in tests/CI)
-    force_demo = os.getenv("MONITOR_FORCE_DEMO", "0") in ("1", "true", "True")
+    force_demo = env_bool("MONITOR_FORCE_DEMO", False)
 
     try:
         if force_demo:
@@ -141,10 +132,10 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
 
         qs = QueryServiceFacade(_QDemo())
         recorder = RecorderServiceFacade(_RDemo())
-    backend = os.getenv("MONITOR_CACHE_BACKEND", "").lower()  # "redis" or ""
-    ttl = float(os.getenv("MONITOR_CACHE_TTL", "60"))
+    backend = (env_str("MONITOR_CACHE_BACKEND", "", lower=True) or "")  # "redis" or ""
+    ttl = env_float("MONITOR_CACHE_TTL", 60)
     if backend == "redis" and RedisReadThroughCache and RedisStagingStore:
-        url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        url = env_str("REDIS_URL", "redis://localhost:6379/0") or "redis://localhost:6379/0"
         read_cache = RedisReadThroughCache(url=url, ttl_seconds=ttl)
         staging = RedisStagingStore(url=url, list_key="monitor:staging", daily=True)
     else:
@@ -162,7 +153,7 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
     minio = ObjectStore()
 
     # Optional async autocommit worker
-    autocommit_enabled = os.getenv("MONITOR_AUTOCOMMIT", "0") in ("1", "true", "True")
+    autocommit_enabled = env_bool("MONITOR_AUTOCOMMIT", False)
     autocommit_q = None
     worker = None
     if autocommit_enabled and recorder is not None:
@@ -267,11 +258,8 @@ def flush_staging(ctx: ToolContext) -> dict[str, Any]:
     if not ctx.recorder or not ctx.staging:
         return {"ok": False, "error": "recorder/staging not configured"}
     res = ctx.staging.flush(ctx.recorder, clear_after=True)
-    try:
-        if ctx.read_cache is not None:
-            ctx.read_cache.clear()
-    except Exception:
-        pass
+    from core.engine.cache_ops import clear_cache_if_present
+    clear_cache_if_present(ctx)
     return res
 
 
@@ -311,18 +299,7 @@ def run_once(
             "retrieval_tool": retrieval_tool,
             "object_upload_tool": object_upload_tool,
             "llm": llm,
-            "narrator": narrator_agent(llm),
-            "archivist": archivist_agent(llm),
-            # Additional LLM agents for flow
-            "director": director_agent(llm),
-            "librarian": librarian_llm_agent(llm),
-            "steward": steward_llm_agent(llm),
-            "critic": critic_agent(llm),
-            "intent_router": intent_router_agent(llm),
-            "planner": planner_agent(llm),
-            "qa": qa_agent(llm),
-            "continuity": continuity_agent(llm),
-            "conductor": conductor_agent(llm),
+            **build_agents(llm),
         }
         graph = build_langgraph_flow(tools_pkg)
         out = graph.invoke({"intent": user_intent, "scene_id": scene_id})

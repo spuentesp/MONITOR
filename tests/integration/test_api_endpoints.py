@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from core.interfaces.api_interface import app
+from tests.conftest import make_ctx_header
 
 pytestmark = pytest.mark.integration
 
@@ -11,11 +12,7 @@ client = TestClient(app)
 
 
 def _ctx_header():
-    # Minimal valid token
-    from core.engine.context import ContextToken
-
-    t = ContextToken(omniverse_id="o1", multiverse_id="m1", universe_id="u1").model_dump_json()
-    return {"X-Context-Token": t}
+    return make_ctx_header()
 
 
 def test_health_and_root_public():

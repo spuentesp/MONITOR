@@ -201,11 +201,12 @@ def list_groq_models(api_key: str) -> list[str]:
 
 
 def select_llm_from_env() -> LLM:
-    backend = os.getenv("MONITOR_LLM_BACKEND", "mock").lower()
+    from core.utils.env import env_str
+    backend = (env_str("MONITOR_LLM_BACKEND", "mock", lower=True) or "mock")
     if backend == "openai":
-        api_key = os.getenv("MONITOR_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
-        model = os.getenv("MONITOR_OPENAI_MODEL", "gpt-4o-mini")
-        base_url = os.getenv("MONITOR_OPENAI_BASE_URL")
+        api_key = env_str("MONITOR_OPENAI_API_KEY") or env_str("OPENAI_API_KEY")
+        model = env_str("MONITOR_OPENAI_MODEL", "gpt-4o-mini") or "gpt-4o-mini"
+        base_url = env_str("MONITOR_OPENAI_BASE_URL")
         if not api_key:
             # Fallback to mock if misconfigured
             return MockLLM()
@@ -214,7 +215,7 @@ def select_llm_from_env() -> LLM:
         except Exception:
             return MockLLM()
     elif backend == "groq":
-        api_key = os.getenv("MONITOR_GROQ_API_KEY") or os.getenv("GROQ_API_KEY")
+        api_key = env_str("MONITOR_GROQ_API_KEY") or env_str("GROQ_API_KEY")
         model = _validate_groq_model(os.getenv("MONITOR_GROQ_MODEL", None))
         if not api_key:
             return MockLLM()

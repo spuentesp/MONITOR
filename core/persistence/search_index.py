@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 import os
 from typing import Any
+from core.utils.env import env_str
 
 
 @dataclass
@@ -21,9 +22,9 @@ class SearchIndex:
     def connect(self) -> SearchIndex:
         if self.client is not None:
             return self
-        url = self.url or os.getenv("OPENSEARCH_URL") or "http://localhost:9200"
-        user = self.user or os.getenv("OPENSEARCH_USER")
-        password = self.password or os.getenv("OPENSEARCH_PASSWORD")
+    url = self.url or (env_str("OPENSEARCH_URL") or "http://localhost:9200")
+    user = self.user or env_str("OPENSEARCH_USER")
+    password = self.password or env_str("OPENSEARCH_PASSWORD")
         try:
             from opensearchpy import OpenSearch  # type: ignore
         except Exception as e:  # pragma: no cover - optional dependency

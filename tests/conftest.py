@@ -25,3 +25,11 @@ os.environ["MONITOR_AGENTIC_STRICT"] = "0"
 os.environ["MONITOR_COPILOT_PAUSE"] = "0"
 os.environ["MONITOR_LC_TOOLS"] = "0"
 os.environ["MONITOR_FORCE_DEMO"] = "1"
+
+
+# Test helper: build a minimal valid ContextToken header
+def make_ctx_header(mode: str = "read") -> dict[str, str]:
+    from core.engine.context import ContextToken
+
+    t = ContextToken(omniverse_id="o1", multiverse_id="m1", universe_id="u1", mode=mode)
+    return {"X-Context-Token": t.model_dump_json()}
