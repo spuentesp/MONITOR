@@ -1,15 +1,17 @@
 """Story and universe setup handlers for monitor mode."""
+
 from __future__ import annotations
 
 from core.agents.narrator import narrator_agent
 from core.engine.monitor_parser import MonitorIntent
 from core.generation.providers import select_llm_from_env
+
 from ..state import GraphState, append_message, generate_id
 from .utils import (
+    clear_wizard_state,
     commit_deltas,
     get_wizard_state,
     update_wizard_state,
-    clear_wizard_state,
 )
 
 
@@ -29,7 +31,7 @@ def handle_start_story(state: GraphState, intent: MonitorIntent, ctx) -> GraphSt
     if intent.description:
         w["story_title"] = intent.description
     update_wizard_state(state, w)
-    
+
     # Ask for missing bits
     missing = []
     if not w.get("topics"):
@@ -44,14 +46,14 @@ def handle_start_story(state: GraphState, intent: MonitorIntent, ctx) -> GraphSt
         )
         state["last_mode"] = "monitor"
         return state
-    
+
     # Create scaffolding: multiverse, universe, arc, story, initial scene
     mv_id = state.get("multiverse_id") or generate_id("multiverse")
     uni_id = state.get("universe_id") or generate_id("universe")
     arc_id = generate_id("arc")
     st_id = generate_id("story")
     sc_id = generate_id("scene")
-    
+
     # Prepare deltas
     deltas = {
         "new_multiverse": {"id": mv_id, "name": (w.get("universe_name") or "GM Session")},
@@ -78,7 +80,7 @@ def handle_start_story(state: GraphState, intent: MonitorIntent, ctx) -> GraphSt
         "_draft": f"Start GM story: {w.get('story_title')}",
     }
     res = commit_deltas(ctx, deltas)
-    
+
     # Generate an intro beat and persist as Fact
     try:
         llm = select_llm_from_env()
@@ -99,24 +101,22 @@ def handle_start_story(state: GraphState, intent: MonitorIntent, ctx) -> GraphSt
         commit_deltas(
             ctx,
             {
-                "facts": [
-                    {"description": primer, "occurs_in": sc_id, "universe_id": uni_id}
-                ],
+                "facts": [{"description": primer, "occurs_in": sc_id, "universe_id": uni_id}],
                 "_draft": primer[:120],
-            }
+            },
         )
     except Exception:
         pass
-    
+
     # Save session context and inform user
     state["multiverse_id"] = mv_id
     state["universe_id"] = uni_id
     state["story_id"] = st_id
     state["scene_id"] = sc_id
-    
+
     # Clear wizard to avoid loops
     clear_wizard_state(state)
-    
+
     append_message(
         state,
         "assistant",
@@ -137,14 +137,14 @@ def handle_setup_universe(state: GraphState, intent: MonitorIntent, ctx) -> Grap
         w["name"] = intent.name
     if intent.multiverse_id:
         w["multiverse_id"] = intent.multiverse_id
-    
+
     # Paso a paso: pedir faltantes
     missing = []
     if not w.get("multiverse_id") and not state.get("multiverse_id"):
         missing.append("multiverse_id (p.ej. multiverse mv:demo)")
     if not w.get("name"):
         missing.append('name (p.ej. nombre "Mi Universo")')
-    
+
     # Si faltan datos, pedirlos
     if missing:
         update_wizard_state(state, w)
@@ -155,7 +155,7 @@ def handle_setup_universe(state: GraphState, intent: MonitorIntent, ctx) -> Grap
         )
         state["last_mode"] = "monitor"
         return state
-    
+
     # Tenemos suficientes datos → crear universo
     mv_id = w.get("multiverse_id") or state.get("multiverse_id")
     uid = w.get("universe_id") or generate_id("universe")
@@ -163,7 +163,7 @@ def handle_setup_universe(state: GraphState, intent: MonitorIntent, ctx) -> Grap
     res = commit_deltas(
         ctx, {"new_universe": new_u, "universe_id": uid, "_draft": f"Setup universo {uid}"}
     )
-    
+
     # Continuar wizard: crear historia
     update_wizard_state(state, {"flow": "setup_story", "universe_id": uid})
     state["universe_id"] = uid

@@ -24,7 +24,10 @@ def populated_db():
     repo.run("MATCH (n) DETACH DELETE n")
     repo.bootstrap_constraints()
     import pathlib
-    yaml_path = pathlib.Path(__file__).resolve().parents[2] / "tests" / "data" / "example_multiverse.yaml"
+
+    yaml_path = (
+        pathlib.Path(__file__).resolve().parents[2] / "tests" / "data" / "example_multiverse.yaml"
+    )
     Projector(repo).project_from_yaml(yaml_path, ensure_constraints=False)
     yield repo
     repo.close()

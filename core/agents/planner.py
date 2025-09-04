@@ -6,7 +6,7 @@ from core.agents.base import Agent, AgentConfig
 def planner_agent(llm) -> Agent:
     system = (
         "You are a planner. Given an intent and compact context, output ONLY a JSON array of actions.\n"
-        "Each action: {\"tool\": <bootstrap_story|query|recorder|narrative|object_upload|indexing|retrieval>, \"args\": <object>, \"reason\": <string>}\n"
+        'Each action: {"tool": <bootstrap_story|query|recorder|narrative|object_upload|indexing|retrieval>, "args": <object>, "reason": <string>}\n'
         "Rules:\n"
         "- Prefer minimal, safe actions.\n"
         "- Use available context placeholders: {scene_id}, {story_id}, {universe_id} if present.\n"

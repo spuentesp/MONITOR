@@ -1,11 +1,10 @@
 """Scene management handlers for monitor mode."""
-from __future__ import annotations
 
-import re
-from typing import Dict, Any
+from __future__ import annotations
 
 from core.engine.monitor_parser import MonitorIntent
 from core.engine.tools import query_tool
+
 from ..state import GraphState, append_message, gen_id
 from .utils import auto_flush_if_needed, commit_deltas
 
@@ -32,24 +31,20 @@ def handle_end_scene(state: GraphState, intent: MonitorIntent, ctx) -> GraphStat
         )
         state["last_mode"] = "monitor"
         return state
-    
+
     next_seq = None
     try:
         if ctx:
             scenes = query_tool(ctx, "scenes_in_story", story_id=story_id) or []
             # compute next sequence index; fallback: count + 1
-            seqs = [
-                s.get("sequence_index")
-                for s in scenes
-                if s.get("sequence_index") is not None
-            ]
+            seqs = [s.get("sequence_index") for s in scenes if s.get("sequence_index") is not None]
             if seqs:
                 next_seq = (max(seqs) or 0) + 1
             else:
                 next_seq = len(scenes) + 1
     except Exception:
         next_seq = None
-    
+
     new_sc_id = gen_id("scene")
     deltas = {
         "new_scene": {
@@ -86,9 +81,7 @@ def handle_add_scene(state: GraphState, intent: MonitorIntent, ctx) -> GraphStat
         if ctx and intent.participants and uid:
             for name in intent.participants:
                 try:
-                    ent = query_tool(
-                        ctx, "entity_by_name_in_universe", universe_id=uid, name=name
-                    )
+                    ent = query_tool(ctx, "entity_by_name_in_universe", universe_id=uid, name=name)
                     if ent:
                         participants_ids.append(ent["id"])  # type: ignore[index]
                 except Exception:
@@ -112,7 +105,7 @@ def handle_add_scene(state: GraphState, intent: MonitorIntent, ctx) -> GraphStat
         state["scene_id"] = sc_id
         state["story_id"] = story_id
         action_reply = f"Scene created (mode={res.get('mode')}). id={sc_id}"
-    
+
     append_message(state, "assistant", action_reply)
     state["last_mode"] = "monitor"
     return state
@@ -129,9 +122,7 @@ def handle_modify_last_scene(state: GraphState, intent: MonitorIntent, ctx) -> G
         if ctx and intent.participants and uid:
             for name in intent.participants:
                 try:
-                    ent = query_tool(
-                        ctx, "entity_by_name_in_universe", universe_id=uid, name=name
-                    )
+                    ent = query_tool(ctx, "entity_by_name_in_universe", universe_id=uid, name=name)
                     if ent:
                         participants_ids.append(ent["id"])  # type: ignore[index]
                 except Exception:
@@ -144,15 +135,13 @@ def handle_modify_last_scene(state: GraphState, intent: MonitorIntent, ctx) -> G
             "facts": (facts or None),
             # Note: adding participants to an existing scene requires updating APPEARS_IN via new_scene participants delta; reuse new_scene path
             "new_scene": (
-                {"id": sc_id, "participants": participants_ids}
-                if participants_ids
-                else None
+                {"id": sc_id, "participants": participants_ids} if participants_ids else None
             ),
             "_draft": (intent.description or "Append to scene"),
         }
         res = commit_deltas(ctx, deltas)
         action_reply = f"Scene updated (mode={res.get('mode')})."
-    
+
     append_message(state, "assistant", action_reply)
     state["last_mode"] = "monitor"
     return state
@@ -173,7 +162,9 @@ def handle_save_conversation(state: GraphState, intent: MonitorIntent, ctx) -> G
     if not transcript.strip():
         action_reply = "No conversation to save."
     else:
-        res = commit_deltas(ctx, {
+        res = commit_deltas(
+            ctx,
+            {
                 "facts": [
                     {
                         "description": f"TRANSCRIPT\n{transcript}",
@@ -182,9 +173,10 @@ def handle_save_conversation(state: GraphState, intent: MonitorIntent, ctx) -> G
                     }
                 ],
                 "_draft": "Save transcript",
-            })
+            },
+        )
         action_reply = f"Conversation saved (mode={res.get('mode')})."
-    
+
     append_message(state, "assistant", action_reply)
     state["last_mode"] = "monitor"
     return state
@@ -193,7 +185,6 @@ def handle_save_conversation(state: GraphState, intent: MonitorIntent, ctx) -> G
 def handle_show_conversation(state: GraphState, intent: MonitorIntent, ctx) -> GraphState:
     """Handle showing saved conversation transcript."""
     # MVP: retrieve transcript fact(s) for current scene; if none, try universe-level
-    uid = state.get("universe_id")
     sc_id = state.get("scene_id")
     try:
         facts = []
@@ -216,7 +207,7 @@ def handle_show_conversation(state: GraphState, intent: MonitorIntent, ctx) -> G
             action_reply = "No transcript found for the current scene/story."
     except Exception as e:
         action_reply = f"Error fetching transcript: {e}"
-    
+
     append_message(state, "assistant", action_reply)
     state["last_mode"] = "monitor"
     return state

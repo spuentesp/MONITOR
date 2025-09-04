@@ -58,7 +58,9 @@ def tool_schema() -> list[dict[str, Any]]:
     ]
 
 
-def ops_prelude(actions: list[dict[str, Any]], *, persona: str = "guardian", verbose: bool = True) -> str | None:
+def ops_prelude(
+    actions: list[dict[str, Any]], *, persona: str = "guardian", verbose: bool = True
+) -> str | None:
     if not verbose:
         return None
     msgs: list[str] = []

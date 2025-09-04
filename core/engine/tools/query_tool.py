@@ -99,7 +99,9 @@ def rules_tool(ctx: ToolContext, action: str, **kwargs) -> dict[str, Any]:
             except Exception:
                 participants = []
             if not participants:
-                violations.append(f"require_role_in_scene: no participants with role '{role}' in scene {scene_id}")
+                violations.append(
+                    f"require_role_in_scene: no participants with role '{role}' in scene {scene_id}"
+                )
         elif action == "max_participants":
             scene_id = kwargs["scene_id"]
             limit = int(kwargs["limit"])
@@ -109,12 +111,14 @@ def rules_tool(ctx: ToolContext, action: str, **kwargs) -> dict[str, Any]:
             except Exception:
                 all_entities = []
             if len(all_entities) > limit:
-                violations.append(f"max_participants: scene {scene_id} has {len(all_entities)} > {limit}")
+                violations.append(
+                    f"max_participants: scene {scene_id} has {len(all_entities)} > {limit}"
+                )
         else:
             violations.append(f"rules_tool: unknown action '{action}'")
     except Exception as e:
         violations.append(f"rules_tool error: {e}")
-    
+
     # Add result field for backward compatibility with tests
     result = "violations" if violations else "ok"
     return {"result": result, "effects": effects, "violations": violations, "trace": trace}

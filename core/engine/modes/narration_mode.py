@@ -1,9 +1,11 @@
 """Narration mode implementation."""
+
 from __future__ import annotations
 
 from core.agents.narrator import narrator_agent
 from core.generation.interfaces.llm import Message
 from core.generation.providers import select_llm_from_env
+
 from .state import GraphState, append_message
 
 

@@ -13,8 +13,12 @@ router = APIRouter(prefix="/branches", tags=["branches"])
 
 class BranchAtSceneReq(BaseModel):
     source_universe_id: str = Field(..., description="Universe to branch from")
-    divergence_scene_id: str = Field(..., description="Scene id inside the source universe to branch at")
-    new_universe_id: str = Field(..., description="Target universe id (must not exist unless force=true)")
+    divergence_scene_id: str = Field(
+        ..., description="Scene id inside the source universe to branch at"
+    )
+    new_universe_id: str = Field(
+        ..., description="Target universe id (must not exist unless force=true)"
+    )
     new_universe_name: str | None = Field(None, description="Optional name for the new universe")
     force: bool = Field(False, description="Allow overwriting existing target universe")
     dry_run: bool = Field(False, description="Return counts only; do not write")
@@ -98,6 +102,7 @@ def diff_universes(source_universe_id: str, target_universe_id: str) -> DiffRes:
     Note: A complete typed diff is a follow-up; this returns presence deltas at entity/story/scene/fact levels.
     """
     repo = Neo4jRepo().connect()
+
     def _count(q: str, **params) -> int:
         rows = repo.run(q, **params)
         return int(rows[0]["c"]) if rows and "c" in rows[0] else 0
@@ -158,7 +163,9 @@ def diff_universes(source_universe_id: str, target_universe_id: str) -> DiffRes:
             u2=target_universe_id,
         ),
     }
-    return DiffRes(source_universe_id=source_universe_id, target_universe_id=target_universe_id, counts=counts)
+    return DiffRes(
+        source_universe_id=source_universe_id, target_universe_id=target_universe_id, counts=counts
+    )
 
 
 class TypedList(BaseModel):
@@ -301,48 +308,60 @@ def diff_universes_typed(source_universe_id: str, target_universe_id: str) -> Ty
     # Provenance counts: nodes in target branched from nodes in source
     prov = {
         "stories": int(
-            (repo.run(
-                """
+            (
+                repo.run(
+                    """
                 MATCH (:Universe {id:$u2})-[:HAS_STORY]->(st2:Story)-[:BRANCHED_FROM]->(st:Story)
                 MATCH (:Universe {id:$u1})-[:HAS_STORY]->(st)
                 RETURN count(DISTINCT st2) AS c
                 """,
-                u1=source_universe_id,
-                u2=target_universe_id,
-            ) or [{"c": 0}])[0]["c"]
+                    u1=source_universe_id,
+                    u2=target_universe_id,
+                )
+                or [{"c": 0}]
+            )[0]["c"]
         ),
         "scenes": int(
-            (repo.run(
-                """
+            (
+                repo.run(
+                    """
                 MATCH (:Universe {id:$u2})-[:HAS_STORY]->(:Story)-[:HAS_SCENE]->(sc2:Scene)-[:BRANCHED_FROM]->(sc:Scene)
                 MATCH (:Universe {id:$u1})-[:HAS_STORY]->(:Story)-[:HAS_SCENE]->(sc)
                 RETURN count(DISTINCT sc2) AS c
                 """,
-                u1=source_universe_id,
-                u2=target_universe_id,
-            ) or [{"c": 0}])[0]["c"]
+                    u1=source_universe_id,
+                    u2=target_universe_id,
+                )
+                or [{"c": 0}]
+            )[0]["c"]
         ),
         "entities": int(
-            (repo.run(
-                """
+            (
+                repo.run(
+                    """
                 MATCH (:Universe {id:$u2})<-[:BELONGS_TO]-(e2:Entity)-[:BRANCHED_FROM]->(e:Entity)
                 MATCH (:Universe {id:$u1})<-[:BELONGS_TO]-(e)
                 RETURN count(DISTINCT e2) AS c
                 """,
-                u1=source_universe_id,
-                u2=target_universe_id,
-            ) or [{"c": 0}])[0]["c"]
+                    u1=source_universe_id,
+                    u2=target_universe_id,
+                )
+                or [{"c": 0}]
+            )[0]["c"]
         ),
         "facts": int(
-            (repo.run(
-                """
+            (
+                repo.run(
+                    """
                 MATCH (:Universe {id:$u2})-[:HAS_STORY]->(:Story)-[:HAS_SCENE]->(:Scene)<-[:OCCURS_IN]-(f2:Fact)-[:BRANCHED_FROM]->(f:Fact)
                 MATCH (:Universe {id:$u1})-[:HAS_STORY]->(:Story)-[:HAS_SCENE]->(:Scene)<-[:OCCURS_IN]-(f)
                 RETURN count(DISTINCT f2) AS c
                 """,
-                u1=source_universe_id,
-                u2=target_universe_id,
-            ) or [{"c": 0}])[0]["c"]
+                    u1=source_universe_id,
+                    u2=target_universe_id,
+                )
+                or [{"c": 0}]
+            )[0]["c"]
         ),
     }
 
@@ -373,8 +392,7 @@ def promote_branch(req: PromoteReq) -> dict[str, Any]:
     try:
         if req.strategy == "append_facts":
             # Create missing Fact nodes in target with OCCURS_IN mapped by matching story/scene ids
-            q = (
-                """
+            q = """
                 MATCH (u2:Universe {id:$target})-[:HAS_STORY]->(st2:Story)-[:HAS_SCENE]->(sc2:Scene)
                 WITH collect({story:st2.id, scene:sc2.id}) AS targets
                 MATCH (u1:Universe {id:$source})-[:HAS_STORY]->(st:Story)-[:HAS_SCENE]->(sc:Scene)
@@ -388,7 +406,6 @@ def promote_branch(req: PromoteReq) -> dict[str, Any]:
                 MERGE (f2)-[:OCCURS_IN]->(sc2)
                 RETURN count(DISTINCT f) AS inserted
                 """
-            )
             rows = repo.run(q, source=req.source_universe_id, target=req.target_universe_id)
             inserted = int(rows[0]["inserted"]) if rows else 0
             return {"ok": True, "inserted": inserted}

@@ -6,39 +6,45 @@ by any persistence layer providing read operations.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class QueryInterface(ABC):
     """Abstract interface for read-only query operations."""
 
     @abstractmethod
-    async def execute_query(self, query: str, parameters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    async def execute_query(
+        self, query: str, parameters: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
         """Execute a query with optional parameters and return results."""
         pass
 
     @abstractmethod
-    async def get_entity_by_id(self, entity_id: str) -> Optional[Dict[str, Any]]:
+    async def get_entity_by_id(self, entity_id: str) -> dict[str, Any] | None:
         """Retrieve a specific entity by its ID."""
         pass
 
     @abstractmethod
-    async def get_entities_by_type(self, entity_type: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    async def get_entities_by_type(
+        self, entity_type: str, limit: int | None = None
+    ) -> list[dict[str, Any]]:
         """Retrieve entities of a specific type."""
         pass
 
     @abstractmethod
-    async def get_facts_for_entity(self, entity_id: str) -> List[Dict[str, Any]]:
+    async def get_facts_for_entity(self, entity_id: str) -> list[dict[str, Any]]:
         """Retrieve all facts associated with an entity."""
         pass
 
     @abstractmethod
-    async def get_relations_for_entity(self, entity_id: str) -> List[Dict[str, Any]]:
+    async def get_relations_for_entity(self, entity_id: str) -> list[dict[str, Any]]:
         """Retrieve all relations for an entity."""
         pass
 
     @abstractmethod
-    async def search_entities(self, search_term: str, entity_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def search_entities(
+        self, search_term: str, entity_type: str | None = None
+    ) -> list[dict[str, Any]]:
         """Search for entities matching a term."""
         pass
 
@@ -47,12 +53,12 @@ class CacheInterface(ABC):
     """Abstract interface for caching operations."""
 
     @abstractmethod
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """Retrieve a value from the cache."""
         pass
 
     @abstractmethod
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+    async def set(self, key: str, value: Any, ttl: int | None = None) -> None:
         """Store a value in the cache with optional TTL."""
         pass
 

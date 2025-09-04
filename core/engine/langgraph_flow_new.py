@@ -8,15 +8,13 @@ transitions to the new modular flow structure.
 from __future__ import annotations
 
 from typing import Any
-
-from .flows import build_langgraph_flow as build_flow
-from .flows import select_engine_backend
+from .flows import build_langgraph_flow as build_flow, select_engine_backend
 
 
 def build_langgraph_flow(tools: Any, config: dict | None = None):
     """
     Legacy compatibility function.
-
+    
     Redirects to the new modular flow builder.
     """
     return build_flow(tools, config)

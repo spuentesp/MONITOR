@@ -202,7 +202,8 @@ def list_groq_models(api_key: str) -> list[str]:
 
 def select_llm_from_env() -> LLM:
     from core.utils.env import env_str
-    backend = (env_str("MONITOR_LLM_BACKEND", "mock", lower=True) or "mock")
+
+    backend = env_str("MONITOR_LLM_BACKEND", "mock", lower=True) or "mock"
     if backend == "openai":
         api_key = env_str("MONITOR_OPENAI_API_KEY") or env_str("OPENAI_API_KEY")
         model = env_str("MONITOR_OPENAI_MODEL", "gpt-4o-mini") or "gpt-4o-mini"

@@ -1,13 +1,15 @@
 """Flow state management and common utilities."""
+
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 from core.utils.env import env_bool, env_str
 
 
 class FlowState(dict):
     """Enhanced state dictionary for LangGraph flows."""
+
     pass
 
 
@@ -16,7 +18,9 @@ def env_flag(name: str, default: str = "0") -> bool:
     return env_bool(name, default in ("1", "true", "True"))
 
 
-def safe_act(tools: Dict[str, Any], agent_key: str, messages: List[Dict[str, Any]], default: Any = None) -> Any:
+def safe_act(
+    tools: dict[str, Any], agent_key: str, messages: list[dict[str, Any]], default: Any = None
+) -> Any:
     """Call tools[agent_key].act(messages) defensively.
 
     Returns default on error or missing agent.
@@ -30,7 +34,7 @@ def safe_act(tools: Dict[str, Any], agent_key: str, messages: List[Dict[str, Any
     return default
 
 
-def fetch_relations(tools: Dict[str, Any], scene_id: str) -> List[Dict[str, Any]]:
+def fetch_relations(tools: dict[str, Any], scene_id: str) -> list[dict[str, Any]]:
     """Retrieve relations effective in scene via lc_tools (if enabled) or query_tool.
 
     Returns a list; errors are swallowed to keep flow resilient.

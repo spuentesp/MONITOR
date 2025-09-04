@@ -6,19 +6,19 @@ by any caching layer providing cache operations.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, List, Dict
+from typing import Any
 
 
 class CacheInterface(ABC):
     """Abstract interface for caching operations."""
 
     @abstractmethod
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """Retrieve a value from the cache."""
         pass
 
     @abstractmethod
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+    async def set(self, key: str, value: Any, ttl: int | None = None) -> None:
         """Store a value in the cache with optional TTL."""
         pass
 
@@ -38,12 +38,12 @@ class CacheInterface(ABC):
         pass
 
     @abstractmethod
-    async def mget(self, keys: List[str]) -> Dict[str, Any]:
+    async def mget(self, keys: list[str]) -> dict[str, Any]:
         """Retrieve multiple values from the cache."""
         pass
 
     @abstractmethod
-    async def mset(self, mapping: Dict[str, Any], ttl: Optional[int] = None) -> None:
+    async def mset(self, mapping: dict[str, Any], ttl: int | None = None) -> None:
         """Store multiple values in the cache."""
         pass
 

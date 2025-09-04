@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import os
 from typing import Any
-from core.utils.env import env_str, env_bool
+
+from core.utils.env import env_bool, env_str
 
 
 @dataclass

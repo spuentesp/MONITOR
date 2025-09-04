@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from .archivist import archivist_agent
 from .conductor import conductor_agent
@@ -15,7 +15,7 @@ from .qa import qa_agent
 from .steward import steward_agent
 
 
-def build_agents(llm: Any) -> Dict[str, Any]:
+def build_agents(llm: Any) -> dict[str, Any]:
     """Construct and return all LLM-backed agents keyed by their canonical names.
 
     Keeps agent wiring in one place to avoid duplication in orchestrators/flows.

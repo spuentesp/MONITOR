@@ -1,8 +1,9 @@
 """State management for LangGraph modes."""
+
 from __future__ import annotations
 
-import uuid
 from typing import Literal, NotRequired, TypedDict
+import uuid
 
 from core.generation.interfaces.llm import Message
 

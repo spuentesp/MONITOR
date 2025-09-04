@@ -10,7 +10,6 @@ except Exception:  # pragma: no cover
     RepoPort = Any  # type: ignore
 
 
-
 class RecorderService:
     """Persist Facts and RelationState deltas to the graph.
 

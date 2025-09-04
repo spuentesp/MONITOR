@@ -4,14 +4,13 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from core.engine.commit import stage_or_commit
 from core.engine.context import ContextToken
 from core.engine.orchestrator import (
     build_live_tools,
     flush_staging,
     run_once,
 )
-from core.engine.resolve_tool import resolve_commit_tool
-from core.engine.commit import stage_or_commit
 from core.engine.steward import StewardService
 from core.generation.providers import select_llm_from_env
 from core.interfaces.branches_api import router as branches_router
@@ -43,7 +42,10 @@ async def validate_context_token(request: Request, call_next):
                 body = await request.json()
                 req_mode = str((body or {}).get("mode") or "").lower()
                 if req_mode == "autopilot" and tok.mode != "write":
-                    return JSONResponse(status_code=403, content={"error": "Autopilot writes require ContextToken.mode=write"})
+                    return JSONResponse(
+                        status_code=403,
+                        content={"error": "Autopilot writes require ContextToken.mode=write"},
+                    )
         except Exception:
             # If we can't parse body, fail closed only for explicit autopilot endpoints; otherwise continue
             pass

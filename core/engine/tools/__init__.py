@@ -43,21 +43,21 @@ class ToolContext:
     embedder: Any | None = None  # Callable[[str], list[float]]
 
 
-# Re-export tools for backward compatibility
-from .query_tool import query_tool, rules_tool
-from .recorder_tool import recorder_tool
-from .narrative_tool import narrative_tool
-from .indexing_tool import indexing_tool
-from .retrieval_tool import retrieval_tool
-from .object_tool import object_upload_tool
-from .bootstrap_tool import bootstrap_story_tool
-from .notes_tool import notes_tool
+# Re-export tools for backward compatibility (after ToolContext definition to avoid circular imports)
+from .bootstrap_tool import bootstrap_story_tool  # noqa: E402
+from .indexing_tool import indexing_tool  # noqa: E402
+from .narrative_tool import narrative_tool  # noqa: E402
+from .notes_tool import notes_tool  # noqa: E402
+from .object_tool import object_upload_tool  # noqa: E402
+from .query_tool import query_tool, rules_tool  # noqa: E402
+from .recorder_tool import recorder_tool  # noqa: E402
+from .retrieval_tool import retrieval_tool  # noqa: E402
 
 __all__ = [
     "ToolContext",
     "query_tool",
     "rules_tool",
-    "recorder_tool", 
+    "recorder_tool",
     "narrative_tool",
     "indexing_tool",
     "retrieval_tool",

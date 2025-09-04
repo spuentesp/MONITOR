@@ -127,6 +127,7 @@ with st.sidebar:
         if api_key:
             try:
                 from core.generation.providers import list_groq_models
+
                 if "_groq_models" not in st.session_state:
                     st.session_state["_groq_models"] = list_groq_models(api_key)
                     # Record timestamp when fetched successfully
@@ -211,6 +212,7 @@ with st.sidebar:
     if cols[1].button("Flush Staging"):
         if st.session_state.get("ctx") is not None:
             from core.engine.orchestrator import flush_staging
+
             out = flush_staging(st.session_state["ctx"])  # type: ignore
             st.toast(f"Flush: {out}")
 
@@ -235,6 +237,7 @@ with st.sidebar:
                 # Validate first
                 from core.engine.orchestrator import build_live_tools
                 from core.engine.steward import StewardService
+
                 ctx_res = build_live_tools(dry_run=True)
                 svc = StewardService(ctx_res.query_service)
                 ok, warns, errs = svc.validate(merged)
@@ -257,11 +260,13 @@ with st.sidebar:
 
                 if will_commit:
                     from core.engine.orchestrator import build_live_tools
+
                     commit_ctx = build_live_tools(dry_run=False)
                     commit_out = recorder_tool(commit_ctx, draft="", deltas=merged)
                 else:
                     # stage in dry-run for traceability
                     from core.engine.orchestrator import build_live_tools
+
                     staged_ctx = build_live_tools(dry_run=True)
                     commit_out = recorder_tool(staged_ctx, draft="", deltas=merged)
                 st.json(
@@ -323,11 +328,10 @@ if user_intent:
     try:
         # If forcing monitor, prepend a prefix the agent router will learn to map to monitor
         msg = (
-            user_intent
-            if not st.session_state.get("force_monitor")
-            else f"[monitor] {user_intent}"
+            user_intent if not st.session_state.get("force_monitor") else f"[monitor] {user_intent}"
         )
         from core.engine.orchestrator import run_once
+
         out = run_once(msg, scene_id=scene_id, mode=st.session_state.mode, ctx=ctx, llm=llm)
     except Exception as e:
         # Display a concise, friendly error and keep the session alive

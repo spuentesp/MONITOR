@@ -1,10 +1,12 @@
 """Router logic for determining execution mode."""
+
 from __future__ import annotations
 
 import json
 import re
 
 from core.generation.providers import select_llm_from_env
+
 from .state import GraphState, Mode
 
 # Command patterns

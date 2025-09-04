@@ -1,42 +1,41 @@
 """Main monitor mode handler coordinating all monitor operations."""
+
 from __future__ import annotations
 
-from typing import Dict, Any
-
-from core.engine.monitor_parser import MonitorIntent, parse_monitor_text
+from core.engine.monitor_parser import parse_monitor_text
 from core.engine.tools import ToolContext
 from core.generation.providers import select_llm_from_env
-from ..state import GraphState, append_message, Message
 
+from ..state import GraphState, Message, append_message
 from .crud_handlers import (
     handle_create_multiverse,
-    handle_create_universe, 
-    handle_save_fact,
-    handle_list_multiverses,
-    handle_list_universes,
-    handle_list_stories,
-    handle_list_scenes,
+    handle_create_universe,
     handle_list_entities,
     handle_list_facts,
+    handle_list_multiverses,
+    handle_list_scenes,
+    handle_list_stories,
+    handle_list_universes,
+    handle_save_fact,
 )
 from .entity_handlers import (
-    handle_show_entity_info,
-    handle_list_enemies,
     handle_last_seen,
+    handle_list_enemies,
+    handle_show_entity_info,
+)
+from .entity_management_handlers import (
+    handle_create_entity,
+    handle_retcon_entity,
+    handle_seed_entities,
+    handle_wizard_setup_scene,
+    handle_wizard_setup_story,
 )
 from .scene_handlers import (
-    handle_end_scene,
     handle_add_scene,
+    handle_end_scene,
     handle_modify_last_scene,
     handle_save_conversation,
     handle_show_conversation,
-)
-from .entity_management_handlers import (
-    handle_retcon_entity,
-    handle_seed_entities,
-    handle_create_entity,
-    handle_wizard_setup_story,
-    handle_wizard_setup_scene,
 )
 from .setup_handlers import handle_setup_flow
 
@@ -73,7 +72,14 @@ def monitor_node(state: GraphState, ctx: ToolContext | None = None) -> GraphStat
         return handle_create_universe(state, intent, ctx)
     elif intent.action == "save_fact":
         return handle_save_fact(state, intent, ctx)
-    elif intent.action in ("list_multiverses", "list_universes", "list_stories", "list_scenes", "list_entities", "list_facts"):
+    elif intent.action in (
+        "list_multiverses",
+        "list_universes",
+        "list_stories",
+        "list_scenes",
+        "list_entities",
+        "list_facts",
+    ):
         if intent.action == "list_multiverses":
             return handle_list_multiverses(state, intent, ctx)
         elif intent.action == "list_universes":

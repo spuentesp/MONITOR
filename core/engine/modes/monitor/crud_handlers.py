@@ -1,9 +1,11 @@
 """CRUD operation handlers for monitor mode."""
+
 from __future__ import annotations
 
 from core.engine.monitor_parser import MonitorIntent
 from core.engine.tools import query_tool
-from ..state import GraphState, append_message, gen_id
+
+from ..state import GraphState, append_message
 from .utils import commit_deltas
 
 
@@ -38,7 +40,7 @@ def handle_create_universe(state: GraphState, intent: MonitorIntent, ctx) -> Gra
             "new_universe": new_u,
             "universe_id": universe_id,
             "_draft": f"Crear universo {intent.id or '(auto-id)'}",
-        }
+        },
     )
     action_reply = f"Universo creado (modo={res.get('mode')})."
     append_message(state, "assistant", action_reply)
@@ -71,7 +73,7 @@ def handle_list_multiverses(state: GraphState, intent: MonitorIntent, ctx) -> Gr
             action_reply = "Multiverses:\n" + "\n".join(lines)
     except Exception as e:
         action_reply = f"Error listing multiverses: {e}"
-    
+
     append_message(state, "assistant", action_reply)
     state["last_mode"] = "monitor"
     return state
@@ -84,11 +86,7 @@ def handle_list_universes(state: GraphState, intent: MonitorIntent, ctx) -> Grap
         action_reply = "Please specify a multiverse id (e.g., multiverse mv:demo)."
     else:
         try:
-            rows = (
-                query_tool(ctx, "list_universes_for_multiverse", multiverse_id=mv)
-                if ctx
-                else []
-            )
+            rows = query_tool(ctx, "list_universes_for_multiverse", multiverse_id=mv) if ctx else []
             if not rows:
                 action_reply = f"No universes found in {mv}."
             else:
@@ -96,7 +94,7 @@ def handle_list_universes(state: GraphState, intent: MonitorIntent, ctx) -> Grap
                 action_reply = f"Universes in {mv}:\n" + "\n".join(lines)
         except Exception as e:
             action_reply = f"Error listing universes: {e}"
-    
+
     append_message(state, "assistant", action_reply)
     state["last_mode"] = "monitor"
     return state
@@ -120,7 +118,7 @@ def handle_list_stories(state: GraphState, intent: MonitorIntent, ctx) -> GraphS
                 action_reply = f"Stories in {uid}:\n" + "\n".join(lines)
         except Exception as e:
             action_reply = f"Error listing stories: {e}"
-    
+
     append_message(state, "assistant", action_reply)
     state["last_mode"] = "monitor"
     return state

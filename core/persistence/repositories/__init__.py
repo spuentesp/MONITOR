@@ -12,7 +12,7 @@ from .system_repository import SystemRepository
 
 __all__ = [
     "EntityRepository",
-    "FactRepository", 
+    "FactRepository",
     "SceneRepository",
     "SystemRepository",
 ]

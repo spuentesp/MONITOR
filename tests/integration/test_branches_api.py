@@ -152,7 +152,11 @@ def test_typed_diff_and_append_missing(monkeypatch):
     # Append missing should succeed with ops counter
     r2 = client.post(
         "/api/branches/promote",
-        json={"source_universe_id": "U-1", "target_universe_id": "U-2", "strategy": "append_missing"},
+        json={
+            "source_universe_id": "U-1",
+            "target_universe_id": "U-2",
+            "strategy": "append_missing",
+        },
         headers=_ctx_header(),
     )
     assert r2.status_code == 200

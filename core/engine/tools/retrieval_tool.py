@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from core.services.retrieval_service import RetrievalService
+
 from . import ToolContext
 
 

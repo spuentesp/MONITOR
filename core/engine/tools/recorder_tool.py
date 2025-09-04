@@ -3,9 +3,9 @@ from __future__ import annotations
 import hashlib
 import json
 from typing import Any
-from uuid import uuid4
 
 from core.domain.deltas import DeltaBatch
+
 from . import ToolContext
 
 
@@ -91,6 +91,7 @@ def recorder_tool(
             pass
         # Invalidate read cache after write
         from core.engine.cache_ops import clear_cache_if_present
+
         clear_cache_if_present(ctx)
         return {
             "mode": "commit",
@@ -100,6 +101,7 @@ def recorder_tool(
         }
     # Dry-run return; clear cache because world may be updated by the worker soon
     from core.engine.cache_ops import clear_cache_if_present
+
     clear_cache_if_present(ctx)
     return {
         "mode": "dry_run",

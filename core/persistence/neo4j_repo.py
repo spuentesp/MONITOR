@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-import os
 
 from dotenv import load_dotenv
-from core.utils.env import env_str
 from neo4j import Driver, GraphDatabase
+
+from core.utils.env import env_str
 
 
 class Neo4jRepo:
     def __init__(
         self, uri: str | None = None, user: str | None = None, password: str | None = None
     ):
-                # Load env from .env if present (non-invasive)
+        # Load env from .env if present (non-invasive)
         load_dotenv()
         self.uri = uri or env_str("NEO4J_URI")
         self.user = user or env_str("NEO4J_USER")

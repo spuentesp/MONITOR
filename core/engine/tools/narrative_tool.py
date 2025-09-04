@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from core.persistence.mongo_repos import DocMeta, Memory, NarrativeService, Note, Turn
+
 from . import ToolContext
 
 
@@ -37,6 +38,7 @@ def narrative_tool(
     preview = {"op": op, "args": {k: ("<bytes>" if k == "data" else v) for k, v in kwargs.items()}}
     mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
     from core.engine.commit import decide_commit
+
     decision, allow = decide_commit(llm, preview, {"ok": True}, mode, {"source": "narrative_tool"})
     if not allow:
         return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}

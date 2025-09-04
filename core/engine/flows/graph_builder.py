@@ -9,8 +9,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from core.utils.env import env_bool, env_str
-from .nodes import planner_node, resolve_decider_node, recorder_node, critic_node
+from core.utils.env import env_bool
+
+from .nodes import critic_node, planner_node, recorder_node, resolve_decider_node
 
 
 def _env_flag(name: str, default: str = "0") -> bool:
@@ -68,27 +69,21 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         """Route intent to determine processing path."""
         intent = state.get("intent", "")
         intent_type = _safe_act(
-            "intent_router",
-            [{"role": "user", "content": intent}],
-            default="narrative"
+            "intent_router", [{"role": "user", "content": intent}], default="narrative"
         )
         return {**state, "intent_type": intent_type}
 
     def director(state: dict[str, Any]) -> dict[str, Any]:
         """Director node for high-level coordination."""
         tags = _safe_act(
-            "director",
-            [{"role": "user", "content": state.get("intent", "")}],
-            default=[]
+            "director", [{"role": "user", "content": state.get("intent", "")}], default=[]
         )
         return {**state, "tags": tags}
 
     def librarian(state: dict[str, Any]) -> dict[str, Any]:
         """Gather evidence and context."""
         evidence = _safe_act(
-            "librarian",
-            [{"role": "user", "content": str(state.get("tags", []))}],
-            default={}
+            "librarian", [{"role": "user", "content": str(state.get("tags", []))}], default={}
         )
         evidence_summary = str(evidence)[:200] if evidence else ""
         return {**state, "evidence": evidence, "evidence_summary": evidence_summary}
@@ -98,7 +93,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         validation = _safe_act(
             "steward",
             [{"role": "user", "content": str(state.get("evidence", {}))}],
-            default={"ok": True, "warnings": []}
+            default={"ok": True, "warnings": []},
         )
         return {**state, "validation": validation}
 
@@ -112,10 +107,10 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
             try:
                 if not isinstance(action, dict):
                     continue
-                    
+
                 tool_name = action.get("tool")
                 tool_kwargs = action.get("kwargs", {})
-                
+
                 if tool_name and tool_name in tools:
                     result = tools[tool_name](ctx, **tool_kwargs)
                     results.append({"tool": tool_name, "result": result})
@@ -150,12 +145,12 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         """Generate narrative content."""
         msgs = [{"role": "user", "content": state.get("intent", "")}]
         draft = _safe_act("narrator", msgs, default="")
-        
+
         # Add operations prelude if present
         pre = state.get("operations_prelude")
         if pre and isinstance(draft, str) and draft.strip():
             draft = f"{pre}\n\n{draft}"
-            
+
         return {**state, "draft": draft}
 
     def continuity_guard(state: dict[str, Any]) -> dict[str, Any]:
@@ -174,7 +169,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         continuity = _safe_act(
             "continuity",
             [{"role": "user", "content": f"Check continuity: {continuity_context}"}],
-            default={"drift": False, "incorrect": False}
+            default={"drift": False, "incorrect": False},
         )
 
         return {**state, "continuity": continuity}
@@ -193,7 +188,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         strict = _env_flag("MONITOR_AGENTIC_STRICT", "0")
         if not strict:
             return state
-            
+
         ok = True
         try:
             ctx = tools["ctx"]
@@ -201,7 +196,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                 ok = False
         except Exception:
             ok = False
-            
+
         return {**state, "engine_ok": ok}
 
     # Create wrapper functions for nodes
@@ -250,7 +245,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         _route,
         {
             "execute_actions": "execute_actions",
-            "qa_node": "qa_node", 
+            "qa_node": "qa_node",
             "health_gate": "health_gate",
             "director": "director",
         },
@@ -282,7 +277,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         _post_steward,
         {"planner": "planner", "narrator": "narrator", "qa_node": "qa_node"},
     )
-    
+
     workflow.add_edge("planner", "execute_actions")
     workflow.add_edge("execute_actions", "narrator")
 
@@ -310,7 +305,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         _needs_continuity,
         {"continuity_guard": "continuity_guard", "critic": "critic"},
     )
-    
+
     workflow.add_edge("critic", "archivist")
 
     # Pause before recorder logic
@@ -327,13 +322,14 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         should_pause,
         {True: END, False: "recorder"},
     )
-    
+
     workflow.add_edge("recorder", END)
     workflow.add_edge("qa_node", END)
 
     compiled = workflow.compile()
-    
+
     from . import FlowAdapter
+
     return FlowAdapter(compiled)
 
 
@@ -341,24 +337,26 @@ def create_fallback_execution(inputs: dict[str, Any]) -> dict[str, Any]:
     """Fallback sequential execution when LangGraph fails."""
     # Simple fallback that provides the expected output structure
     state = dict(inputs)
-    
+
     # Add basic expected fields for tests
-    state.update({
-        "intent_type": "narrative",
-        "tags": [],
-        "evidence": {},
-        "evidence_summary": "",
-        "validation": {"ok": True, "warnings": []},
-        "actions": [],
-        "action_results": [],
-        "deltas": {"entities": [], "facts": [], "relations": []},
-        "draft": "Fallback execution result",
-        "continuity": {"drift": False, "incorrect": False},
-        "archive_id": "fallback_archive",
-        "resolve_decision": {"commit": True, "reason": "Fallback commit"},
-        "commit": {"id": "fallback_commit", "status": "success", "mode": "dry_run"},
-        "plan": {"beats": ["Fallback plan beat"], "actions": []},
-        "_fallback": True
-    })
-    
+    state.update(
+        {
+            "intent_type": "narrative",
+            "tags": [],
+            "evidence": {},
+            "evidence_summary": "",
+            "validation": {"ok": True, "warnings": []},
+            "actions": [],
+            "action_results": [],
+            "deltas": {"entities": [], "facts": [], "relations": []},
+            "draft": "Fallback execution result",
+            "continuity": {"drift": False, "incorrect": False},
+            "archive_id": "fallback_archive",
+            "resolve_decision": {"commit": True, "reason": "Fallback commit"},
+            "commit": {"id": "fallback_commit", "status": "success", "mode": "dry_run"},
+            "plan": {"beats": ["Fallback plan beat"], "actions": []},
+            "_fallback": True,
+        }
+    )
+
     return state

@@ -1,11 +1,13 @@
 """Planning and directing nodes."""
+
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any
 
 from core.engine.flow_utils import ops_prelude as flow_ops_prelude
-from ..state import FlowState, safe_act, MONITOR_PERSONA, MONITOR_VERBOSE_TASKS
+
+from ..state import MONITOR_PERSONA, MONITOR_VERBOSE_TASKS, FlowState, safe_act
 
 
 def ops_prelude(actions: list[dict[str, Any]]) -> str | None:
@@ -13,7 +15,7 @@ def ops_prelude(actions: list[dict[str, Any]]) -> str | None:
     return flow_ops_prelude(actions, persona=MONITOR_PERSONA, verbose=MONITOR_VERBOSE_TASKS)
 
 
-def director(state: FlowState, tools: Dict[str, Any]) -> FlowState:
+def director(state: FlowState, tools: dict[str, Any]) -> FlowState:
     """Create a high-level plan using the Director agent."""
     # Use LLM-backed Director if provided; fallback to trivial plan
     intent = state.get("intent", "")
@@ -23,7 +25,7 @@ def director(state: FlowState, tools: Dict[str, Any]) -> FlowState:
         [{"role": "user", "content": f"Intent: {intent}. Return a tiny plan."}],
         default=None,
     )
-    
+
     if reply is not None:
         # Ensure a structured plan for callers/tests even if LLM returns free text
         structured = {"beats": [intent] if intent else [], "assumptions": []}
@@ -34,7 +36,7 @@ def director(state: FlowState, tools: Dict[str, Any]) -> FlowState:
             structured.update(reply)
             structured.setdefault("beats", [intent] if intent else [])
             structured.setdefault("assumptions", [])
-        
+
         # Add a prelude announcing planned operations (best-effort heuristic)
         try:
             actions = structured.get("actions") or []
@@ -44,17 +46,17 @@ def director(state: FlowState, tools: Dict[str, Any]) -> FlowState:
         except Exception:
             pass
         return {**state, "plan": structured}
-    
+
     return {**state, "plan": {"beats": [intent], "assumptions": []}}
 
 
-def planner(state: FlowState, tools: Dict[str, Any]) -> FlowState:
+def planner(state: FlowState, tools: dict[str, Any]) -> FlowState:
     """Agentic planner: always request a JSON list of actions; empty list means no-ops.
 
     The planner decides if/what to do given intent and context.
     """
     from core.engine.flow_utils import tool_schema as flow_tool_schema
-    
+
     # Provide richer but compact context: IDs and librarian/evidence summary if available
     compact_ctx = {
         k: state.get(k)
@@ -63,7 +65,7 @@ def planner(state: FlowState, tools: Dict[str, Any]) -> FlowState:
     }
     if state.get("evidence_summary"):
         compact_ctx["evidence_summary"] = state.get("evidence_summary")
-    
+
     tool_schema = flow_tool_schema()
     plan = safe_act(
         tools,
@@ -76,10 +78,10 @@ def planner(state: FlowState, tools: Dict[str, Any]) -> FlowState:
         ],
         default="[]",
     )
-    
+
     try:
         actions = json.loads(plan) if isinstance(plan, str) else plan
     except Exception:
         actions = []
-    
+
     return {**state, "actions": actions or []}

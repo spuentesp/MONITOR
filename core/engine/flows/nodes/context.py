@@ -1,21 +1,22 @@
 """Evidence gathering and context nodes."""
+
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
-from ..state import FlowState, safe_act, fetch_relations
+from ..state import FlowState, fetch_relations, safe_act
 
 
-def librarian(state: FlowState, tools: Dict[str, Any]) -> FlowState:
+def librarian(state: FlowState, tools: dict[str, Any]) -> FlowState:
     """Gather evidence and context for the current operation."""
     scene_id = state.get("scene_id")
     evidence = []
-    
+
     if scene_id:
         rels = fetch_relations(tools, scene_id)
         if rels is not None:
             evidence.append({"relations": rels})
-    
+
     # Optionally let LLM librarian summarize evidence
     if evidence:
         summary = safe_act(
@@ -26,11 +27,11 @@ def librarian(state: FlowState, tools: Dict[str, Any]) -> FlowState:
         )
         if summary is not None:
             return {**state, "evidence": evidence, "evidence_summary": summary}
-    
+
     return {**state, "evidence": evidence}
 
 
-def steward(state: FlowState, tools: Dict[str, Any]) -> FlowState:
+def steward(state: FlowState, tools: dict[str, Any]) -> FlowState:
     """Validate context and provide guidance."""
     # LLM-backed steward for quick validation hints
     hints = safe_act(
@@ -47,8 +48,8 @@ def steward(state: FlowState, tools: Dict[str, Any]) -> FlowState:
         ],
         default=None,
     )
-    
+
     if hints is not None:
         return {**state, "validation": {"ok": True, "warnings": [hints]}}
-    
+
     return {**state, "validation": {"ok": True, "warnings": []}}

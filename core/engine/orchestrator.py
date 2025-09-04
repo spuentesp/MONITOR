@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from queue import Queue
 import re
 from typing import Any
@@ -9,7 +8,6 @@ from core.agents.factory import build_agents
 from core.engine.autocommit import AutoCommitWorker, DeciderFn
 from core.engine.cache import ReadThroughCache, StagingStore
 from core.engine.langgraph_flow import select_engine_backend
-from core.utils.env import env_bool, env_str, env_float
 from core.engine.tools import (
     ToolContext,
     bootstrap_story_tool,
@@ -23,6 +21,7 @@ from core.engine.tools import (
 from core.persistence.neo4j_repo import Neo4jRepo
 from core.persistence.queries import QueryService
 from core.persistence.recorder import RecorderService
+from core.utils.env import env_bool, env_float, env_str
 
 # Module-level singletons to avoid spawning a worker per request
 _AUTOCOMMIT_WORKER: AutoCommitWorker | None = None
@@ -132,7 +131,7 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
 
         qs = QueryServiceFacade(_QDemo())
         recorder = RecorderServiceFacade(_RDemo())
-    backend = (env_str("MONITOR_CACHE_BACKEND", "", lower=True) or "")  # "redis" or ""
+    backend = env_str("MONITOR_CACHE_BACKEND", "", lower=True) or ""  # "redis" or ""
     ttl = env_float("MONITOR_CACHE_TTL", 60)
     if backend == "redis" and RedisReadThroughCache and RedisStagingStore:
         url = env_str("REDIS_URL", "redis://localhost:6379/0") or "redis://localhost:6379/0"
@@ -259,6 +258,7 @@ def flush_staging(ctx: ToolContext) -> dict[str, Any]:
         return {"ok": False, "error": "recorder/staging not configured"}
     res = ctx.staging.flush(ctx.recorder, clear_after=True)
     from core.engine.cache_ops import clear_cache_if_present
+
     clear_cache_if_present(ctx)
     return res
 

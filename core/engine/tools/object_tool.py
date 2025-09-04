@@ -4,6 +4,7 @@ import base64
 from typing import Any
 
 from core.services.object_service import ObjectService
+
 from . import ToolContext
 
 
@@ -43,7 +44,10 @@ def object_upload_tool(
     }
     mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
     from core.engine.commit import decide_commit
-    decision, allow = decide_commit(llm, preview, {"ok": True}, mode, {"source": "object_upload_tool"})
+
+    decision, allow = decide_commit(
+        llm, preview, {"ok": True}, mode, {"source": "object_upload_tool"}
+    )
     if not allow:
         return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}
 

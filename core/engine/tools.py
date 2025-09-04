@@ -9,7 +9,6 @@ from typing import Any
 from uuid import uuid4
 
 from core.domain.deltas import DeltaBatch
-from core.engine.resolve_tool import resolve_commit_tool
 from core.persistence.mongo_repos import DocMeta, Memory, NarrativeService, Note, Turn
 from core.services.indexing_service import IndexingService
 from core.services.object_service import ObjectService
@@ -92,7 +91,7 @@ def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
         "stories_in_universe",
         "list_multiverses",
         "list_universes_for_multiverse",
-    "list_universes",
+        "list_universes",
         # Entity lookup helpers
         "entity_by_name_in_universe",
     }
@@ -151,7 +150,9 @@ def rules_tool(ctx: ToolContext, action: str, **kwargs) -> dict[str, Any]:
             except Exception:
                 participants = []
             if not participants:
-                violations.append(f"require_role_in_scene: no participants with role {role} in {scene_id}")
+                violations.append(
+                    f"require_role_in_scene: no participants with role {role} in {scene_id}"
+                )
         elif action == "max_participants":
             scene_id = kwargs["scene_id"]
             limit = int(kwargs["limit"])
@@ -166,7 +167,14 @@ def rules_tool(ctx: ToolContext, action: str, **kwargs) -> dict[str, Any]:
     except KeyError as e:
         violations.append(f"missing_arg:{e}")
     result = "ok" if not violations else "violations"
-    return {"action": action, "inputs": kwargs, "result": result, "violations": violations, "effects": effects, "trace": trace}
+    return {
+        "action": action,
+        "inputs": kwargs,
+        "result": result,
+        "violations": violations,
+        "effects": effects,
+        "trace": trace,
+    }
 
 
 def notes_tool(_: ToolContext, text: str, scope: dict[str, str] | None = None) -> dict[str, Any]:
@@ -256,6 +264,7 @@ def recorder_tool(
             pass
         # Invalidate read cache after write
         from core.engine.cache_ops import clear_cache_if_present
+
         clear_cache_if_present(ctx)
         return {
             "mode": "commit",
@@ -265,6 +274,7 @@ def recorder_tool(
         }
     # Dry-run return; clear cache because world may be updated by the worker soon
     from core.engine.cache_ops import clear_cache_if_present
+
     clear_cache_if_present(ctx)
     return {
         "mode": "dry_run",
@@ -358,6 +368,7 @@ def narrative_tool(
     preview = {"op": op, "args": {k: ("<bytes>" if k == "data" else v) for k, v in kwargs.items()}}
     mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
     from core.engine.commit import decide_commit
+
     decision, allow = decide_commit(llm, preview, {"ok": True}, mode, {"source": "narrative_tool"})
     if not allow:
         return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}
@@ -463,7 +474,10 @@ def object_upload_tool(
     }
     mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
     from core.engine.commit import decide_commit
-    decision, allow = decide_commit(llm, preview, {"ok": True}, mode, {"source": "object_upload_tool"})
+
+    decision, allow = decide_commit(
+        llm, preview, {"ok": True}, mode, {"source": "object_upload_tool"}
+    )
     if not allow:
         return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}
 
@@ -532,6 +546,7 @@ def indexing_tool(
     }
     mode = "autopilot" if not getattr(ctx, "dry_run", True) else "copilot"
     from core.engine.commit import decide_commit
+
     decision, allow = decide_commit(llm, preview, {"ok": True}, mode, {"source": "indexing_tool"})
     if not allow:
         return {"ok": True, "mode": "dry_run", "preview": preview, "decision": decision}
