@@ -26,7 +26,7 @@ class SearchIndex:
         user = self.user or env_str("OPENSEARCH_USER")
         password = self.password or env_str("OPENSEARCH_PASSWORD")
         try:
-            from opensearchpy import OpenSearch  # type: ignore
+            from opensearchpy import OpenSearch
         except Exception as e:  # pragma: no cover - optional dependency
             raise RuntimeError("opensearch-py not installed; cannot use SearchIndex") from e
         auth = (user, password) if user and password else None

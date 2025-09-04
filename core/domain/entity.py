@@ -26,7 +26,6 @@ class ConcreteEntity(BaseModel):
     story: list[str] = Field(default_factory=list)  # References to events or observations
     relations: dict[str, str] = Field(default_factory=dict)  # e.g., {"ally_of": "concrete-103"}
     system_id: str | None = None
-    sheets: list["Sheet"] = Field(default_factory=list)
+    sheets: list[Sheet] = Field(default_factory=list)
     # Pydantic v2 config
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    sheets: list[Sheet] = Field(default_factory=list)

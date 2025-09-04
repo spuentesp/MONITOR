@@ -4,6 +4,15 @@ from typing import Any
 
 
 class CloneSubsetMixin:
+    """
+    Mixin for subset cloning operations.
+    
+    This mixin expects to be used with a base class that provides:
+    - repo: repository object with run() method
+    - _check_source_and_target(): validation method
+    - _first_count(): helper method for counting results
+    """
+    
     def clone_universe_subset(
         self,
         source_universe_id: str,

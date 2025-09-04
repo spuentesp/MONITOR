@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import Any
 
 try:
-    from core.ports.storage import RepoPort  # type: ignore
-except Exception:  # pragma: no cover
+    from core.ports.storage import RepoPort
+except ImportError:  # pragma: no cover
     RepoPort = Any  # type: ignore
 
 
-class BranchBase:
-    def __init__(self, repo: RepoPort | Any):
+class BaseBrancher:
+    def __init__(self, repo: Any):  # duck-typed to RepoPort when available
         self.repo = repo
 
     def _check_source_and_target(

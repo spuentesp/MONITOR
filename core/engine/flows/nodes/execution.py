@@ -48,7 +48,7 @@ def execute_actions(state: FlowState, tools: dict[str, Any]) -> FlowState:
                 try:
                     # Capture tags from args to seed continuity across nodes
                     if isinstance(args.get("tags"), list):
-                        new_tags = list(args.get("tags"))
+                        new_tags = list(args.get("tags") or [])
                     # Include time_label tag if provided
                     if args.get("time_label"):
                         if new_tags is None:
@@ -110,4 +110,4 @@ def execute_actions(state: FlowState, tools: dict[str, Any]) -> FlowState:
     if new_tags and not next_state.get("tags"):
         next_state["tags"] = new_tags
 
-    return next_state
+    return FlowState(next_state)

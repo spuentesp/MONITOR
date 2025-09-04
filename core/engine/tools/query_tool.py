@@ -61,7 +61,7 @@ def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:
             # Cache is best-effort
             cache_key = None
     out = fn(**kwargs)
-    if cache_key is not None:
+    if cache_key is not None and ctx.read_cache is not None:
         try:
             ctx.read_cache.set(cache_key, out)
         except Exception:

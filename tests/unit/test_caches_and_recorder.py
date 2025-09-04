@@ -8,11 +8,13 @@ from core.engine.cache_redis import RedisReadThroughCache, RedisStagingStore
 from core.persistence.recorder import RecorderService
 
 
-def test_redis_classes_raise_without_dependency():
-    with pytest.raises(RuntimeError):
-        RedisReadThroughCache(url="redis://localhost:6379/0")
-    with pytest.raises(RuntimeError):
-        RedisStagingStore(url="redis://localhost:6379/0")
+def test_redis_classes_can_be_instantiated():
+    # Redis is now a required dependency, so these should not raise
+    cache = RedisReadThroughCache(url="redis://localhost:6379/0")
+    store = RedisStagingStore(url="redis://localhost:6379/0")
+    # Just verify they can be created (connection may fail in tests, that's ok)
+    assert cache is not None
+    assert store is not None
 
 
 class FakeRepo:

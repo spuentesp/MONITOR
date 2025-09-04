@@ -26,9 +26,9 @@ def librarian(state: FlowState, tools: dict[str, Any]) -> FlowState:
             default=None,
         )
         if summary is not None:
-            return {**state, "evidence": evidence, "evidence_summary": summary}
+            return FlowState({**state, "evidence": evidence, "evidence_summary": summary})
 
-    return {**state, "evidence": evidence}
+    return FlowState({**state, "evidence": evidence})
 
 
 def steward(state: FlowState, tools: dict[str, Any]) -> FlowState:
@@ -50,6 +50,6 @@ def steward(state: FlowState, tools: dict[str, Any]) -> FlowState:
     )
 
     if hints is not None:
-        return {**state, "validation": {"ok": True, "warnings": [hints]}}
+        return FlowState({**state, "validation": {"ok": True, "warnings": [hints]}})
 
-    return {**state, "validation": {"ok": True, "warnings": []}}
+    return FlowState({**state, "validation": {"ok": True, "warnings": []}})

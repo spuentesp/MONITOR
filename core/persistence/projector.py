@@ -6,13 +6,12 @@ from typing import Any
 import yaml
 
 try:
-    from core.ports.storage import RepoPort  # type: ignore
-except Exception:  # pragma: no cover
+    from core.ports.storage import RepoPort
+except ImportError:  # pragma: no cover
     RepoPort = Any  # type: ignore
 
 from core.loaders.yaml_loader import load_omniverse_from_yaml
-from core.persistence.neo4j_repo import Neo4jRepo
-from core.persistence.projector_lib.base import ProjectorBase
+from core.persistence.projector_lib.base import BaseProjector
 from core.persistence.projector_lib.entities_sheets import EntitiesSheetsMixin
 from core.persistence.projector_lib.facts_relations import FactsRelationsMixin
 from core.persistence.projector_lib.stories_scenes import StoriesScenesMixin
@@ -21,14 +20,15 @@ from core.persistence.projector_lib.universe_and_arcs import UniverseAndArcsMixi
 
 
 class Projector(
-    ProjectorBase,
+    BaseProjector,
     SystemsAxiomsArchetypesMixin,
     UniverseAndArcsMixin,
     StoriesScenesMixin,
     EntitiesSheetsMixin,
     FactsRelationsMixin,
 ):
-    def __init__(self, repo: RepoPort | Neo4jRepo):
+    def __init__(self, repo: Any):  # duck-typed to RepoPort | Neo4jRepo when available
+        # repo is neo4j_repo in the injected deps
         super().__init__(repo)
 
     def project_from_yaml(self, yaml_path: Path | str, ensure_constraints: bool = True) -> None:

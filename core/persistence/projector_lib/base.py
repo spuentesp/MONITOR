@@ -4,13 +4,13 @@ import json
 from typing import Any
 
 try:
-    from core.ports.storage import RepoPort  # type: ignore
-except Exception:  # pragma: no cover
+    from core.ports.storage import RepoPort
+except ImportError:  # pragma: no cover
     RepoPort = Any  # type: ignore
 
 
-class ProjectorBase:
-    def __init__(self, repo: RepoPort | Any):  # duck-typed to RepoPort
+class BaseProjector:
+    def __init__(self, repo: Any):  # duck-typed to RepoPort when available
         self.repo = repo
 
     @staticmethod

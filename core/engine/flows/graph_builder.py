@@ -124,7 +124,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
                 results.append({"tool": action.get("tool"), "error": str(e)})
 
         # Extract deltas from results
-        deltas = {"entities": [], "facts": [], "relations": []}
+        deltas: dict[str, list[Any]] = {"entities": [], "facts": [], "relations": []}
         for result in results:
             if isinstance(result.get("result"), dict):
                 result_data = result["result"]
@@ -213,21 +213,21 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         return recorder_node(state, tools)
 
     # Build the workflow
-    workflow = StateGraph(State)
-    workflow.add_node("intent_router", intent_router)
-    workflow.add_node("health_gate", health_gate)
-    workflow.add_node("director", director)
-    workflow.add_node("librarian", librarian)
-    workflow.add_node("steward", steward)
-    workflow.add_node("planner", planner)
-    workflow.add_node("execute_actions", execute_actions)
-    workflow.add_node("qa_node", qa_node)
-    workflow.add_node("narrator", narrator)
-    workflow.add_node("critic", critic)
-    workflow.add_node("continuity_guard", continuity_guard)
-    workflow.add_node("archivist", archivist)
-    workflow.add_node("resolve_decider", resolve_decider)
-    workflow.add_node("recorder", recorder)
+    workflow = StateGraph(State)  # type: ignore[type-var]
+    workflow.add_node("intent_router", intent_router)  # type: ignore[type-var]
+    workflow.add_node("health_gate", health_gate)  # type: ignore[type-var]
+    workflow.add_node("director", director)  # type: ignore[type-var]
+    workflow.add_node("librarian", librarian)  # type: ignore[type-var]
+    workflow.add_node("steward", steward)  # type: ignore[type-var]
+    workflow.add_node("planner", planner)  # type: ignore[type-var]
+    workflow.add_node("execute_actions", execute_actions)  # type: ignore[type-var]
+    workflow.add_node("qa_node", qa_node)  # type: ignore[type-var]
+    workflow.add_node("narrator", narrator)  # type: ignore[type-var]
+    workflow.add_node("critic", critic)  # type: ignore[type-var]
+    workflow.add_node("continuity_guard", continuity_guard)  # type: ignore[type-var]
+    workflow.add_node("archivist", archivist)  # type: ignore[type-var]
+    workflow.add_node("resolve_decider", resolve_decider)  # type: ignore[type-var]
+    workflow.add_node("recorder", recorder)  # type: ignore[type-var]
 
     workflow.set_entry_point("intent_router")
 

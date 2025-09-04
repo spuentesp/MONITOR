@@ -31,6 +31,8 @@ def narrative_tool(
     # Reads are not gated
     if op == "list_turns_for_scene":
         scene_id = kwargs.get("scene_id")
+        if scene_id is None:
+            return {"ok": False, "error": "scene_id is required"}
         limit = int(kwargs.get("limit", 50))
         return {"ok": True, "result": service.list_turns_for_scene(scene_id, limit=limit)}
 
@@ -58,7 +60,7 @@ def narrative_tool(
             )
             ins = service.insert_turn(doc)
         elif op == "insert_note":
-            doc = Note(
+            note_doc = Note(
                 universe_id=kwargs["universe_id"],
                 story_id=kwargs.get("story_id"),
                 scene_id=kwargs.get("scene_id"),
@@ -68,9 +70,9 @@ def narrative_tool(
                 tags=kwargs.get("tags"),
                 meta=kwargs.get("meta"),
             )
-            ins = service.insert_note(doc)
+            ins = service.insert_note(note_doc)
         elif op == "insert_memory":
-            doc = Memory(
+            memory_doc = Memory(
                 universe_id=kwargs["universe_id"],
                 story_id=kwargs.get("story_id"),
                 scene_id=kwargs.get("scene_id"),
@@ -81,9 +83,9 @@ def narrative_tool(
                 confidence=kwargs.get("confidence"),
                 meta=kwargs.get("meta"),
             )
-            ins = service.insert_memory(doc)
+            ins = service.insert_memory(memory_doc)
         elif op == "insert_docmeta":
-            doc = DocMeta(
+            docmeta_doc = DocMeta(
                 universe_id=kwargs["universe_id"],
                 story_id=kwargs.get("story_id"),
                 scene_id=kwargs.get("scene_id"),
@@ -95,7 +97,7 @@ def narrative_tool(
                 minio_key=kwargs.get("minio_key"),
                 meta=kwargs.get("meta"),
             )
-            ins = service.insert_docmeta(doc)
+            ins = service.insert_docmeta(docmeta_doc)
         else:
             return {"ok": False, "error": f"unknown op: {op}"}
         return {

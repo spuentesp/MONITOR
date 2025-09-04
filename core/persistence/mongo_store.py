@@ -28,8 +28,8 @@ class MongoStore:
         url = self.url or (env_str("MONGO_URL") or "mongodb://localhost:27017")
         database = self.database or (env_str("MONGO_DB") or "monitor")
         try:
-            from pymongo import MongoClient  # type: ignore
-        except Exception as e:  # pragma: no cover - optional dependency
+            from pymongo import MongoClient
+        except Exception as e:  # pragma: no cover - required dependency
             raise RuntimeError("pymongo not installed; cannot use MongoStore") from e
         self.client = MongoClient(url, serverSelectionTimeoutMS=1500)
         self.db = self.client[database]

@@ -99,7 +99,7 @@ class RelationEdge(_Base):
     temporal: dict[str, Any] | None = None
 
     # Accept legacy keys {from,to} by alias
-    def model_post_init(self, __context: Any) -> None:  # type: ignore[override]
+    def model_post_init(self, context: Any) -> None:
         # Coalesce legacy keys
         if self.a is None and hasattr(self, "from"):
             object.__setattr__(self, "a", getattr(self, "from"))

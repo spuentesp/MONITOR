@@ -5,9 +5,9 @@ from typing import Any
 from uuid import uuid4
 
 try:
-    from core.ports.storage import RepoPort  # type: ignore
-except Exception:  # pragma: no cover
-    RepoPort = Any  # type: ignore
+    from core.ports.storage import RepoPort
+except ImportError:  # pragma: no cover
+    RepoPort = None  # type: ignore
 
 
 class RecorderService:
@@ -348,14 +348,16 @@ class RecorderService:
                             sid = f"source:{doc_id}"
                             sources.append({"id": sid, "doc_id": doc_id})
                         elif isinstance(e, dict):
-                            doc_id = e.get("doc_id")
+                            dict_doc_id = e.get("doc_id")
+                            if not isinstance(dict_doc_id, str):
+                                dict_doc_id = ""
                             sid = e.get("id") or (
-                                f"source:{doc_id}" if doc_id else f"source:{uuid4()}"
+                                f"source:{dict_doc_id}" if dict_doc_id else f"source:{uuid4()}"
                             )
                             sources.append(
                                 {
                                     "id": sid,
-                                    "doc_id": doc_id,
+                                    "doc_id": dict_doc_id,
                                     "title": e.get("title"),
                                     "kind": e.get("kind"),
                                     "minio_key": e.get("minio_key"),

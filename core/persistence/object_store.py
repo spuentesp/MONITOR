@@ -27,8 +27,8 @@ class ObjectStore:
         sk = self.secret_key or (env_str("MINIO_SECRET_KEY") or "minioadmin")
         secure = self.secure if self.secure is not None else env_bool("MINIO_SECURE", False)
         try:
-            from minio import Minio  # type: ignore
-        except Exception as e:  # pragma: no cover - optional dependency
+            from minio import Minio
+        except Exception as e:  # pragma: no cover - required dependency
             raise RuntimeError("minio not installed; cannot use ObjectStore") from e
         self.client = Minio(ep, access_key=ak, secret_key=sk, secure=secure)
         return self

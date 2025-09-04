@@ -28,7 +28,7 @@ def director(state: FlowState, tools: dict[str, Any]) -> FlowState:
 
     if reply is not None:
         # Ensure a structured plan for callers/tests even if LLM returns free text
-        structured = {"beats": [intent] if intent else [], "assumptions": []}
+        structured: dict[str, Any] = {"beats": [intent] if intent else [], "assumptions": []}
         if isinstance(reply, str) and reply.strip():
             structured["notes"] = reply.strip()
         elif isinstance(reply, dict):
@@ -42,12 +42,12 @@ def director(state: FlowState, tools: dict[str, Any]) -> FlowState:
             actions = structured.get("actions") or []
             prelude = ops_prelude(actions if isinstance(actions, list) else [])
             if prelude:
-                return {**state, "plan": structured, "operations_prelude": prelude}
+                return FlowState({**state, "plan": structured, "operations_prelude": prelude})
         except Exception:
             pass
-        return {**state, "plan": structured}
+        return FlowState({**state, "plan": structured})
 
-    return {**state, "plan": {"beats": [intent], "assumptions": []}}
+    return FlowState({**state, "plan": {"beats": [intent], "assumptions": []}})
 
 
 def planner(state: FlowState, tools: dict[str, Any]) -> FlowState:
@@ -84,4 +84,4 @@ def planner(state: FlowState, tools: dict[str, Any]) -> FlowState:
     except Exception:
         actions = []
 
-    return {**state, "actions": actions or []}
+    return FlowState({**state, "actions": actions or []})

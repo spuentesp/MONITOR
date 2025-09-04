@@ -25,7 +25,7 @@ class QdrantIndex:
         url = self.url or (env_str("QDRANT_URL") or "http://localhost:6333")
         api_key = self.api_key or env_str("QDRANT_API_KEY")
         try:
-            from qdrant_client import QdrantClient  # type: ignore
+            from qdrant_client import QdrantClient
         except Exception as e:  # pragma: no cover - optional dependency
             raise RuntimeError("qdrant-client not installed; cannot use QdrantIndex") from e
         self.client = QdrantClient(url=url, api_key=api_key)
@@ -45,7 +45,7 @@ class QdrantIndex:
         assert self.client is not None
         colls = self.client.get_collections().collections
         if not any(c.name == name for c in colls):
-            from qdrant_client.http import models as qm  # type: ignore
+            from qdrant_client.http import models as qm
 
             self.client.create_collection(
                 collection_name=name,
@@ -64,7 +64,7 @@ class QdrantIndex:
         name = collection or self.collection
         if not name:
             raise ValueError("Qdrant collection not set")
-        from qdrant_client.http import models as qm  # type: ignore
+        from qdrant_client.http import models as qm
 
         ids: list[str] = []
         vecs: list[list[float]] = []
@@ -95,7 +95,7 @@ class QdrantIndex:
         name = collection or self.collection
         if not name:
             raise ValueError("Qdrant collection not set")
-        from qdrant_client.http import models as qm  # type: ignore
+        from qdrant_client.http import models as qm
 
         filt = None
         if query_filter:

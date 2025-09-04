@@ -19,4 +19,4 @@ def intent_router(state: FlowState, tools: dict[str, Any]) -> FlowState:
     if not label:
         label = "narrative"
 
-    return {**state, "intent_type": label}
+    return FlowState({**state, "intent_type": label})
