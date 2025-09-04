@@ -5,7 +5,8 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from core.engine.langgraph_modes import GraphState, build_langgraph_modes
+from core.engine.modes.graph_state import GraphState
+from core.engine.modes.graph_builder import build_langgraph_modes
 from core.engine.orchestrator import build_live_tools
 
 router = APIRouter(tags=["langgraph-modes"])
@@ -90,6 +91,6 @@ class HelpRes(BaseModel):
 
 @router.get("/langgraph/modes/help", response_model=HelpRes)
 def help_endpoint() -> HelpRes:
-    from core.engine.langgraph_modes import get_help_text
+    from core.engine.modes.constants import HELP_TEXT
 
-    return HelpRes(help=get_help_text())
+    return HelpRes(help=HELP_TEXT)

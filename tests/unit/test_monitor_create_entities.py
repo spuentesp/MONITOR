@@ -1,4 +1,5 @@
-from core.engine.langgraph_modes import monitor_node
+from core.engine.modes.monitor_node import monitor_node
+from core.engine.modes.graph_state import GraphState
 from core.engine.monitor_parser import parse_monitor_intent
 from core.engine.tools import ToolContext
 
@@ -49,7 +50,7 @@ def test_monitor_create_entity_adds_appears_in(monkeypatch):
     }
     # Monkeypatch recorder_tool used by monitor_node via replacing _commit behavior is tricky; instead we rely on returned deltas
     # Call monitor_node (router bypassed)
-    out = monitor_node(state)
+    out = monitor_node(state)  # type: ignore[arg-type]
     assert out.get("last_mode") == "monitor"
     # Validate staged deltas have new_scene with participants
     assert staging.staged, "No deltas staged"
