@@ -122,3 +122,63 @@
 {"scene_id": "s1", "facts": [{"description": "The darkness envelops you like a shroud. Your eyes strain to adjust, but the blackness seems to have a life of its own, a palpable presence that presses against your skin. A faint …", "occurs_in": "s1"}]}
 {"facts": [{"description": "x"}]}
 {"relation_states": [{}]}
+{}
+{}
+{}
+{}
+{}
+{"scene_id": "s1"}
+{"scene_id": "s1", "facts": [{"description": "there", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest. The trees seem to lean in, their branches tangling above, as if sharing a dark secret. A faint smell of damp earth and decay wafts through the air,", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest. The trees seem to lean in, their branches tangling above, as if sharing a dark secret. A faint smell of dam…", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{}
+{}
+{}
+{}
+{"scene_id": "s1"}
+{"scene_id": "s1", "facts": [{"description": "there", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1"}
+{"scene_id": "s1", "facts": [{"description": "x", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{}
+{}
+{"facts": [{"description": "The air hums with a low, metallic whine, and a faint glow seeps from the console before you. A soft chime acknowledges your presence, its tone echoing in the empty chamber.\n\n*What will you do next?*"}]}
+{}
+{}
+{}
+{}
+{"universe_id": "universe:85babd01-e826-4929-9e74-1b6cf5b90e32", "new_universe": {"id": "universe:85babd01-e826-4929-9e74-1b6cf5b90e32", "name": "Omniverse"}, "new_story": {"id": "story:959fc871-99c3-4a00-bdeb-4b01de756ae9", "title": "Isekai: Roman Frontier Camp", "universe_id": "universe:85babd01-e826-4929-9e74-1b6cf5b90e32", "tags": ["c. 100 CE – Height of the Roman Empire", "isekai", "roman empire", "modern gear", "camping", "adventure"]}, "new_scene": {"id": "scene:c7034749-ee7c-4c64-b3f5-34aec595141b", "title": "Opening Scene", "story_id": "story:959fc871-99c3-4a00-bdeb-4b01de756ae9", "sequence_index": 1}, "new_entities": [{"id": "entity:c24ad20f-3d9d-48ca-b3b2-bbea801771d8", "name": "Sebastian Puentes", "universe_id": "universe:85babd01-e826-4929-9e74-1b6cf5b90e32"}]}
+{"facts": [{"description": "The night air is cool, the scent of pine mingling with distant campfires. A flash of blinding light and a low, resonant hum later, you find yourself on a gravel‑laden clearing beside a well‑trodden Roman road. The road s"}]}
+{"scene_id": "s1"}
+{"scene_id": "s1", "facts": [{"description": "there", "occurs_in": "s1"}]}
+{}
+{"universe_id": "universe:848c5e85-ec71-4318-b4b6-087b128e71de", "new_universe": {"id": "universe:848c5e85-ec71-4318-b4b6-087b128e71de", "name": "Omniverse"}, "new_story": {"id": "story:86bdb476-28cf-4128-a61c-ad541a941bc2", "title": "Engine Start", "universe_id": "universe:848c5e85-ec71-4318-b4b6-087b128e71de", "tags": []}, "new_scene": {"id": "scene:3f863802-7c16-4633-8ff4-785fe6df6576", "title": "Opening Scene", "story_id": "story:86bdb476-28cf-4128-a61c-ad541a941bc2", "sequence_index": 1}}
+{"facts": [{"description": "The hatch thuds shut, sealing the cabin from the howling wind.  \nYour gloved hand twists the ignition; the engine rumbles awake, vibrations humming through the floor.  \nA thin plume of steam curls from the exhaust as the"}]}
+{}
+{"facts": [{"description": "The pine‑scented air turns warm and fragrant as the distant hum of traffic reaches your ears. A weather‑worn stone marker, half‑eroded by centuries of rain, bears the faded Latin inscription “Via Flaminia – 12 km.” Beyon"}]}
+{}
+{"scene_id": "s1"}
+{"scene_id": "s1", "facts": [{"description": "x", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"universe_id": "universe:5275e4ed-7610-4b8f-8647-d9f7ba0c479a", "new_universe": {"id": "universe:5275e4ed-7610-4b8f-8647-d9f7ba0c479a", "name": "Omniverse"}, "new_story": {"id": "story:f0b64cf9-ed2e-4b96-835b-22480bb833b4", "title": "Journey on the Via Flaminia", "universe_id": "universe:5275e4ed-7610-4b8f-8647-d9f7ba0c479a", "tags": ["Roman Empire", "road", "historical", "peninsula"]}, "new_scene": {"id": "scene:d950797b-bb57-40a6-90f9-78de6f79684e", "title": "Opening Scene", "story_id": "story:f0b64cf9-ed2e-4b96-835b-22480bb833b4", "sequence_index": 1}}
+{"facts": [{"description": "The dust‑laden path you’ve been stumbling along widens abruptly, the earth giving way to a packed ribbon of stone. Ahead, the Via Flaminia stretches straight through the rolling hills, flanked by carts, merchants shoutin"}]}
+{}
+{"universe_id": "universe:1df3bcc3-9d22-442d-804d-79341f558213", "new_universe": {"id": "universe:1df3bcc3-9d22-442d-804d-79341f558213", "name": "Omniverse"}, "new_story": {"id": "story:51b4a843-8779-40a8-afbf-3f906ab0976c", "title": "Checking GPS While Parking", "universe_id": "universe:1df3bcc3-9d22-442d-804d-79341f558213", "tags": ["present", "roleplay", "urban"]}, "new_scene": {"id": "scene:badfeed9-a580-422f-bb0a-2fd248ff49ce", "title": "Opening Scene", "story_id": "story:51b4a843-8779-40a8-afbf-3f906ab0976c", "sequence_index": 1}}
+{"facts": [{"description": "The night air hangs heavy over the narrow via, the distant hum of traffic a low, steady thrum. Your car idles in the shadows of a rusted fire escape, the streetlamp above casting a pale pool of light that catches the gli"}]}
+{}
+{"facts": [{"description": "The monitor’s dim screen blinks to life, a soft green glow cutting through the gloom. A low, static‑laden voice crackles, “…system online. Awaiting input.” The hum of the ship’s life‑support thrums beneath the words, rem"}]}
+{}
+{"facts": [{"description": "The candle‑lit study flickers, shadows leaping across a cluttered desk. Papers flutter as if caught in an unseen wind, and the ink on the map you were tracing smears into an indecipherable swirl. Voices overlap—your comp"}]}
+{}
+{"facts": [{"description": "**The Road Unfolds**  \n- The gravel of the ancient Via Flaminia stretches ahead, a ribbon of stone and dust that seems to pulse beneath the summer sun.  \n- Your camper, a sleek, modern capsule of chrome and canvas, sits "}]}
+{}
+{"facts": [{"description": "The night sky over the city of Vespera never quite settles; constellations shift like living thoughts, and the streets pulse with rumors of a hidden Archive that records every choice made within its walls. Scholars claim"}]}

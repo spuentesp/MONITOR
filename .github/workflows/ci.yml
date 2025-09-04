@@ -27,12 +27,16 @@ jobs:
       - name: Lint (ruff)
         run: ruff check .
 
-      - name: Tests (pytest)
-        run: pytest -q
+      - name: Tests (pytest + coverage)
+        run: |
+          pytest -q \
+            --cov=core --cov=frontend \
+            --cov-report=term-missing \
+            --cov-fail-under=70
 
       - name: Architecture (import-linter)
         run: lint-imports --config importlinter.ini
 
       - name: Type-check (mypy)
         continue-on-error: true
-        run: mypy
+        run: mypy core frontend tests

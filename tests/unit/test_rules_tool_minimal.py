@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from core.engine.tools import ToolContext, rules_tool
 
 

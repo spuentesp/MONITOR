@@ -330,3 +330,43 @@ See the “System overview (how it works today)” section in `docs/narrative_en
 > Tip: Start small. Create one Universe, one Story with a few Scenes, edit YAML or ingest two documents, and let the co-pilot draft a scene. Then add a what-if branch and compare diffs.
 
 For a detailed explanation of agents, prompts, LangGraph/LangChain orchestration, and policies, see `docs/agents_and_langgraph.md`.
+
+---
+
+## Branch API quickstart
+
+Endpoints are exposed under `/api/branches` (see `core/interfaces/branches_api.py`). Examples assume the backend is running and the required `X-Context-Token` header is set.
+
+- Branch from a scene:
+	- POST `/api/branches/branch-at-scene` with `{ "source_universe": "u:canon", "scene_id": "scene:42", "target_universe": "u:whatif" }`
+- Clone a full universe or subset:
+	- POST `/api/branches/clone` with filters like `stories`, `entities`, `facts_since`.
+- Diff universes (counts):
+	- GET `/api/branches/{source}/diff/{target}` → counts of stories/scenes/entities/facts.
+- Typed diff (detailed lists + provenance counts):
+	- GET `/api/branches/{source}/diff/{target}/typed` → per-type presence lists and `provenance_counts`.
+- Promote changes into target:
+	- POST `/api/branches/promote` with `{ "source": "u:whatif", "target": "u:canon", "strategy": "append_missing" }` to idempotently merge stories/scenes/entities/facts/sheets that exist in source but are missing in target.
+
+Notes:
+- `append_missing` is safe to re-run (MERGE semantics); `overwrite` will replace conflicting nodes/edges.
+- Diffs help review before promotion; typed diff includes IDs for precise review.
+
+## Optional Redis backend
+
+Redis is used for cache/staging when available. Docker Compose includes a Redis service; ensure the client lib is installed (already listed in `requirements.txt`). To enable via env:
+
+- `export MONITOR_USE_REDIS=true`
+- Optional: `export MONITOR_REDIS_URL=redis://localhost:6379/0`
+
+The system will fall back to in-memory staging if Redis is not configured.
+
+## Minimal rules tool
+
+The `rules` tool now supports a small, test-backed set of actions:
+
+- `forbid_relation(type, a, b)` → returns violation if relation would be created.
+- `require_role_in_scene(role, scene_id)` → checks scene participants/roles.
+- `max_participants(scene_id, limit)` → enforces a cap.
+
+These are invoked by agents internally; you can extend them in `core/engine/tools.py`. Steward integration is planned to run selected checks before persistence.
