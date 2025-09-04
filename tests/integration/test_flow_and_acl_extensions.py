@@ -146,7 +146,6 @@ def test_flow_injects_citations_into_narrative_and_sets_narrative_result():
     ctx = Ctx()
 
     def retrieval_tool(_ctx, *, query, vector_collection, text_index, k=8, filter_terms=None):
-        # Return two hits to act as citations
         return {
             "ok": True,
             "results": [
@@ -195,9 +194,7 @@ def test_flow_injects_citations_into_narrative_and_sets_narrative_result():
     graph = build_langgraph_flow(tools_pkg)
     out = graph.invoke({"intent": "tell me something", "universe_id": "u"})
 
-    # Narrative should be present
     assert "narrative_result" in out
-    # And citations should have been injected into payload meta
     assert captured_payloads, "narrative_tool should have been called"
     meta = captured_payloads[-1].get("meta")
     assert meta and isinstance(meta.get("citations"), list) and len(meta["citations"]) == 2

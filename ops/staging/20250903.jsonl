@@ -58,3 +58,14 @@
 {"scene_id": "s1", "facts": [{"description": "You stare blankly at the small, weathered wooden door in front of you. It's been hours since you arrived in Raven's Peak, a crumbling town shrouded in mist and legend. The local in…", "occurs_in": "s1"}]}
 {"facts": [{"description": "x"}]}
 {"relation_states": [{}]}
+{}
+{"facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest, the air heavy with the scent of damp earth and decaying leaves. The trees tower above, their branches creaking ominously in the gentle breeze. A fa"}]}
+{}
+{"facts": [{"description": "You stand at the edge of a worn, wooden pier, the sun dipping into the horizon as it casts a warm orange glow across the calm waters of the lake. The air is filled with the sweet scent of blooming flowers and the soft la"}]}
+{"universe_id": "universe:9a04f5ae-7412-4f86-8aca-166bd63b2b0c", "new_universe": {"id": "universe:9a04f5ae-7412-4f86-8aca-166bd63b2b0c", "name": "Omniverse"}, "new_story": {"id": "story:d4a737ff-67b5-4ac2-a9b3-09cfad6378ae", "title": "Context Summary", "universe_id": "universe:9a04f5ae-7412-4f86-8aca-166bd63b2b0c", "tags": ["Unknown", "summary"]}, "new_scene": {"id": "scene:1a11ed2f-d607-4a19-bdb8-d12b1225ab33", "title": "Opening Scene", "story_id": "story:d4a737ff-67b5-4ac2-a9b3-09cfad6378ae", "sequence_index": 1}}
+{"scene_id": "s1", "facts": [{"description": "You stand at the edge of a dusty, moonlit desert, the silence broken only by the faint rustling of sand beneath your feet. The stars above twinkle like diamonds scattered across the velvet expanse, and the air is heavy w", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You stand at the edge of a dusty, moonlit desert, the silence broken only by the faint rustling of sand beneath your feet. The stars above twinkle like diamonds scattered across th…", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "I don't see any characters or setting. Let's establish the scene. \n\nYou find yourself standing at the edge of a dense forest, with a worn dirt path leading into the trees. A faint mist clings to the air, and the sound of", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "I don't see any characters or setting. Let's establish the scene. \n\nYou find yourself standing at the edge of a dense forest, with a worn dirt path leading into the trees. A faint …", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}

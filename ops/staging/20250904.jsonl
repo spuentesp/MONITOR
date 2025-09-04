@@ -1,0 +1,71 @@
+{"facts": [{"description": "You stand at the edge of a moonlit lake, its surface reflecting the stars above. A lone rowboat bobs gently on the water, tied to a weathered wooden dock. The air is heavy with the scent of wet earth and decaying leaves."}]}
+{}
+{"facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest. The air is heavy with the scent of damp earth and decaying leaves. A faint, whispery wind stirs the trees, causing the mist to swirl and dance arou"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The dimly lit tavern was a refuge for weary travelers. You sat at a wooden bar, nursing a mug of lukewarm ale. The fire crackled, casting flickering shadows on the walls. Outside, a storm raged on, its intensity mirrored", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The dimly lit tavern was a refuge for weary travelers. You sat at a wooden bar, nursing a mug of lukewarm ale. The fire crackled, casting flickering shadows on the walls. Outside, …", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "You stand at the edge of a dusty, moonlit plain, the ruins of an ancient city stretching before you like the shards of a shattered dream. The air is heavy with the scent of sandalwood and decay. A gust of wind stirs the ", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You stand at the edge of a dusty, moonlit plain, the ruins of an ancient city stretching before you like the shards of a shattered dream. The air is heavy with the scent of sandalw…", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"facts": [{"description": "You step off the worn, wooden pier and onto the mist-shrouded dock. The air is heavy with the scent of saltwater and decay. As you look out over the water, the faint outline of a lighthouse rises from the fog like a spec"}]}
+{"facts": [{"description": "You step off the train, the worn wooden platform creaking beneath your feet. The small station is deserted, save for a lone figure watching from the shadows. The air is heavy with the scent of damp earth and decaying lea"}]}
+{}
+{"universe_id": "universe:6cdf4842-e9b6-4101-b48b-16edb898cfb8", "new_universe": {"id": "universe:6cdf4842-e9b6-4101-b48b-16edb898cfb8", "name": "Omniverse"}, "new_story": {"id": "story:57cbe26b-f236-44dd-8b26-7979328d9936", "title": "No Context", "universe_id": "universe:6cdf4842-e9b6-4101-b48b-16edb898cfb8", "tags": ["Unknown", "empty"]}, "new_scene": {"id": "scene:6efe13c4-bea1-4881-a498-7b9261b065e1", "title": "Opening Scene", "story_id": "story:57cbe26b-f236-44dd-8b26-7979328d9936", "sequence_index": 1}}
+{"scene_id": "s1", "facts": [{"description": "The old, creaky door groaned as it swung open, revealing a dimly lit room with a single, flickering candle casting eerie shadows on the walls. You stepped inside, your footsteps echoing off the wooden floorboards. The ai", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The old, creaky door groaned as it swung open, revealing a dimly lit room with a single, flickering candle casting eerie shadows on the walls. You stepped inside, your footsteps ec…", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The dimly lit alleyway seemed to swallow the faint moonlight, casting long shadows across the damp cobblestones. You stood at the entrance, the air heavy with the stench of rot and decay. A flickering torch cast eerie si", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The dimly lit alleyway seemed to swallow the faint moonlight, casting long shadows across the damp cobblestones. You stood at the entrance, the air heavy with the stench of rot and…", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest, the air thick with the scent of damp earth and decaying leaves. The trees tower above, their branches creaking in the gentle breeze like skeletal f"}]}
+{"facts": [{"description": "You find yourself standing at the edge of a dense forest, the air thick with the scent of damp earth and decaying leaves. The canopy above is a vibrant tapestry of greens, with sunlight filtering through the gaps to cast"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "You find yourself standing at the edge of a dimly lit alleyway, the air thick with the smell of damp stone and decay. The flickering flame of a nearby streetlamp casts eerie shadows on the walls, making it seem as though", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You find yourself standing at the edge of a dimly lit alleyway, the air thick with the smell of damp stone and decay. The flickering flame of a nearby streetlamp casts eerie shadow…", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest, a worn dirt path stretching out before you like a serpent's spine. The air is heavy with the scent of damp earth and decaying leaves. You've been w", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest, a worn dirt path stretching out before you like a serpent's spine. The air is heavy with the scent of damp …", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{"facts": [{"description": "You stand at the edge of a dusty, abandoned town, the sun beating down on the cracked earth and worn wooden signs that hang above the empty storefronts. The air is thick with the scent of dry grass and the distant tang o"}]}
+{"facts": [{"description": "You stand at the edge of a dusty, forgotten town. The main street stretches out before you, lined with crumbling buildings and overgrown weeds. A faded sign creaks in the gentle breeze, reading \"Raven's Peak.\" \n\nYou've b"}]}
+{}
+{"universe_id": "universe:61a69bea-2a1e-4c06-b6ad-2562f330c69d", "new_universe": {"id": "universe:61a69bea-2a1e-4c06-b6ad-2562f330c69d", "name": "Omniverse"}, "new_story": {"id": "story:934219bb-6a6a-42b8-b33c-4911b718924a", "title": "No Context", "universe_id": "universe:61a69bea-2a1e-4c06-b6ad-2562f330c69d", "tags": ["Unknown", "empty"]}, "new_scene": {"id": "scene:5ce3b9db-cec9-48b8-ab9e-331c32cce871", "title": "Opening Scene", "story_id": "story:934219bb-6a6a-42b8-b33c-4911b718924a", "sequence_index": 1}}
+{"scene_id": "s1", "facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest. The air is heavy with the scent of damp earth and decaying leaves. A faint whispering echoes through the trees, but it's impossible to make out wha", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You find yourself standing at the edge of a dense, mist-shrouded forest. The air is heavy with the scent of damp earth and decaying leaves. A faint whispering echoes through the tr…", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The mist-shrouded streets of Ravenshire are always at their most unforgiving at dawn. A lone figure, shrouded in a long, black cloak, moves swiftly through the deserted alleys. The air is heavy with the scent of damp ear", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The mist-shrouded streets of Ravenshire are always at their most unforgiving at dawn. A lone figure, shrouded in a long, black cloak, moves swiftly through the deserted alleys. The…", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"facts": [{"description": "The dimly lit tavern was abuzz with whispered conversations and the clinking of mugs. You stood at the bar, ordering a pint of the local ale from the gruff but affable bartender. As he poured the drink, a hooded figure s"}]}
+{}
+{"facts": [{"description": "The warm glow of a lantern casts flickering shadows on the weathered walls of a small, seaside tavern. The air is thick with the smell of saltwater and cheap ale. You've just entered, a stranger in town, and the patrons "}]}
+{}
+{"universe_id": "universe:1953663e-aeb2-4ab9-bcbc-dfbd1e0ca697", "new_universe": {"id": "universe:1953663e-aeb2-4ab9-bcbc-dfbd1e0ca697", "name": "Omniverse"}, "new_story": {"id": "story:5ef2cd49-8fdc-4c00-893d-c821e1d0f298", "title": "New Story", "universe_id": "universe:1953663e-aeb2-4ab9-bcbc-dfbd1e0ca697", "tags": ["Unknown", "untitled"]}, "new_scene": {"id": "scene:047ddad5-d27d-42c0-8435-b953cd1d6f15", "title": "Opening Scene", "story_id": "story:5ef2cd49-8fdc-4c00-893d-c821e1d0f298", "sequence_index": 1}}
+{"scene_id": "s1", "facts": [{"description": "You find yourself standing in the middle of a dense marketplace, surrounded by the cacophony of vendors calling out their wares. The air is thick with the smells of exotic spices and freshly baked bread. People of all sh", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "You find yourself standing in the middle of a dense marketplace, surrounded by the cacophony of vendors calling out their wares. The air is thick with the smells of exotic spices a…", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The dimly lit tavern was a hub of hushed conversations and mugs of ale. You sat at the bar, your eyes scanning the patrons. A hooded figure sat in the corner, eyes fixed on you. The bard in the center of the room, strumm", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The dimly lit tavern was a hub of hushed conversations and mugs of ale. You sat at the bar, your eyes scanning the patrons. A hooded figure sat in the corner, eyes fixed on you. Th…", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"facts": [{"description": "You stand at the edge of the dense forest, the trees looming above you like sentinels. The air is heavy with the scent of damp earth and decaying leaves. A faint mist clings to the underbrush, obscuring the path ahead.\n\n"}]}
+{}
+{"facts": [{"description": "You find yourself standing at the edge of a dense, misty forest. The air is heavy with the scent of damp earth and decaying leaves. A faint, eerie glow emanates from within the forest, casting an otherworldly light on th"}]}
+{"universe_id": "universe:97f955c6-0e18-4fb4-9b64-a4cfdcbe62f1", "new_universe": {"id": "universe:97f955c6-0e18-4fb4-9b64-a4cfdcbe62f1", "name": "Omniverse"}, "new_story": {"id": "story:dbbaf561-77fd-4bef-a120-42d6c1eddfd2", "title": "No Context", "universe_id": "universe:97f955c6-0e18-4fb4-9b64-a4cfdcbe62f1", "tags": ["Unknown", "empty"]}, "new_scene": {"id": "scene:6c9b5d57-dcef-467d-a718-34534c0c0970", "title": "Opening Scene", "story_id": "story:dbbaf561-77fd-4bef-a120-42d6c1eddfd2", "sequence_index": 1}}
+{"scene_id": "s1", "facts": [{"description": "The darkness recedes, replaced by a faint warmth. You find yourself in a small cabin, nestled deep within a dense forest. A fire crackles in the hearth, casting flickering shadows on the walls. Smoke wafts upwards, disap", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The darkness recedes, replaced by a faint warmth. You find yourself in a small cabin, nestled deep within a dense forest. A fire crackles in the hearth, casting flickering shadows …", "occurs_in": "s1"}]}
+{}
+{"scene_id": "s1", "facts": [{"description": "The mist-shrouded alleys of New Haven's underworld. The flickering gas lamps cast eerie shadows on the walls as you navigate the narrow passageways. You've received a cryptic message from a mysterious figure, leading you", "occurs_in": "s1"}]}
+{"scene_id": "s1", "facts": [{"description": "The mist-shrouded alleys of New Haven's underworld. The flickering gas lamps cast eerie shadows on the walls as you navigate the narrow passageways. You've received a cryptic messa…", "occurs_in": "s1"}]}
+{"facts": [{"description": "x"}]}
+{"relation_states": [{}]}
+{}
+{"facts": [{"description": "You stand at the edge of the small, seaside town of Ravenshurst, its weathered wooden buildings seeming to lean in as if sharing a secret. The salty air is heavy with the scent of seaweed and the distant crash of waves a"}]}
