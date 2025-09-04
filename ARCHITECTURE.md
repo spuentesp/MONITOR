@@ -115,38 +115,45 @@ Omniverse (Meta-container)
 
 ### **Agent Integration**
 
-Agents operate with rich narrative context:
+Agents operate with comprehensive narrative and world context:
 
-- **Context Enrichment**: Agents receive relevant memories, relationships, and plot threads
-- **Memory Recording**: Agent outputs are captured as structured narrative content  
-- **Character Awareness**: Agents maintain consistent character voices and development
-- **Relationship Tracking**: Dynamic relationship state monitoring and updates
+- **Graph Integration**: Full access to universe ontology, entities, relationships, and temporal facts
+- **Narrative Grounding**: Agents receive complete story context including timelines, character development, and established facts
+- **Context Enrichment**: Multi-layered context combining graph relationships with narrative content memories
+- **Memory Recording**: Agent outputs captured as structured content linked to graph entities and events
+- **Character Awareness**: Consistent character voices maintained through relationship tracking and development history
+- **World Consistency**: All narrative generation grounded in established world state and continuity
+- **Relationship Tracking**: Dynamic relationship state monitoring across graph and narrative content
+- **Consequence Awareness**: Decision-making informed by established facts and potential story implications
 
 ## LangGraph Flow Architecture
 
 ### **Enhanced Multi-Phase Processing**
 
 **Phase 1: Context Enrichment**
-- Retrieve relevant narrative context from MongoDB
-- Gather character memories and relationship states
-- Load scene history and current narrative state
+- Retrieve comprehensive context from both Neo4j graph and MongoDB narrative content
+- Gather character memories, relationship states, and story timeline
+- Load universe context, entities, facts, and established world state
+- Build complete narrative grounding for agent decision-making
 
 **Phase 2: Multi-Agent Council**
-- **Narrator**: Analyzes dramatic potential and story flow
-- **Steward**: Validates continuity and consistency
-- **Character Analyst**: Evaluates character development impact
-- **Synthesis**: Combines perspectives for optimal narrative approach
+- **Narrator**: Analyzes dramatic potential with full world context
+- **Steward**: Validates continuity against established facts and relationships
+- **Character Analyst**: Evaluates character development with relationship awareness
+- **Plot Analyst**: Assesses story momentum and consequence implications
+- **Synthesis**: Combines perspectives for optimal narrative approach with comprehensive grounding
 
 **Phase 3: Intelligent Generation**
-- Context-aware content generation with character consistency
-- Plot thread integration and consequence management
-- Adaptive tone and pacing based on narrative state
+- Context-aware content generation grounded in established world state
+- Character consistency maintained through relationship and memory tracking
+- Plot thread integration with consequence awareness from graph data
+- Adaptive tone and pacing based on comprehensive narrative state
 
 **Phase 4: Memory Integration**
-- Update character memories with new experiences
-- Track relationship changes and developments
-- Record plot thread progression and consequences
-- Maintain narrative state for future sessions
+- Update character memories with new experiences and relationship changes
+- Track relationship developments across graph and narrative content
+- Record plot thread progression and consequence realization
+- Maintain comprehensive narrative state for future sessions
 
 ### **Flow Implementations**
 
