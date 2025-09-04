@@ -1,3 +1,5 @@
+-- System usage summary across a universe
+-- Parameters: $uid (universe_id)
 CALL {
   MATCH (u:Universe {id:$uid})-[:USES_SYSTEM]->(sys:System)
   RETURN sys.id AS sid, 'universe' AS kind, count(*) AS c

@@ -1,3 +1,5 @@
+-- Effective system for universe with inheritance hierarchy
+-- Parameters: $uid (universe_id)
 MATCH (u:Universe {id:$uid})
 OPTIONAL MATCH (u)-[:USES_SYSTEM]->(su:System)
 OPTIONAL MATCH (m:Multiverse)-[:HAS_UNIVERSE]->(u)

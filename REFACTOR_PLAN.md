@@ -14,14 +14,22 @@
   - ✅ `bootstrap_tool.py` - Story bootstrapping tools
   - ✅ `notes_tool.py` - Note recording tools
 
-### 1.2 Split `langgraph_modes.py` (1003 lines) 🔄 PENDING
-- `core/engine/modes/` directory:
-  - `__init__.py` - Mode types and registry
-  - `router.py` - Mode detection/routing logic
-  - `narration_mode.py` - Narration-specific flow
-  - `monitor_mode.py` - Monitor command handling
-  - `state.py` - GraphState management
-  - `utils.py` - Helper functions
+### 1.2 Split `langgraph_modes.py` (1003 lines) ✅ COMPLETED
+- ✅ `core/engine/modes/` directory structure:
+  - ✅ `state.py` - GraphState management and utilities
+  - ✅ `router.py` - Intent classification and routing logic  
+  - ✅ `narration_mode.py` - Simple narration mode handler
+  - ✅ `monitor/` subdirectory with specialized handlers:
+    - ✅ `__init__.py` - Package exports
+    - ✅ `main_handler.py` - Central coordinator for all monitor operations
+    - ✅ `crud_handlers.py` - Basic CRUD operations (create, list entities/facts/etc)
+    - ✅ `entity_handlers.py` - Entity queries (show info, list enemies, last seen)
+    - ✅ `scene_handlers.py` - Scene management (end/add/modify scenes, conversations)
+    - ✅ `entity_management_handlers.py` - Entity creation, retcon, wizard flows
+    - ✅ `setup_handlers.py` - Story/universe setup workflows
+    - ✅ `utils.py` - Helper functions for commits, wizard state, auto-flush
+- ✅ Created `langgraph_modes_modular.py` with legacy compatibility adapters
+- ✅ **All tests passing (71/71)** after major refactoring
 
 ### 1.3 Split `langgraph_flow.py` (656 lines) 🔄 PENDING
 - `core/engine/flows/` directory:
@@ -39,24 +47,20 @@
 - ✅ `core/persistence/query_files/builders/` directory:
   - ✅ `query_loader.py` - Query loading and caching utility
 
-### 2.2 Extract Raw Queries to Configuration ✅ PARTIALLY COMPLETE
+### 2.2 Extract Raw Queries to Configuration ✅ COMPLETED
 - ✅ `core/persistence/query_files/cypher/` directory:
-  - ✅ `system_usage_summary.cypher` - System usage queries
-  - ✅ `effective_system_for_universe.cypher` - System hierarchy queries
-  - ✅ `entities_in_scene.cypher` - Entity by scene queries
-  - ✅ `entities_in_story.cypher` - Entity by story queries
-  - ✅ `entities_in_universe.cypher` - Entity by universe queries
-  - ✅ `entities_in_arc.cypher` - Entity by arc queries
-  - ✅ `entities_in_*_by_role.cypher` - Role-based entity queries
-  - ✅ `entity_by_name_in_universe.cypher` - Entity lookup queries
-  - ✅ `facts_for_scene.cypher` - Scene fact queries
-  - ✅ `facts_for_story.cypher` - Story fact queries
-  - ✅ `scenes_for_entity.cypher` - Entity scene queries
-  - ✅ `participants_by_role_for_*.cypher` - Role participation queries
-  - ✅ `*_scene_for_entity_in_story.cypher` - Scene navigation queries
-  - ✅ `stories_in_universe.cypher` - Universe story queries
-  - ✅ `scenes_in_story.cypher` - Story scene queries
-  - 🔄 More queries to extract from remaining query files
+  - ✅ **30 query files extracted** from inline strings to separate .cypher files
+  - ✅ Entity queries: `entities_in_*.cypher` (8 files)
+  - ✅ Fact queries: `facts_for_*.cypher` (2 files)  
+  - ✅ Scene queries: `scenes_*.cypher`, `participants_by_role_*.cypher` (6 files)
+  - ✅ Relation queries: `relation_*.cypher`, `relations_*.cypher` (3 files)
+  - ✅ System queries: `system_usage_summary.cypher`, `effective_system_for_*.cypher` (6 files)
+  - ✅ Axiom queries: `axioms_*.cypher` (2 files)
+  - ✅ Catalog queries: `list_*.cypher` (2 files)
+  - ✅ Navigation queries: `*_scene_for_entity_in_story.cypher` (2 files)
+- ✅ **7 query classes updated** to use QueryLoader:
+  - ✅ `EntitiesQueries`, `FactsQueries`, `ScenesQueries`
+  - ✅ `RelationsQueries`, `SystemsQueries`, `AxiomsQueries`, `CatalogQueries`
 
 ### 2.3 Create Repository Abstractions ✅ PARTIALLY COMPLETE
 - `core/persistence/repositories/` directory:

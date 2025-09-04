@@ -2,23 +2,17 @@ from __future__ import annotations
 
 from typing import Any
 
+from core.persistence.query_files.builders.query_loader import load_query
+
 
 class CatalogQueries:
     def list_multiverses(self) -> list[dict[str, Any]]:
         return self._rows(
-            """
-            MATCH (m:Multiverse)
-            RETURN m.id AS id, m.name AS name
-            ORDER BY name, id
-            """,
+            load_query("list_multiverses"),
         )
 
     def list_universes_for_multiverse(self, multiverse_id: str) -> list[dict[str, Any]]:
         return self._rows(
-            """
-            MATCH (m:Multiverse {id:$mid})-[:HAS_UNIVERSE]->(u:Universe)
-            RETURN u.id AS id, u.name AS name
-            ORDER BY name, id
-            """,
+            load_query("list_universes_for_multiverse"),
             mid=multiverse_id,
         )
