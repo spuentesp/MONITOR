@@ -4,6 +4,7 @@ from collections.abc import Iterable
 import os
 
 from dotenv import load_dotenv
+from core.utils.env import env_str
 from neo4j import Driver, GraphDatabase
 
 
@@ -11,11 +12,11 @@ class Neo4jRepo:
     def __init__(
         self, uri: str | None = None, user: str | None = None, password: str | None = None
     ):
-        # Load env from .env if present (non-invasive)
+                # Load env from .env if present (non-invasive)
         load_dotenv()
-        self.uri = uri or os.getenv("NEO4J_URI")
-        self.user = user or os.getenv("NEO4J_USER")
-        self.password = password or os.getenv("NEO4J_PASS")
+        self.uri = uri or env_str("NEO4J_URI")
+        self.user = user or env_str("NEO4J_USER")
+        self.password = password or env_str("NEO4J_PASS")
         self._driver: Driver | None = None
 
     def connect(self):

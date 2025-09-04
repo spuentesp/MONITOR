@@ -25,8 +25,8 @@ class MongoStore:
         """
         if self.client is not None and self.db is not None:
             return self
-    url = self.url or (env_str("MONGO_URL") or "mongodb://localhost:27017")
-    database = self.database or (env_str("MONGO_DB") or "monitor")
+        url = self.url or (env_str("MONGO_URL") or "mongodb://localhost:27017")
+        database = self.database or (env_str("MONGO_DB") or "monitor")
         try:
             from pymongo import MongoClient  # type: ignore
         except Exception as e:  # pragma: no cover - optional dependency

@@ -2,41 +2,25 @@ from __future__ import annotations
 
 from typing import Any
 
+from core.persistence.query_files.builders.query_loader import load_query
+
 
 class ScenesQueries:
     def scenes_for_entity(self, entity_id: str) -> list[dict[str, Any]]:
         return self._rows(
-            """
-            MATCH (e:Entity {id:$eid})-[:APPEARS_IN]->(sc:Scene)
-            OPTIONAL MATCH (st:Story)-[:HAS_SCENE]->(sc)
-            RETURN sc.id AS scene_id, st.id AS story_id, sc.sequence_index AS sequence_index
-            ORDER BY story_id, sequence_index
-            """,
+            load_query("scenes_for_entity"),
             eid=entity_id,
         )
 
     def participants_by_role_for_scene(self, scene_id: str) -> list[dict[str, Any]]:
         return self._rows(
-            """
-            MATCH (f:Fact)-[:OCCURS_IN]->(s:Scene {id:$sid})
-            MATCH (e:Entity)-[p:PARTICIPATES_AS]->(f)
-            WITH p.role AS role, collect(DISTINCT e.id) AS entities
-            RETURN role, entities
-            ORDER BY role
-            """,
+            load_query("participants_by_role_for_scene"),
             sid=scene_id,
         )
 
     def participants_by_role_for_story(self, story_id: str) -> list[dict[str, Any]]:
         return self._rows(
-            """
-            MATCH (st:Story {id:$sid})-[:HAS_SCENE]->(sc:Scene)
-            MATCH (f:Fact)-[:OCCURS_IN]->(sc)
-            MATCH (e:Entity)-[p:PARTICIPATES_AS]->(f)
-            WITH p.role AS role, collect(DISTINCT e.id) AS entities
-            RETURN role, entities
-            ORDER BY role
-            """,
+            load_query("participants_by_role_for_story"),
             sid=story_id,
         )
 
@@ -44,14 +28,7 @@ class ScenesQueries:
         self, story_id: str, entity_id: str, after_sequence_index: int
     ) -> dict[str, Any] | None:
         rows = self._rows(
-            """
-            MATCH (st:Story {id:$sid})-[:HAS_SCENE]->(sc:Scene)
-            WHERE sc.sequence_index > $idx
-            MATCH (e:Entity {id:$eid})-[:APPEARS_IN]->(sc)
-            RETURN sc.id AS scene_id, sc.sequence_index AS sequence_index
-            ORDER BY sequence_index ASC
-            LIMIT 1
-            """,
+            load_query("next_scene_for_entity_in_story"),
             sid=story_id,
             eid=entity_id,
             idx=after_sequence_index,
@@ -62,14 +39,7 @@ class ScenesQueries:
         self, story_id: str, entity_id: str, before_sequence_index: int
     ) -> dict[str, Any] | None:
         rows = self._rows(
-            """
-            MATCH (st:Story {id:$sid})-[:HAS_SCENE]->(sc:Scene)
-            WHERE sc.sequence_index < $idx
-            MATCH (e:Entity {id:$eid})-[:APPEARS_IN]->(sc)
-            RETURN sc.id AS scene_id, sc.sequence_index AS sequence_index
-            ORDER BY sequence_index DESC
-            LIMIT 1
-            """,
+            load_query("previous_scene_for_entity_in_story"),
             sid=story_id,
             eid=entity_id,
             idx=before_sequence_index,
@@ -78,22 +48,12 @@ class ScenesQueries:
 
     def stories_in_universe(self, universe_id: str) -> list[dict[str, Any]]:
         return self._rows(
-            """
-            MATCH (u:Universe {id:$uid})-[:HAS_STORY]->(st:Story)
-            OPTIONAL MATCH (a:Arc)-[:HAS_STORY]->(st)
-            RETURN st.id AS id, st.title AS title, st.sequence_index AS sequence_index,
-                   a.id AS arc_id
-            ORDER BY sequence_index, title
-            """,
+            load_query("stories_in_universe"),
             uid=universe_id,
         )
 
     def scenes_in_story(self, story_id: str) -> list[dict[str, Any]]:
         return self._rows(
-            """
-            MATCH (:Story {id:$sid})-[:HAS_SCENE]->(sc:Scene)
-            RETURN sc.id AS id, sc.title AS title, sc.sequence_index AS sequence_index
-            ORDER BY sequence_index
-            """,
+            load_query("scenes_in_story"),
             sid=story_id,
         )
