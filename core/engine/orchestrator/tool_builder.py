@@ -96,14 +96,13 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
         _AUTOCOMMIT_QUEUE = Queue()
         _IDEMPOTENCY_SET = set()
 
-        # LLM-based decision function
-        agents = build_agents()
+        # Get LLM for agents and decider
+        from core.generation.providers import select_llm_from_env
+        llm = select_llm_from_env()
 
         def _llm_decider(payload: dict[str, Any]) -> tuple[bool, str]:
             """LLM-based auto-commit decision function."""
             try:
-                from core.generation.providers import select_llm_from_env
-                llm = select_llm_from_env()
                 prompt = (
                     "You are AutoCommit. Decide if this change should be committed.\n"
                     'Return ONLY JSON: {"commit": <true|false>, "reason": <short>}\n'
@@ -125,9 +124,9 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
         _AUTOCOMMIT_WORKER = AutoCommitWorker(
             queue=_AUTOCOMMIT_QUEUE,
             recorder=recorder,
+            read_cache=cache,
+            idempotency=_IDEMPOTENCY_SET,
             decider=decider,
-            staging_store=staging,
-            idempotency_set=_IDEMPOTENCY_SET,
         )
         _AUTOCOMMIT_WORKER.start()
 
@@ -154,19 +153,15 @@ def build_live_tools(dry_run: bool = True) -> ToolContext:
 
     # Build and return tool context
     return ToolContext(
-        repository=repo,
-        cache=cache,
-        staging=staging,
-        query=query_service,
+        query_service=query_service,
         recorder=recorder,
-        narrative_tool=narrative_tool,
-        query_tool=query_tool,
-        recorder_tool=recorder_tool,
-        bootstrap_story_tool=bootstrap_story_tool,
-        retrieval_tool=retrieval_tool,
-        indexing_tool=indexing_tool,
-        object_upload_tool=object_upload_tool,
-        embedder=embedder_fn,
-        index=index,
+        dry_run=dry_run,
+        read_cache=cache,
+        staging=staging,
+        autocommit_enabled=env_bool("ENABLE_AUTOCOMMIT"),
         autocommit_queue=_AUTOCOMMIT_QUEUE,
+        autocommit_worker=_AUTOCOMMIT_WORKER,
+        idempotency=_IDEMPOTENCY_SET,
+        qdrant=index,
+        embedder=embedder_fn,
     )
