@@ -9,14 +9,15 @@ from typing import Any
 
 import streamlit as st
 
-from core.utils.merge import deep_merge as _dm
-
 # Make repository root importable when running from frontend/
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-# Avoid module-level imports from project after sys.path mutation; import locally where used.
+# Import after sys.path modification
+from core.utils.merge import deep_merge as _dm
+
+# Avoid other module-level imports from project after sys.path mutation; import locally where used.
 
 st.set_page_config(page_title="MONITOR — Agents Chat", layout="wide")
 
