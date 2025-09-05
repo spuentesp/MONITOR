@@ -127,6 +127,31 @@ class AgentRegistry:
         )
 
     @classmethod
+    def get_agent_info(cls, name: str) -> dict[str, Any] | None:
+        """
+        Get agent information by name.
+        
+        Args:
+            name: Agent name (case-insensitive)
+            
+        Returns:
+            Agent info dict or None if not found
+        """
+        agent_key = name.lower()
+        if agent_key not in cls._agents:
+            return None
+        
+        spec, prompt_func = cls._agents[agent_key]
+        return {
+            "name": spec.name,
+            "temperature": spec.temperature,
+            "max_tokens": spec.max_tokens,
+            "prompt_key": spec.prompt_key,
+            "fallback_prompt": spec.fallback_prompt,
+            "prompt_func": prompt_func,
+        }
+
+    @classmethod
     def build_all_agents(cls, llm: Any) -> dict[str, Agent]:
         """
         Build all registered agents.
@@ -135,9 +160,12 @@ class AgentRegistry:
             llm: LLM instance to use
 
         Returns:
-            Dictionary mapping agent keys to Agent instances
+            Dictionary mapping agent names to Agent instances
         """
-        return {key: cls.create_agent(key, llm) for key in cls._agents.keys()}
+        result = {}
+        for key, (spec, _) in cls._agents.items():
+            result[spec.name] = cls.create_agent(key, llm)
+        return result
 
     @classmethod
     def list_registered(cls) -> list[str]:
