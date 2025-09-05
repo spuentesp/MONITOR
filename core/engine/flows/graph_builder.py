@@ -11,6 +11,7 @@ from typing import Any
 
 from core.utils.env import env_bool
 
+from .agent_utils import safe_agent_call
 from .nodes import critic_node, planner_node, recorder_node, resolve_decider_node
 
 
@@ -46,15 +47,8 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         pass
 
     def _safe_act(agent_key: str, messages: list[dict[str, Any]], default: Any = None) -> Any:
-        """Safe agent invocation with fallback."""
-        try:
-            agent = tools[agent_key]
-            if agent and callable(agent):
-                response = agent(messages)
-                return response if response is not None else default
-        except Exception:
-            pass
-        return default
+        """Safe agent invocation - wrapper for shared utility."""
+        return safe_agent_call(tools, agent_key, messages, default)
 
     def _fetch_relations(scene_id: str) -> list[dict[str, Any]]:
         """Fetch effective relations for a scene."""
@@ -98,7 +92,10 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         return {**state, "validation": validation}
 
     def execute_actions(state: dict[str, Any]) -> dict[str, Any]:
-        """Execute planned actions."""
+        """Execute planned actions with proper error logging."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         actions = state.get("actions") or []
         ctx = tools["ctx"]
         results: list[dict[str, Any]] = []
@@ -106,6 +103,7 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
         for action in actions:
             try:
                 if not isinstance(action, dict):
+                    logger.warning(f"Invalid action format: {action}")
                     continue
 
                 tool_name = action.get("tool")
@@ -113,15 +111,19 @@ def build_langgraph_flow(tools: Any, config: dict | None = None):
 
                 if tool_name and tool_name in tools:
                     result = tools[tool_name](ctx, **tool_kwargs)
-                    results.append({"tool": tool_name, "result": result})
+                    results.append({"tool": tool_name, "result": result, "success": True})
                 elif lc_tools and tool_name in lc_tools:
                     lc_tool = lc_tools[tool_name]
                     result = lc_tool.invoke(tool_kwargs)
-                    results.append({"tool": tool_name, "result": result})
+                    results.append({"tool": tool_name, "result": result, "success": True})
                 else:
-                    results.append({"tool": tool_name, "error": "Tool not found"})
+                    error_msg = f"Tool '{tool_name}' not found. Available: {list(tools.keys())}"
+                    logger.error(error_msg)
+                    results.append({"tool": tool_name, "error": error_msg, "success": False})
             except Exception as e:
-                results.append({"tool": action.get("tool"), "error": str(e)})
+                error_msg = f"Tool '{action.get('tool')}' failed: {str(e)}"
+                logger.error(error_msg)
+                results.append({"tool": action.get("tool"), "error": error_msg, "success": False})
 
         # Extract deltas from results
         deltas: dict[str, list[Any]] = {"entities": [], "facts": [], "relations": []}

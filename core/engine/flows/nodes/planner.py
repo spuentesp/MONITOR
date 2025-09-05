@@ -9,6 +9,7 @@ import json
 from typing import Any
 
 from core.engine.flow_utils import tool_schema as flow_tool_schema
+from core.engine.flows.agent_utils import safe_agent_call
 
 
 def _tool_schema() -> list[dict[str, Any]]:
@@ -21,17 +22,6 @@ def planner_node(state: dict[str, Any], tools: Any) -> dict[str, Any]:
     The planner decides if/what to do given intent and context.
     """
 
-    def _safe_act(agent_key: str, messages: list[dict[str, Any]], default: Any = None) -> Any:
-        """Safe agent invocation with fallback."""
-        try:
-            agent = tools[agent_key]
-            if agent and callable(agent):
-                response = agent(messages)
-                return response if response is not None else default
-        except Exception:
-            pass
-        return default
-
     # Provide richer but compact context: IDs and librarian/evidence summary if available
     compact_ctx = {
         k: state.get(k)
@@ -41,7 +31,8 @@ def planner_node(state: dict[str, Any], tools: Any) -> dict[str, Any]:
     if state.get("evidence_summary"):
         compact_ctx["evidence_summary"] = state.get("evidence_summary")
 
-    plan = _safe_act(
+    plan = safe_agent_call(
+        tools,
         "planner",
         [
             {

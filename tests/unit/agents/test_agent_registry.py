@@ -17,12 +17,16 @@ class TestAgentRegistry:
     
     def setup_method(self):
         """Set up clean registry for each test."""
-        # Clear the registry for isolated tests
+        # Save original registry state
+        self._original_agents = AgentRegistry._agents.copy()
+        # Clear the registry for isolated tests  
         AgentRegistry._agents.clear()
     
     def teardown_method(self):
         """Clean up registry after each test."""
+        # Restore original registry state
         AgentRegistry._agents.clear()
+        AgentRegistry._agents.update(self._original_agents)
     
     def test_register_decorator_adds_agent_to_registry(self):
         """Test that @AgentRegistry.register adds agent to registry."""
@@ -155,26 +159,33 @@ class TestAgentRegistry:
 def test_agent_registry_follows_open_closed_principle():
     """Test that new agents can be added without modifying existing code."""
     
-    # Clear registry
+    # Save and clear registry for this test
+    original_agents = AgentRegistry._agents.copy()
     AgentRegistry._agents.clear()
     
-    # Original agents
-    @AgentRegistry.register("OriginalAgent")
-    def original_agent():
-        return "Original"
-    
-    original_count = len(AgentRegistry._agents)
-    
-    # Add new agent (Open for extension)
-    @AgentRegistry.register("NewAgent")
-    def new_agent():
-        return "New agent"
-    
-    # Should have both agents (using lowercase keys)
-    assert len(AgentRegistry._agents) == original_count + 1
-    assert "originalagent" in AgentRegistry._agents
-    assert "newagent" in AgentRegistry._agents
-    
-    # Original agent should be unchanged (Closed for modification)
-    original_info = AgentRegistry.get_agent_info("OriginalAgent")
-    assert original_info["prompt_func"] == original_agent
+    try:
+        # Original agents
+        @AgentRegistry.register("OriginalAgent")
+        def original_agent():
+            return "Original"
+        
+        original_count = len(AgentRegistry._agents)
+        
+        # Add new agent (Open for extension)
+        @AgentRegistry.register("NewAgent")
+        def new_agent():
+            return "New agent"
+        
+        # Should have both agents (using lowercase keys)
+        assert len(AgentRegistry._agents) == original_count + 1
+        assert "originalagent" in AgentRegistry._agents
+        assert "newagent" in AgentRegistry._agents
+        
+        # Original agent should be unchanged (Closed for modification)
+        original_info = AgentRegistry.get_agent_info("OriginalAgent")
+        assert original_info["prompt_func"] == original_agent
+        
+    finally:
+        # Restore original registry
+        AgentRegistry._agents.clear()
+        AgentRegistry._agents.update(original_agents)

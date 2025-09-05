@@ -7,6 +7,8 @@ whether to commit or stage changes.
 
 from typing import Any
 
+from core.engine.flows.agent_utils import safe_agent_call
+
 
 def resolve_decider_node(state: dict[str, Any], tools: Any) -> dict[str, Any]:
     """
@@ -15,17 +17,6 @@ def resolve_decider_node(state: dict[str, Any], tools: Any) -> dict[str, Any]:
     Adds more context to the resolve decision to guide whether
     to commit or stage operations.
     """
-
-    def _safe_act(agent_key: str, messages: list[dict[str, Any]], default: Any = None) -> Any:
-        """Safe agent invocation with fallback."""
-        try:
-            agent = tools[agent_key]
-            if agent and callable(agent):
-                response = agent(messages)
-                return response if response is not None else default
-        except Exception:
-            pass
-        return default
 
     # Gather resolution context
     draft = state.get("draft", "")
@@ -50,7 +41,7 @@ def resolve_decider_node(state: dict[str, Any], tools: Any) -> dict[str, Any]:
         }
     ]
 
-    decision_raw = _safe_act("resolve", messages, default='{"commit": true}')
+    decision_raw = safe_agent_call(tools, "resolve", messages, default='{"commit": true}')
 
     try:
         import json

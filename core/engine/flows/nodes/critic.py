@@ -7,6 +7,8 @@ and provides quality assurance for the generated content.
 
 from typing import Any
 
+from core.engine.flows.agent_utils import safe_agent_call
+
 
 def critic_node(state: dict[str, Any], tools: Any) -> dict[str, Any]:
     """
@@ -15,17 +17,6 @@ def critic_node(state: dict[str, Any], tools: Any) -> dict[str, Any]:
     Provides quality assurance and validation feedback
     for the draft content and planned actions.
     """
-
-    def _safe_act(agent_key: str, messages: list[dict[str, Any]], default: Any = None) -> Any:
-        """Safe agent invocation with fallback."""
-        try:
-            agent = tools[agent_key]
-            if agent and callable(agent):
-                response = agent(messages)
-                return response if response is not None else default
-        except Exception:
-            pass
-        return default
 
     draft = state.get("draft", "")
     actions = state.get("actions", [])
@@ -48,7 +39,7 @@ def critic_node(state: dict[str, Any], tools: Any) -> dict[str, Any]:
         }
     ]
 
-    validation_raw = _safe_act("critic", messages, default='{"ok": true, "warnings": []}')
+    validation_raw = safe_agent_call(tools, "critic", messages, default='{"ok": true, "warnings": []}')
 
     try:
         import json
