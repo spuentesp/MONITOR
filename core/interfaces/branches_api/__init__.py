@@ -3,7 +3,7 @@
 This package splits the original monolithic branches_api.py into focused modules:
 
 - models: All Pydantic request/response models
-- utils: Common utilities and service factories  
+- utils: Common utilities and service factories
 - branching_endpoints: Branch and clone operations
 - diff_endpoints: Universe comparison operations
 - promotion_endpoints: Branch promotion operations

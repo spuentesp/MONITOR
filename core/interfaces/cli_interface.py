@@ -396,9 +396,7 @@ def clone_universe(
 ):
     repo = Neo4jRepo().connect()
     svc = BrancherService(repo)
-    out = svc.clone_full(
-        source_universe_id, new_universe_id, name, force=force, dry_run=dry_run
-    )
+    out = svc.clone_full(source_universe_id, new_universe_id, name, force=force, dry_run=dry_run)
     _print_json(out)
     repo.close()
 

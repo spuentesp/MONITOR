@@ -13,10 +13,10 @@ from core.domain.multiverse import Multiverse
 
 class UniverseProjector:
     """Handles projection of universes and arcs."""
-    
+
     def __init__(self, repo: Any):
         self.repo = repo
-    
+
     def project_multiverse(self, multiverse: Multiverse) -> None:
         """Project multiverse and its universes."""
         # Upsert Multiverse
@@ -26,7 +26,7 @@ class UniverseProjector:
             name=multiverse.name,
             desc=multiverse.description,
         )
-        
+
         # Project Multiverse-level Axioms
         for axiom in multiverse.axioms:
             self.repo.run(
@@ -45,7 +45,7 @@ class UniverseProjector:
                 description=axiom.description,
                 multiverse_id=multiverse.id,
             )
-        
+
         # Project Multiverse-level Archetypes
         for archetype in multiverse.archetypes:
             self.repo.run(
@@ -64,7 +64,7 @@ class UniverseProjector:
                 type=archetype.type,
                 multiverse_id=multiverse.id,
             )
-        
+
         # Upsert Universes and their Arcs
         for universe in multiverse.universes:
             self.repo.run(
@@ -81,7 +81,7 @@ class UniverseProjector:
                 desc=universe.description,
                 multiverse_id=multiverse.id,
             )
-            
+
             # Project Arcs for this universe
             for arc in universe.arcs:
                 self.repo.run(
@@ -97,7 +97,7 @@ class UniverseProjector:
                     title=arc.title,
                     universe_id=universe.id,
                 )
-            
+
             # Project Axioms for this universe
             for axiom in universe.axioms:
                 self.repo.run(
@@ -116,7 +116,7 @@ class UniverseProjector:
                     description=axiom.description,
                     universe_id=universe.id,
                 )
-            
+
             # Project Archetypes for this universe
             for archetype in universe.archetypes:
                 self.repo.run(

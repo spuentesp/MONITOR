@@ -2,34 +2,30 @@ from __future__ import annotations
 
 from typing import Any
 
-from .archivist import archivist_agent
-from .conductor import conductor_agent
-from .continuity import continuity_agent
-from .critic import critic_agent
-from .director import director_agent
-from .intent_router import intent_router_agent
-from .librarian import librarian_agent
-from .narrator import narrator_agent
-from .planner import planner_agent
-from .qa import qa_agent
-from .steward import steward_agent
+# Import agents to trigger registration
+from .registry import AgentRegistry
 
 
 def build_agents(llm: Any) -> dict[str, Any]:
     """Construct and return all LLM-backed agents keyed by their canonical names.
 
-    Keeps agent wiring in one place to avoid duplication in orchestrators/flows.
+    Now uses the extensible AgentRegistry system to eliminate duplication
+    and enable adding new agents without modifying existing code.
     """
+    # Build all registered agents
+    agents = AgentRegistry.build_all_agents(llm)
+
+    # Map registry keys to expected factory keys for backward compatibility
     return {
-        "narrator": narrator_agent(llm),
-        "archivist": archivist_agent(llm),
-        "director": director_agent(llm),
-        "librarian": librarian_agent(llm),
-        "steward": steward_agent(llm),
-        "critic": critic_agent(llm),
-        "intent_router": intent_router_agent(llm),
-        "planner": planner_agent(llm),
-        "qa": qa_agent(llm),
-        "continuity": continuity_agent(llm),
-        "conductor": conductor_agent(llm),
+        "narrator": agents.get("narrator"),
+        "archivist": agents.get("archivist"),
+        "director": agents.get("director"),
+        "librarian": agents.get("librarian"),
+        "steward": agents.get("steward"),
+        "critic": agents.get("critic"),
+        "intent_router": agents.get("intentrouter"),
+        "planner": agents.get("planner"),
+        "qa": agents.get("qa"),
+        "continuity": agents.get("continuitymoderator"),
+        "conductor": agents.get("conductor"),
     }

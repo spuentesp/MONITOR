@@ -41,7 +41,7 @@ class RecorderService:
     ) -> list[str]:
         """Validate universe_id consistency across operations."""
         warnings: list[str] = []
-        
+
         if (
             new_story
             and universe_id
@@ -66,7 +66,7 @@ class RecorderService:
                     warnings.append(
                         f"entity {e.get('id') or e.get('name')} universe_id ({e.get('universe_id')}) differs from provided universe_id ({universe_id})"
                     )
-        
+
         return warnings
 
     def commit_deltas(
@@ -89,7 +89,7 @@ class RecorderService:
         relation_states = relation_states or []
         relations = relations or []
         new_entities = new_entities or []
-        
+
         written = {
             "facts": 0,
             "relation_states": 0,
@@ -102,7 +102,7 @@ class RecorderService:
             "universes": 0,
             "multiverses": 0,
         }
-        
+
         # Preflight validation
         warnings = self._validate_universe_consistency(
             new_story, new_arc, new_entities, universe_id

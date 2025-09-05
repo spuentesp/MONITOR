@@ -17,7 +17,7 @@ class StoryRecorder:
         """Create arc and link to universe."""
         if not (new_arc.get("universe_id") or universe_id):
             raise ValueError("universe_id is required to create arcs")
-            
+
         a_id = ensure_id("arc", new_arc.get("id"))
         self.repo.run(
             """
@@ -45,7 +45,7 @@ class StoryRecorder:
         """Create story and link to universe and optionally arc."""
         if not (new_story.get("universe_id") or universe_id):
             raise ValueError("universe_id is required to create stories")
-            
+
         st_id = ensure_id("story", new_story.get("id"))
         u_for_story = new_story.get("universe_id") or universe_id
         props = {

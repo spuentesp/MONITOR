@@ -17,7 +17,7 @@ class EntityRecorder:
         """Create entities and link to universe."""
         if not universe_id:
             raise ValueError("universe_id is required to create entities")
-            
+
         erows = []
         for e in new_entities:
             eid = ensure_id("entity", e.get("id"))

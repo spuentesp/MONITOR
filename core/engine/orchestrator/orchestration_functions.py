@@ -16,6 +16,7 @@ from core.engine.tools import (
     recorder_tool,
     retrieval_tool,
 )
+
 from .autocommit_manager import autocommit_stats
 from .tool_builder import build_live_tools
 
@@ -40,8 +41,8 @@ def run_once(
     backend = select_engine_backend()
     if backend == "langgraph":
         try:
-            from core.engine.langgraph_flow import build_langgraph_flow
             from core.agents.factory import build_agents
+            from core.engine.langgraph_flow import build_langgraph_flow
         except Exception as e:
             # Treat missing/failed LangGraph as app down
             raise RuntimeError(

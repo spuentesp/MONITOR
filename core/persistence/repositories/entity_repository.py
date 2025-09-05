@@ -7,80 +7,32 @@ persistence operations using the repository pattern.
 
 from typing import Any
 
-from core.domain.base_model import BaseModel
 from core.interfaces.persistence import EntityRepositoryInterface
 
+from .base_repository import BaseRepository
 
-class EntityRepository(EntityRepositoryInterface):
+
+class EntityRepository(BaseRepository, EntityRepositoryInterface):
     """Concrete implementation of entity repository."""
 
-    def __init__(self, neo4j_repo, query_service):
-        self.neo4j_repo = neo4j_repo
-        self.query_service = query_service
+    def get_entity_type(self) -> str:
+        """Return the entity type."""
+        return "entity"
 
-    async def create(self, entity: BaseModel) -> str:
-        """Create a new entity and return its ID."""
-        # Convert Pydantic model to dict for persistence
-        entity_data = entity.model_dump() if hasattr(entity, "model_dump") else entity.dict()
+    def get_node_label(self, entity_data: dict[str, Any]) -> str:
+        """Return the Neo4j label for entities."""
+        labels = entity_data.get("labels", ["Entity"])
+        return ":".join(labels) if isinstance(labels, list) else "Entity"
+
+    async def create_entity_specific(self, entity_data: dict[str, Any]) -> str:
+        """Create a new entity using entity-specific logic."""
         return await self.create_entity(entity_data)
-
-    async def update(self, entity_id: str, data: dict[str, Any]) -> bool:
-        """Update an existing entity."""
-        try:
-            # Use neo4j_repo to update entity
-            query = """
-            MATCH (e {id: $entity_id})
-            SET e += $data
-            RETURN e
-            """
-            result = await self.neo4j_repo.execute_query(
-                query, {"entity_id": entity_id, "data": data}
-            )
-            return len(result) > 0
-        except Exception:
-            return False
-
-    async def delete(self, entity_id: str) -> bool:
-        """Delete an entity by ID."""
-        try:
-            query = """
-            MATCH (e {id: $entity_id})
-            DETACH DELETE e
-            RETURN count(e) as deleted
-            """
-            result = await self.neo4j_repo.execute_query(query, {"entity_id": entity_id})
-            return result[0].get("deleted", 0) > 0
-        except Exception:
-            return False
-
-    async def save_batch(self, entities: list[BaseModel]) -> list[str]:
-        """Save multiple entities in a batch operation."""
-        entity_ids = []
-        for entity in entities:
-            entity_id = await self.create(entity)
-            entity_ids.append(entity_id)
-        return entity_ids
 
     async def create_entity(self, entity_data: dict[str, Any]) -> str:
         """Create a new entity with validation."""
-        try:
-            # Generate ID if not provided
-            entity_id = entity_data.get("id") or f"entity_{hash(str(entity_data)) % 100000}"
-            entity_data["id"] = entity_id
-
-            # Create entity node in Neo4j
-            labels = entity_data.get("labels", ["Entity"])
-            label_str = ":".join(labels) if isinstance(labels, list) else "Entity"
-
-            query = f"""
-            CREATE (e:{label_str} $properties)
-            RETURN e.id as id
-            """
-            result = await self.neo4j_repo.execute_query(query, {"properties": entity_data})
-            return result[0]["id"] if result else entity_id
-        except Exception:
-            # Fallback to returning generated ID
-            return entity_data.get("id", f"entity_{hash(str(entity_data)) % 100000}")
+        label = self.get_node_label(entity_data)
+        entity_id, query, params = self._create_basic_entity(entity_data, label)
+        return await self._execute_with_fallback(query, params, entity_id)
 
     async def update_entity_attributes(self, entity_id: str, attributes: dict[str, Any]) -> bool:
         """Update entity attributes."""

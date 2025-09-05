@@ -15,7 +15,7 @@ from core.services.projection.universe_projector import UniverseProjector
 __all__ = [
     "ProjectionService",
     "EntityProjector",
-    "FactProjector", 
+    "FactProjector",
     "StoryProjector",
     "SystemProjector",
     "UniverseProjector",

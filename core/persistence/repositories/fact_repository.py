@@ -7,60 +7,28 @@ persistence operations using the repository pattern.
 
 from typing import Any
 
-from core.domain.base_model import BaseModel
 from core.interfaces.persistence import FactRepositoryInterface
 
+from .base_repository import BaseRepository
 
-class FactRepository(FactRepositoryInterface):
+
+class FactRepository(BaseRepository, FactRepositoryInterface):
     """Concrete implementation of fact repository."""
 
-    def __init__(self, neo4j_repo, query_service):
-        self.neo4j_repo = neo4j_repo
-        self.query_service = query_service
+    def get_entity_type(self) -> str:
+        """Return the entity type."""
+        return "fact"
 
-    async def create(self, entity: BaseModel) -> str:
-        """Create a new fact and return its ID."""
-        fact_data = entity.model_dump() if hasattr(entity, "model_dump") else entity.dict()
-        entity_id = fact_data.get("entity_id", "")
+    def get_node_label(self, entity_data: dict[str, Any]) -> str:
+        """Return the Neo4j label for facts."""
+        return "Fact"
+
+    async def create_entity_specific(self, entity_data: dict[str, Any]) -> str:
+        """Create a new fact using fact-specific logic."""
+        entity_id = entity_data.get("entity_id", "")
         if not isinstance(entity_id, str):
             entity_id = ""
-        return await self.create_fact(fact_data, entity_id)
-
-    async def update(self, entity_id: str, data: dict[str, Any]) -> bool:
-        """Update an existing fact."""
-        try:
-            query = """
-            MATCH (f:Fact {id: $fact_id})
-            SET f += $data
-            RETURN f
-            """
-            result = await self.neo4j_repo.execute_query(
-                query, {"fact_id": entity_id, "data": data}
-            )
-            return len(result) > 0
-        except Exception:
-            return False
-
-    async def delete(self, entity_id: str) -> bool:
-        """Delete a fact by ID."""
-        try:
-            query = """
-            MATCH (f:Fact {id: $fact_id})
-            DETACH DELETE f
-            RETURN count(f) as deleted
-            """
-            result = await self.neo4j_repo.execute_query(query, {"fact_id": entity_id})
-            return result[0].get("deleted", 0) > 0
-        except Exception:
-            return False
-
-    async def save_batch(self, entities: list[BaseModel]) -> list[str]:
-        """Save multiple facts in a batch operation."""
-        fact_ids = []
-        for entity in entities:
-            fact_id = await self.create(entity)
-            fact_ids.append(fact_id)
-        return fact_ids
+        return await self.create_fact(entity_data, entity_id)
 
     async def create_fact(self, fact_data: dict[str, Any], entity_id: str) -> str:
         """Create a new fact associated with an entity."""

@@ -11,6 +11,6 @@ from core.services.branching.universe_cloner import UniverseCloner
 
 __all__ = [
     "BrancherService",
-    "UniverseBrancher", 
+    "UniverseBrancher",
     "UniverseCloner",
 ]

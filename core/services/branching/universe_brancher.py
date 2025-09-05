@@ -11,10 +11,10 @@ from typing import Any
 
 class UniverseBrancher:
     """Handles universe branching operations."""
-    
+
     def __init__(self, repo: Any):
         self.repo = repo
-    
+
     def branch_at_scene(
         self,
         source_universe_id: str,
@@ -28,7 +28,7 @@ class UniverseBrancher:
         """Create a branch of a universe starting at a specific scene."""
         # Validation
         self._check_source_and_target(source_universe_id, new_universe_id, force)
-        
+
         # Check if scene exists in source universe
         scene_exists = self.repo.run(
             "MATCH (sc:Scene {id: $scene_id, universe_id: $src}) RETURN count(sc) > 0 AS exists",
@@ -37,7 +37,7 @@ class UniverseBrancher:
         )
         if not (scene_exists and scene_exists[0].get("exists", False)):
             raise ValueError(f"Scene {scene_id} not found in source universe {source_universe_id}")
-        
+
         if dry_run:
             # Count operations that would be performed
             scenes_before = self._first_count(
@@ -53,7 +53,7 @@ class UniverseBrancher:
                     scene_id=scene_id,
                 )
             )
-            
+
             return {
                 "dry_run": True,
                 "branch_point": scene_id,
@@ -61,10 +61,10 @@ class UniverseBrancher:
                     "scenes_included": scenes_before,
                 },
             }
-        
+
         # Execute branch operation
         result: dict[str, Any] = {"branched": True, "branch_point": scene_id, "operations": []}
-        
+
         # Create new universe
         self.repo.run(
             """
@@ -84,7 +84,7 @@ class UniverseBrancher:
             scene_id=scene_id,
         )
         result["operations"].append("universe")
-        
+
         # Copy all content up to and including the branch scene
         self.repo.run(
             """
@@ -108,9 +108,9 @@ class UniverseBrancher:
             scene_id=scene_id,
         )
         result["operations"].append("scenes")
-        
+
         return result
-    
+
     def _check_source_and_target(
         self, source_universe_id: str, new_universe_id: str, force: bool
     ) -> None:
@@ -132,7 +132,7 @@ class UniverseBrancher:
             raise ValueError(
                 "Target universe already exists; use --force to overwrite or choose a new id"
             )
-    
+
     @staticmethod
     def _first_count(rows: list[dict[str, Any]] | list[Any]) -> int:
         """Extract count from first row."""

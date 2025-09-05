@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from core.engine.commit import stage_or_commit
-from core.engine.context import ContextToken
+from core.engine.context.context_token import ContextToken
 from core.engine.orchestrator import (
     build_live_tools,
     flush_staging,

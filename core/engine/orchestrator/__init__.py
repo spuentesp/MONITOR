@@ -13,7 +13,7 @@ from .tool_builder import build_live_tools
 
 __all__ = [
     "build_live_tools",
-    "autocommit_stats", 
+    "autocommit_stats",
     "flush_staging",
     "run_once",
     "monitor_reply",

@@ -1,6 +1,7 @@
 """Common HTTP exception utilities for FastAPI endpoints."""
 
 from fastapi import HTTPException
+
 from core.utils.constants import HTTP_BAD_REQUEST, HTTP_FORBIDDEN, HTTP_INTERNAL_ERROR
 
 

@@ -1,4 +1,5 @@
 """Constants and patterns for mode classification."""
+
 import re
 
 # Command patterns for intent classification

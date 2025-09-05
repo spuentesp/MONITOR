@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter
-from core.utils.http_exceptions import bad_request_from_exception
 
 from core.persistence.neo4j_repo import Neo4jRepo
+from core.utils.http_exceptions import bad_request_from_exception
 
 from .models import PromoteReq
 

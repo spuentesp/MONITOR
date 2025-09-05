@@ -15,15 +15,12 @@ class FactRecorder:
         self.repo = repo
 
     def create_facts(
-        self, 
-        facts: list[dict[str, Any]], 
-        scene_id: str | None, 
-        universe_id: str | None
+        self, facts: list[dict[str, Any]], scene_id: str | None, universe_id: str | None
     ) -> int:
         """Create facts with scene linking and evidence/source management."""
         rows = []
         ev_rows: list[dict[str, Any]] = []
-        
+
         for f in facts:
             fid = ensure_id("fact", f.get("id"))
             # Enforce provenance: require a scene_id either per fact or defaulted from request
@@ -49,7 +46,7 @@ class FactRecorder:
                     "participants": participants,
                 }
             )
-            
+
             # Optional evidence promotion to :Source
             evidence = f.get("evidence") or []
             if evidence:
@@ -78,7 +75,7 @@ class FactRecorder:
                         )
                 if sources:
                     ev_rows.append({"fact_id": fid, "sources": sources})
-        
+
         # Create facts and link to scenes
         self.repo.run(
             """
@@ -91,7 +88,7 @@ class FactRecorder:
             """,
             rows=rows,
         )
-        
+
         # Create participant relationships
         self.repo.run(
             """
@@ -103,7 +100,7 @@ class FactRecorder:
             """,
             rows=rows,
         )
-        
+
         # Create evidence/source relationships
         if ev_rows:
             self.repo.run(
@@ -121,5 +118,5 @@ class FactRecorder:
                 """,
                 rows=ev_rows,
             )
-        
+
         return len(rows)

@@ -13,10 +13,10 @@ from core.domain.multiverse import Multiverse
 
 class EntityProjector:
     """Handles projection of entities and character sheets."""
-    
+
     def __init__(self, repo: Any):
         self.repo = repo
-    
+
     def project_entities_and_sheets(self, multiverse: Multiverse) -> None:
         """Project entities and their character sheets."""
         for universe in multiverse.universes:
@@ -39,7 +39,7 @@ class EntityProjector:
                     archetype_id=entity.archetype_id,
                     system_id=entity.system_id,
                 )
-                
+
                 # Upsert Character Sheets
                 for sheet in entity.sheets:
                     self.repo.run(

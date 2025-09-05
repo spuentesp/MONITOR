@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-from core.agents.base import Agent, AgentConfig
-from core.loaders.agent_prompts import load_agent_prompts
+from core.agents.base import Agent
+from core.agents.registry import AgentRegistry
 
 
+@AgentRegistry.register("Steward", temperature=0.1, max_tokens=180)
+def steward_prompt():
+    """Steward agent prompt."""
+    return (
+        "You are Steward. Validate coherence and policy. Flag missing IDs, continuity breaks, "
+        "or ontology write risks. Be terse and practical with fixes."
+    )
+
+
+# Legacy compatibility function
 def steward_agent(llm) -> Agent:
-    prompts = load_agent_prompts()
-    sys = prompts.get(
-        "steward",
-        "You are Steward. Validate coherence and policy. Flag missing IDs, continuity breaks,"
-        " or ontology write risks. Be terse and practical with fixes.",
-    )
-    return Agent(
-        AgentConfig(name="Steward", system_prompt=sys, llm=llm, temperature=0.1, max_tokens=180)
-    )
+    """Legacy compatibility: create steward agent."""
+    return AgentRegistry.create_agent("steward", llm)

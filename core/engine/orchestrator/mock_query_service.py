@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 
 class MockQueryService:
     """Mock implementation of QueryService for dry runs and testing.
-    
+
     Returns empty results or placeholder data for all query methods.
     """
 

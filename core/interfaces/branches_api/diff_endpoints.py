@@ -8,7 +8,7 @@ from fastapi import APIRouter
 
 from core.persistence.neo4j_repo import Neo4jRepo
 
-from .models import DiffRes, TypedDiffRes, TypedList, ProvenanceCounts
+from .models import DiffRes, ProvenanceCounts, TypedDiffRes, TypedList
 
 router = APIRouter()
 

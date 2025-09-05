@@ -13,10 +13,10 @@ from core.domain.multiverse import Multiverse
 
 class StoryProjector:
     """Handles projection of stories and scenes."""
-    
+
     def __init__(self, repo: Any):
         self.repo = repo
-    
+
     def project_stories_and_scenes(self, multiverse: Multiverse) -> None:
         """Project stories and their scenes."""
         for universe in multiverse.universes:
@@ -36,7 +36,7 @@ class StoryProjector:
                     summary=story.summary,
                     universe_id=universe.id,
                 )
-                
+
                 # Upsert Scenes
                 for scene in story.scenes:
                     self.repo.run(

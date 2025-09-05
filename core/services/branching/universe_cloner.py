@@ -11,10 +11,10 @@ from typing import Any
 
 class UniverseCloner:
     """Handles universe cloning operations."""
-    
+
     def __init__(self, repo: Any):
         self.repo = repo
-    
+
     def clone_full(
         self,
         source_universe_id: str,
@@ -27,7 +27,7 @@ class UniverseCloner:
         """Clone a universe with all its content."""
         # Validation
         self._check_source_and_target(source_universe_id, new_universe_id, force)
-        
+
         if dry_run:
             # Count operations without executing
             stories = self._first_count(
@@ -72,7 +72,7 @@ class UniverseCloner:
                     src=source_universe_id,
                 )
             )
-            
+
             return {
                 "dry_run": True,
                 "operations": {
@@ -85,10 +85,10 @@ class UniverseCloner:
                     "arcs": arcs,
                 },
             }
-        
+
         # Execute full clone
         result: dict[str, Any] = {"cloned": True, "operations": []}
-        
+
         # Clone universe node
         self.repo.run(
             """
@@ -106,7 +106,7 @@ class UniverseCloner:
             name=new_universe_name,
         )
         result["operations"].append("universe")
-        
+
         # Clone stories
         self.repo.run(
             """
@@ -126,12 +126,12 @@ class UniverseCloner:
             tgt=new_universe_id,
         )
         result["operations"].append("stories")
-        
+
         # Continue with other entity types...
         # (Implementation would continue with scenes, entities, facts, etc.)
-        
+
         return result
-    
+
     def clone_subset(
         self,
         source_universe_id: str,
@@ -148,7 +148,7 @@ class UniverseCloner:
         """Clone a subset of a universe."""
         # Validation
         self._check_source_and_target(source_universe_id, new_universe_id, force)
-        
+
         if dry_run:
             # Count operations for subset
             stories_cnt = 0
@@ -160,16 +160,16 @@ class UniverseCloner:
                         story_ids=stories,
                     )
                 )
-            
+
             return {
                 "dry_run": True,
                 "subset": True,
                 "operations": {"stories": stories_cnt},
             }
-        
+
         # Execute subset clone
         result: dict[str, Any] = {"cloned": True, "subset": True, "operations": []}
-        
+
         # Clone universe node
         self.repo.run(
             """
@@ -188,7 +188,7 @@ class UniverseCloner:
             name=new_universe_name,
         )
         result["operations"].append("universe")
-        
+
         # Clone specified stories if provided
         if stories:
             self.repo.run(
@@ -209,9 +209,9 @@ class UniverseCloner:
                 story_ids=stories,
             )
             result["operations"].append("stories")
-        
+
         return result
-    
+
     def _check_source_and_target(
         self, source_universe_id: str, new_universe_id: str, force: bool
     ) -> None:
@@ -233,7 +233,7 @@ class UniverseCloner:
             raise ValueError(
                 "Target universe already exists; use --force to overwrite or choose a new id"
             )
-    
+
     @staticmethod
     def _first_count(rows: list[dict[str, Any]] | list[Any]) -> int:
         """Extract count from first row."""

@@ -14,14 +14,12 @@ class RelationRecorder:
         self.repo = repo
 
     def create_relation_states(
-        self, 
-        relation_states: list[dict[str, Any]], 
-        scene_id: str | None
+        self, relation_states: list[dict[str, Any]], scene_id: str | None
     ) -> tuple[int, list[str]]:
         """Create relation states with scene provenance. Returns (count, warnings)."""
         rows = []
         warnings: list[str] = []
-        
+
         for r in relation_states:
             # Canonical ID for dedupe when not provided
             rid = r.get("id")
@@ -54,7 +52,7 @@ class RelationRecorder:
                 warnings.append(
                     f"RelationState {rid} has no provenance scene (set/changed/ended) and no default scene_id"
                 )
-        
+
         self.repo.run(
             """
             UNWIND $rows AS row
@@ -77,7 +75,7 @@ class RelationRecorder:
             """,
             rows=rows,
         )
-        
+
         return len(rows), warnings
 
     def create_simple_relations(self, relations: list[dict[str, Any]]) -> int:
@@ -95,7 +93,7 @@ class RelationRecorder:
                     ),  # {started_at, ended_at} optional
                 }
             )
-        
+
         self.repo.run(
             """
             UNWIND $rows AS row
@@ -107,5 +105,5 @@ class RelationRecorder:
             """,
             rows=rrows,
         )
-        
+
         return len(rrows)

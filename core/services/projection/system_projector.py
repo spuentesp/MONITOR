@@ -11,10 +11,10 @@ from typing import Any
 
 class SystemProjector:
     """Handles projection of systems, axioms, and archetypes."""
-    
+
     def __init__(self, repo: Any):
         self.repo = repo
-    
+
     def project_systems(self, systems: list[dict[str, Any]]) -> None:
         """Project systems from YAML data."""
         for sys in systems:
@@ -24,7 +24,7 @@ class SystemProjector:
                 name=sys["name"],
                 desc=sys.get("description"),
             )
-    
+
     def project_axioms(self, axioms: list[dict[str, Any]]) -> None:
         """Project axioms for systems."""
         for axiom in axioms:
@@ -39,7 +39,7 @@ class SystemProjector:
                 desc=axiom.get("description"),
                 system_id=axiom.get("system_id"),
             )
-    
+
     def project_archetypes(self, archetypes: list[dict[str, Any]]) -> None:
         """Project character/entity archetypes."""
         for archetype in archetypes:

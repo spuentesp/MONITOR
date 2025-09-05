@@ -15,7 +15,7 @@ class Projector:
     """
     Projects domain models to persistence layer using composition pattern.
     """
-    
+
     def __init__(self, repo: Any):  # duck-typed to RepoPort | Neo4jRepo when available
         self.repo = repo
         self._service = ProjectionService(repo)

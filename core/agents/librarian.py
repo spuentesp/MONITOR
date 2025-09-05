@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-from core.agents.base import Agent, AgentConfig
-from core.loaders.agent_prompts import load_agent_prompts
+from core.agents.base import Agent
+from core.agents.registry import AgentRegistry
 
 
+@AgentRegistry.register("Librarian", temperature=0.2, max_tokens=220)
+def librarian_prompt():
+    """Librarian agent prompt."""
+    return (
+        "You are Librarian. Retrieve and summarize relevant story context (entities, scenes, relations). "
+        "Be concise and return only the most useful details for the next beat."
+    )
+
+
+# Legacy compatibility function
 def librarian_agent(llm) -> Agent:
-    prompts = load_agent_prompts()
-    sys = prompts.get(
-        "librarian",
-        "You are Librarian. Retrieve and summarize relevant story context (entities, scenes, relations)."
-        " Be concise and return only the most useful details for the next beat.",
-    )
-    return Agent(
-        AgentConfig(name="Librarian", system_prompt=sys, llm=llm, temperature=0.2, max_tokens=220)
-    )
+    """Legacy compatibility: create librarian agent."""
+    return AgentRegistry.create_agent("librarian", llm)

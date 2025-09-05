@@ -83,7 +83,7 @@ class BranchService:
             force=force,
             dry_run=dry_run,
         )
-    
+
     # Legacy method names for backward compatibility
     def clone_universe_full(
         self,
@@ -102,7 +102,7 @@ class BranchService:
             force=force,
             dry_run=dry_run,
         )
-    
+
     def clone_universe_subset(
         self,
         source_universe_id: str,
@@ -128,7 +128,7 @@ class BranchService:
             force=force,
             dry_run=dry_run,
         )
-    
+
     def branch_universe_at_scene(
         self,
         source_universe_id: str,

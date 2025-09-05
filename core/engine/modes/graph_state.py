@@ -3,10 +3,11 @@
 This module contains the state definition and helper functions
 for managing conversation state across nodes.
 """
+
 from __future__ import annotations
 
-import uuid
 from typing import Any, Literal, NotRequired, TypedDict
+import uuid
 
 from core.generation.interfaces.llm import Message
 
@@ -15,6 +16,7 @@ Mode = Literal["narration", "monitor"]
 
 class GraphState(TypedDict, total=False):
     """State shared across all graph nodes."""
+
     # Conversación acumulada
     messages: list[Message]
     # Último input del usuario (para el step actual)

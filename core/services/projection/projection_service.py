@@ -22,7 +22,7 @@ from core.services.projection.universe_projector import UniverseProjector
 
 class ProjectionService:
     """Main projection service that composes all projection operations."""
-    
+
     def __init__(self, repo: Any):
         self.repo = repo
         self.system_projector = SystemProjector(repo)
@@ -30,7 +30,7 @@ class ProjectionService:
         self.story_projector = StoryProjector(repo)
         self.entity_projector = EntityProjector(repo)
         self.fact_projector = FactProjector(repo)
-    
+
     def project_from_yaml(self, yaml_path: Path | str, ensure_constraints: bool = True) -> None:
         """Project a complete omniverse from YAML."""
         if ensure_constraints:
@@ -51,12 +51,12 @@ class ProjectionService:
         systems = raw.get("systems", []) or []
         if systems:
             self.system_projector.project_systems(systems)
-        
+
         # Axioms
         axioms = raw.get("axioms", []) or []
         if axioms:
             self.system_projector.project_axioms(axioms)
-        
+
         # Archetypes
         archetypes = raw.get("archetypes", []) or []
         if archetypes:

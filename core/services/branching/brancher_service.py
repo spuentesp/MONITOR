@@ -9,18 +9,18 @@ from __future__ import annotations
 
 from typing import Any
 
-from core.services.branching.universe_cloner import UniverseCloner
 from core.services.branching.universe_brancher import UniverseBrancher
+from core.services.branching.universe_cloner import UniverseCloner
 
 
 class BrancherService:
     """Main brancher service that composes cloning and branching operations."""
-    
+
     def __init__(self, repo: Any):
         self.repo = repo
         self.cloner = UniverseCloner(repo)
         self.brancher = UniverseBrancher(repo)
-    
+
     # Cloning operations
     def clone_full(
         self,
@@ -39,7 +39,7 @@ class BrancherService:
             force=force,
             dry_run=dry_run,
         )
-    
+
     def clone_subset(
         self,
         source_universe_id: str,
@@ -65,7 +65,7 @@ class BrancherService:
             force=force,
             dry_run=dry_run,
         )
-    
+
     # Branching operations
     def branch_at_scene(
         self,

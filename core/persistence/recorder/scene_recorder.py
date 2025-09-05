@@ -24,7 +24,7 @@ class SceneRecorder:
             "recorded_at": new_scene.get("recorded_at"),
             "location": new_scene.get("location"),
         }
-        
+
         self.repo.run(
             """
             UNWIND [$row] AS row
@@ -47,12 +47,12 @@ class SceneRecorder:
             """,
             row={"id": sc_id, "props": props},
         )
-        
+
         # Handle participants
         participants = new_scene.get("participants") or []
         appears_in_count = 0
         warnings: list[str] = []
-        
+
         if participants:
             self.repo.run(
                 """
@@ -65,7 +65,7 @@ class SceneRecorder:
                 sid=sc_id,
             )
             appears_in_count = len(participants)
-            
+
             # Optional DB existence check for participants
             try:
                 if hasattr(self.repo, "ping") and self.repo.ping() and participants:
@@ -80,5 +80,5 @@ class SceneRecorder:
             except Exception:
                 # Never fail commit for warning checks
                 pass
-                
+
         return sc_id, appears_in_count, warnings

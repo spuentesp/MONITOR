@@ -1,11 +1,4 @@
-from typing import Literal
+# Legacy compatibility: import from new location
+from .context import ContextToken
 
-from pydantic import BaseModel
-
-
-class ContextToken(BaseModel):
-    omniverse_id: str
-    multiverse_id: str
-    universe_id: str
-    time_ref: str | None = None
-    mode: Literal["read", "write", "observe"] = "read"
+__all__ = ["ContextToken"]
