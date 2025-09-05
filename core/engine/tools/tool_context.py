@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import Any
 
 try:  # Optional typing only; no runtime import dependency
-    from core.ports.cache import CachePort, StagingPort  # type: ignore
-    from core.ports.storage import QueryReadPort, RecorderWritePort  # type: ignore
+    from core.ports.cache import CachePort, StagingPort
+    from core.ports.storage import QueryReadPort, RecorderWritePort
 except Exception:  # pragma: no cover
     CachePort = StagingPort = QueryReadPort = RecorderWritePort = Any  # type: ignore
 

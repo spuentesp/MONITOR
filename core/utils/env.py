@@ -14,9 +14,22 @@ def env_bool(name: str, default: bool = False) -> bool:
     return raw in ("1", "true", "True")
 
 
+from typing import overload
+
+@overload
+def env_str(name: str, default: str, *, lower: bool = False) -> str:
+    ...
+
+@overload  
+def env_str(name: str, default: None = None, *, lower: bool = False) -> str | None:
+    ...
+
 def env_str(name: str, default: str | None = None, *, lower: bool = False) -> str | None:
     """Return a string from env; optionally lowercase the value.
     Returns default if unset.
+    
+    If default is a string, guarantees non-None return.
+    If default is None, may return None.
     """
     val = os.getenv(name, default if default is not None else None)
     if val is None:

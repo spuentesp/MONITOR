@@ -1,17 +1,41 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Protocol
 
 
-class CloneSubsetMixin:
-    """
-    Mixin for subset cloning operations.
+class Repository(Protocol):
+    """Protocol for repository with query execution capability."""
+    def run(self, query: str, **params: Any) -> Any:
+        """Execute a query with parameters."""
+        ...
 
-    This mixin expects to be used with a base class that provides:
-    - repo: repository object with run() method
-    - _check_source_and_target(): validation method
-    - _first_count(): helper method for counting results
-    """
+
+class UniverseValidator(Protocol):
+    """Protocol for universe validation operations."""
+    def check_source_and_target(self, source_universe_id: str, new_universe_id: str, force: bool = False) -> None:
+        """Validate source and target universes."""
+        ...
+
+
+class QueryResultHelper(Protocol):
+    """Protocol for query result processing."""
+    def first_count(self, query_result: Any) -> int:
+        """Extract count from first result row."""
+        ...
+
+
+class CloneSubsetService:
+    """Service for subset cloning operations using composition."""
+    
+    def __init__(
+        self,
+        repository: Repository,
+        validator: UniverseValidator,
+        result_helper: QueryResultHelper,
+    ):
+        self.repo = repository
+        self.validator = validator
+        self.result_helper = result_helper
 
     def clone_universe_subset(
         self,
@@ -27,18 +51,18 @@ class CloneSubsetMixin:
         dry_run: bool = False,
     ) -> dict[str, Any]:
         # Guardrails
-        self._check_source_and_target(source_universe_id, new_universe_id, force)
+        self.validator.check_source_and_target(source_universe_id, new_universe_id, force)
         stories = stories or []
         arcs = arcs or []
         if dry_run:
-            stories_cnt = self._first_count(
+            stories_cnt = self.result_helper.first_count(
                 self.repo.run(
                     "MATCH (:Universe {id:$src})-[:HAS_STORY]->(st:Story) WHERE size($stories)=0 OR st.id IN $stories RETURN count(DISTINCT st) AS c",
                     src=source_universe_id,
                     stories=stories,
                 )
             )
-            scenes_cnt = self._first_count(
+            scenes_cnt = self.result_helper.first_count(
                 self.repo.run(
                     """
                 MATCH (:Universe {id:$src})-[:HAS_STORY]->(st:Story)-[:HAS_SCENE]->(sc:Scene)
@@ -51,14 +75,14 @@ class CloneSubsetMixin:
                 )
             )
             if include_all_entities:
-                entities_cnt = self._first_count(
+                entities_cnt = self.result_helper.first_count(
                     self.repo.run(
                         "MATCH (:Universe {id:$src})<-[:BELONGS_TO]-(e:Entity) RETURN count(DISTINCT e) AS c",
                         src=source_universe_id,
                     )
                 )
             else:
-                entities_cnt = self._first_count(
+                entities_cnt = self.result_helper.first_count(
                     self.repo.run(
                         """
                     MATCH (:Universe {id:$src})-[:HAS_STORY]->(st:Story)-[:HAS_SCENE]->(sc:Scene)
@@ -71,7 +95,7 @@ class CloneSubsetMixin:
                         scene_max=scene_max_index,
                     )
                 )
-            facts_cnt = self._first_count(
+            facts_cnt = self.result_helper.first_count(
                 self.repo.run(
                     """
                 MATCH (:Universe {id:$src})-[:HAS_STORY]->(st:Story)-[:HAS_SCENE]->(sc:Scene)
@@ -84,13 +108,13 @@ class CloneSubsetMixin:
                     scene_max=scene_max_index,
                 )
             )
-            sheets_cnt = self._first_count(
+            sheets_cnt = self.result_helper.first_count(
                 self.repo.run(
                     "MATCH (:Universe {id:$src})<-[:BELONGS_TO]-(:Entity)-[:HAS_SHEET]->(sh:Sheet) RETURN count(DISTINCT sh) AS c",
                     src=source_universe_id,
                 )
             )
-            arcs_cnt = self._first_count(
+            arcs_cnt = self.result_helper.first_count(
                 self.repo.run(
                     "MATCH (:Universe {id:$src})-[:HAS_ARC]->(a:Arc) WHERE size($arcs)=0 OR a.id IN $arcs RETURN count(DISTINCT a) AS c",
                     src=source_universe_id,
