@@ -84,5 +84,9 @@ class StagingStore:
     def pending(self) -> int:
         return len(self._buffer)
 
+    def peek_all(self) -> list[dict[str, Any]]:
+        """Return all staged items without removing them."""
+        return self._buffer.copy()
+
     def clear(self) -> None:
         self._buffer.clear()

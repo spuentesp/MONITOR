@@ -39,11 +39,15 @@ def test_branch_at_scene_calls_service(monkeypatch):
             calls.append(("branch_universe_at_scene", kw))
             return {"new_universe_id": kw["new_universe_id"], "counts": {"facts": 3}}
 
-    # Patch repo and service factory used by endpoints
-    import core.interfaces.branches_api as mod
+    # Patch repo in the specific modules that use it
+    import core.interfaces.branches_api.utils as utils_mod
+    import core.interfaces.branches_api.diff_endpoints as diff_mod
+    import core.interfaces.branches_api.promotion_endpoints as promotion_mod
 
-    monkeypatch.setattr(mod, "Neo4jRepo", lambda: FakeRepo())
-    monkeypatch.setattr(mod, "BranchService", lambda repo: FakeSvc(repo))
+    monkeypatch.setattr(utils_mod, "Neo4jRepo", lambda: FakeRepo())
+    monkeypatch.setattr(diff_mod, "Neo4jRepo", lambda: FakeRepo())
+    monkeypatch.setattr(promotion_mod, "Neo4jRepo", lambda: FakeRepo())
+    monkeypatch.setattr(utils_mod, "BrancherService", lambda repo: FakeSvc(repo))
 
     payload = {
         "source_universe_id": "U-1",
@@ -74,10 +78,15 @@ def test_clone_full_and_subset(monkeypatch):
         def clone_universe_subset(self, **kw):  # type: ignore[no-untyped-def]
             return {"new_universe_id": kw["new_universe_id"], "mode": "subset"}
 
-    import core.interfaces.branches_api as mod
+    # Patch repo in the specific modules that use it
+    import core.interfaces.branches_api.utils as utils_mod
+    import core.interfaces.branches_api.diff_endpoints as diff_mod
+    import core.interfaces.branches_api.promotion_endpoints as promotion_mod
 
-    monkeypatch.setattr(mod, "Neo4jRepo", lambda: FakeRepo())
-    monkeypatch.setattr(mod, "BranchService", lambda repo: FakeSvc(repo))
+    monkeypatch.setattr(utils_mod, "Neo4jRepo", lambda: FakeRepo())
+    monkeypatch.setattr(diff_mod, "Neo4jRepo", lambda: FakeRepo())
+    monkeypatch.setattr(promotion_mod, "Neo4jRepo", lambda: FakeRepo())
+    monkeypatch.setattr(utils_mod, "BrancherService", lambda repo: FakeSvc(repo))
 
     base = {
         "source_universe_id": "U-1",
@@ -105,9 +114,14 @@ def test_diff_shape(monkeypatch):
         def run(self, q, **params):  # type: ignore[no-untyped-def]
             return [{"c": 0}]
 
-    import core.interfaces.branches_api as mod
+    # Patch repo in the specific modules that use it
+    import core.interfaces.branches_api.utils as utils_mod
+    import core.interfaces.branches_api.diff_endpoints as diff_mod
+    import core.interfaces.branches_api.promotion_endpoints as promotion_mod
 
-    monkeypatch.setattr(mod, "Neo4jRepo", lambda: FakeRepo())
+    monkeypatch.setattr(utils_mod, "Neo4jRepo", lambda: FakeRepo())
+    monkeypatch.setattr(diff_mod, "Neo4jRepo", lambda: FakeRepo())
+    monkeypatch.setattr(promotion_mod, "Neo4jRepo", lambda: FakeRepo())
 
     r = client.get("/api/branches/U-1/diff/U-2", headers=_ctx_header())
     assert r.status_code == 200
@@ -140,9 +154,14 @@ def test_typed_diff_and_append_missing(monkeypatch):
                 return [{"inserted": 0}]
             return [{"c": 0}]
 
-    import core.interfaces.branches_api as mod
+    # Patch repo in the specific modules that use it
+    import core.interfaces.branches_api.utils as utils_mod
+    import core.interfaces.branches_api.diff_endpoints as diff_mod
+    import core.interfaces.branches_api.promotion_endpoints as promotion_mod
 
-    monkeypatch.setattr(mod, "Neo4jRepo", lambda: FakeRepo())
+    monkeypatch.setattr(utils_mod, "Neo4jRepo", lambda: FakeRepo())
+    monkeypatch.setattr(diff_mod, "Neo4jRepo", lambda: FakeRepo())
+    monkeypatch.setattr(promotion_mod, "Neo4jRepo", lambda: FakeRepo())
 
     r = client.get("/api/branches/U-1/diff/U-2/typed", headers=_ctx_header())
     assert r.status_code == 200

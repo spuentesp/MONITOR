@@ -50,7 +50,10 @@ class FlowAdapter:
             out = self._compiled.invoke(inputs)
             if out is not None:
                 return out
-        except Exception:
+        except Exception as e:
+            # Log the actual error for debugging instead of silently catching
+            import logging
+            logging.error(f"LangGraph execution failed, falling back: {e}")
             pass
 
         # Fallback: sequential execution to produce a final state dict

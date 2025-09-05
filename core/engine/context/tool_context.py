@@ -82,6 +82,11 @@ class ToolContext:
         """Legacy compatibility: access idempotency set."""
         return self.autocommit.idempotency
 
+    @idempotency.setter
+    def idempotency(self, value):
+        """Legacy compatibility: set idempotency set."""
+        self.autocommit.idempotency = value
+
     @property
     def mongo(self):
         """Legacy compatibility: access mongo service."""

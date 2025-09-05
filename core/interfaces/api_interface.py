@@ -1,6 +1,10 @@
 from typing import Any
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request
+
+# Load environment variables from .env file
+load_dotenv()
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 

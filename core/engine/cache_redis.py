@@ -74,6 +74,12 @@ class RedisStagingStore:
     def pending(self) -> int:
         return int(self.r.llen(self._key()))
 
+    def peek_all(self) -> list[dict[str, Any]]:
+        """Return all staged items without removing them."""
+        key = self._key()
+        items = self.r.lrange(key, 0, -1)
+        return [json.loads(item) for item in items]
+
     def clear(self) -> None:
         self.r.delete(self._key())
 

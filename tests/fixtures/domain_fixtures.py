@@ -16,7 +16,6 @@ from core.domain.deltas import (
     FactDelta,
     FactParticipant,
     NewEntity,
-    NewFact,
     NewScene,
     NewStory,
     NewUniverse,
@@ -96,28 +95,27 @@ def build_test_entity(
 
 def build_test_fact(
     id: str | None = None,
-    content: str = "Test fact content",
-    entity_id: str | None = None,
-    scene_id: str | None = None,
+    description: str = "Test fact description",
+    universe_id: str | None = None,
+    occurs_in: str | None = None,
     participants: list[FactParticipant] | None = None
-) -> NewFact:
-    """Build a test Fact object."""
-    return NewFact(
+) -> FactDelta:
+    """Build a test FactDelta object."""
+    return FactDelta(
         id=id or test_id("fact"),
-        content=content,
-        entity_id=entity_id or test_id("entity"),
-        scene_id=scene_id or test_id("scene"),
+        description=description,
+        universe_id=universe_id or test_id("universe"),
+        occurs_in=occurs_in or test_id("scene"),
         participants=participants or []
     )
 
 
 def build_test_fact_delta(
-    fact: NewFact | None = None,
+    fact: FactDelta | None = None,
     participants: list[FactParticipant] | None = None
 ) -> FactDelta:
     """Build a test FactDelta object."""
-    return FactDelta(
-        new_fact=fact or build_test_fact(),
+    return fact or FactDelta(
         participants=participants or []
     )
 
