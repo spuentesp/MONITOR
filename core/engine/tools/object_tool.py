@@ -5,7 +5,7 @@ from typing import Any
 
 from core.services.object_service import ObjectService
 
-from . import ToolContext
+from .tool_context import ToolContext
 
 
 def object_upload_tool(

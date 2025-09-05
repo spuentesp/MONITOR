@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from . import ToolContext
+from .tool_context import ToolContext
 
 
 def notes_tool(_: ToolContext, text: str, scope: dict[str, str] | None = None) -> dict[str, Any]:

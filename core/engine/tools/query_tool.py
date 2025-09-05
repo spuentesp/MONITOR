@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from . import ToolContext
+from .tool_context import ToolContext
 
 
 def query_tool(ctx: ToolContext, method: str, **kwargs) -> Any:

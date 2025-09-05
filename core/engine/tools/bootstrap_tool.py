@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import uuid4
 
-from . import ToolContext
+from .tool_context import ToolContext
 from .recorder_tool import recorder_tool
 
 

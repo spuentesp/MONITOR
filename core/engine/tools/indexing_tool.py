@@ -4,7 +4,7 @@ from typing import Any
 
 from core.services.indexing_service import IndexingService
 
-from . import ToolContext
+from .tool_context import ToolContext
 
 
 def indexing_tool(

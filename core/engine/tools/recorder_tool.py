@@ -6,7 +6,7 @@ from typing import Any
 
 from core.domain.deltas import DeltaBatch
 
-from . import ToolContext
+from .tool_context import ToolContext
 
 
 def recorder_tool(

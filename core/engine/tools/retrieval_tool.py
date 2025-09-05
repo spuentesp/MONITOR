@@ -4,7 +4,7 @@ from typing import Any
 
 from core.services.retrieval_service import RetrievalService
 
-from . import ToolContext
+from .tool_context import ToolContext
 
 
 def retrieval_tool(

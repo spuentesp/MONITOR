@@ -4,7 +4,7 @@ from typing import Any
 
 from core.persistence.mongo_repos import DocMeta, Memory, MongoNarrativeRepository, Note, Turn
 
-from . import ToolContext
+from .tool_context import ToolContext
 
 
 def narrative_tool(
