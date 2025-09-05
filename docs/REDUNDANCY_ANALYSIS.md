@@ -71,6 +71,17 @@ We successfully identified and eliminated key redundancies in the MONITOR codeba
 - ~~`tools.py` (583 lines)~~ → **COMPLETED ✅**: Split into 10 focused modules
 - ~~`branches_api.py` (518 lines)~~ → **COMPLETED ✅**: Split into 6 focused modules
 - ~~`recorder.py` (494 lines)~~ → **COMPLETED ✅**: Split into 8 focused modules
+- ~~`orchestrator.py` (379 lines)~~ → **COMPLETED ✅**: Split into 5 focused modules
+
+**Solution for orchestrator.py**: Split into focused operational domains:
+- **`core/engine/orchestrator/`** - Modular orchestration architecture
+  - `tool_builder.py` - Tool context building with caching/auto-commit (172 lines)
+  - `orchestration_functions.py` - Core orchestration (run_once, monitor_reply) (136 lines)
+  - `mock_query_service.py` - Mock service for dry runs/testing (85 lines)
+  - `autocommit_manager.py` - Auto-commit statistics and staging flush (54 lines)
+  - `__init__.py` - Module exports (20 lines)
+- **Result**: 379 lines → 16 lines + 467 lines in 5 focused modules (23% increase for proper separation)
+- **Benefit**: Clear separation of tool building, orchestration logic, mocking, and auto-commit management
 
 **Solution for recorder.py**: Split into focused persistence operations:
 - **`core/persistence/recorder/`** - Modular persistence architecture
